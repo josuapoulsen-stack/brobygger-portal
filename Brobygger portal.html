@@ -8430,6 +8430,13 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
         {tab === 'brobyggere' && (
           <div style={{ position: 'relative' }}>
             <div style={{ background: '#fff', borderBottom: `1px solid ${SoS.lineSoft}`, padding: '54px 20px 14px' }}>
+              <button onClick={() => setTab('arbejde')} style={{
+                display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+                cursor: 'pointer', padding: 0, marginBottom: 10,
+                fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft,
+              }}>
+                <Icon name="chevron-left" size={16} color={SoS.inkSoft}/> Arbejde
+              </button>
               <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 500, color: SoS.ink }}>
                 Brobyggere
               </div>
@@ -8439,7 +8446,18 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
         )}
 
         {tab === 'mennesker' && (
-          <AdminMenneskeListe viewingHq={viewingHq} onOpenMatching={onOpenMatching} typeFilter={typeFilter}/>
+          <div>
+            <div style={{ background: '#fff', borderBottom: `1px solid ${SoS.lineSoft}`, padding: '54px 20px 8px' }}>
+              <button onClick={() => setTab('arbejde')} style={{
+                display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+                cursor: 'pointer', padding: 0, marginBottom: 0,
+                fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft,
+              }}>
+                <Icon name="chevron-left" size={16} color={SoS.inkSoft}/> Arbejde
+              </button>
+            </div>
+            <AdminMenneskeListe viewingHq={viewingHq} onOpenMatching={onOpenMatching} typeFilter={typeFilter}/>
+          </div>
         )}
 
         {(tab === 'overview' || tab === 'kalender') && (
@@ -8510,6 +8528,7 @@ const AdminMobileTabBar = ({ active, onChange, isAdmin }) => {
     { id: 'beskeder', label: 'Beskeder', icon: 'bell' },
     { id: 'profil',   label: 'Profil',   icon: 'user' },
   ];
+  const navActive = ['brobyggere', 'mennesker', 'overview'].includes(active) ? 'arbejde' : active;
   return (
     <div style={{
       position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -8521,7 +8540,7 @@ const AdminMobileTabBar = ({ active, onChange, isAdmin }) => {
       display: 'flex', justifyContent: 'space-around', zIndex: 50,
     }}>
       {tabs.map(t => {
-        const on = active === t.id;
+        const on = navActive === t.id;
         return (
           <button key={t.id} onClick={() => onChange(t.id)} style={{
             background: 'none', border: 'none', cursor: 'pointer',
