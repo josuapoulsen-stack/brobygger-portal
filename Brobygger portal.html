@@ -7644,10 +7644,12 @@ window.AdminHome = AdminHome;
 
 // AdminMobileBeskeder: proper component to avoid hooks-in-IIFE violation
 // ─── RaadgiverKalender ───────────────────────────────────────────────────────
-const RaadgiverKalender = ({ viewingHq }) => {
+const RaadgiverKalender = ({ viewingHq, typeFilter: tfProp, setTypeFilter: setTfProp }) => {
   const [selDay, setSelDay] = React.useState(2); // onsdag = i dag (mock)
   const [selectedAppt, setSelectedAppt] = React.useState(null);
-  const [typeFilter, setTypeFilter] = React.useState('alle');
+  const [_localTf, _setLocalTf] = React.useState('alle');
+  const typeFilter = tfProp !== undefined ? tfProp : _localTf;
+  const setTypeFilter = setTfProp || _setLocalTf;
   const weekDays = ['Man','Tir','Ons','Tor','Fre','L\u00f8r','S\u00f8n'];
   const weekDates = [21,22,23,24,25,26,27];
 
@@ -7831,14 +7833,15 @@ const AdminMobileBeskeder = ({ isAdmin, viewingHq }) => {
 };
 
 // AdminMenneskeListe: mennesker list with search + filter
-const AdminMenneskeListe = ({ viewingHq, onOpenMatching }) => {
+const AdminMenneskeListe = ({ viewingHq, onOpenMatching, typeFilter: typeFProp }) => {
   const [search, setSearch] = React.useState('');
   const [filter, setFilter] = React.useState('alle');
   const alle = Object.values(SoS_MENNESKER);
   const filtered = alle.filter(m => {
     const matchSearch = !search || (m.firstName + ' ' + (m.lastName || '')).toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === 'alle' || (filter === 'matchet' ? m.matchedWith : !m.matchedWith);
-    return matchSearch && matchFilter;
+    const matchType = !typeFProp || typeFProp === 'alle' || m.type === typeFProp;
+    return matchSearch && matchFilter && matchType;
   });
   return (
     <div>
@@ -8079,6 +8082,26 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
         {tab === 'arbejde' && (
           <>
             {/* Type-filter — prominent */}
+            {tfProp !== undefined && tfProp !== 'alle' && (() => {
+              const t = SoS_TYPER[tfProp];
+              return (
+                <div style={{ padding: '10px 16px', background: t.soft,
+                  borderBottom: `1px solid ${t.color}30`,
+                  display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name={t.icon} size={13} color={t.color}/>
+                  <span style={{ fontFamily: SoS.sans, fontSize: 12,
+                    color: t.color, fontWeight: 600 }}>
+                    Filtrerer: {t.label}
+                  </span>
+                  <button onClick={() => setTfProp('alle')} style={{
+                    marginLeft: 'auto', background: 'none', border: 'none',
+                    fontFamily: SoS.sans, fontSize: 11, color: t.color,
+                    cursor: 'pointer', padding: '2px 8px',
+                    borderRadius: 999, fontWeight: 600,
+                  }}>× Nulstil</button>
+                </div>
+              );
+            })()}
             <div style={{ padding: '16px 16px 12px', background: '#fff',
               borderBottom: `1px solid ${SoS.lineSoft}` }}>
               <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
@@ -8396,11 +8419,11 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
         )}
 
         {tab === 'mennesker' && (
-          <AdminMenneskeListe viewingHq={viewingHq} onOpenMatching={onOpenMatching}/>
+          <AdminMenneskeListe viewingHq={viewingHq} onOpenMatching={onOpenMatching} typeFilter={typeFilter}/>
         )}
 
         {(tab === 'overview' || tab === 'kalender') && (
-          <RaadgiverKalender viewingHq={viewingHq}/>
+          <RaadgiverKalender viewingHq={viewingHq} typeFilter={typeFilter} setTypeFilter={setTypeFilter}/>
         )}
 
         {tab === 'profil' && (
