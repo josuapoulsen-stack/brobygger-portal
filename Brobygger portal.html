@@ -6567,14 +6567,34 @@ const BrobyggerProfilePanel = ({ brobygger: b, onClose }) => {
   );
 };
 
-const AdminBrobyggereScreen = ({ hovedsaede, onOpenMatching }) => {
+const AdminBrobyggereScreen = ({ hovedsaede, onOpenMatching, typeFilter: typeFProp }) => {
   const [filter, setFilter] = React.useState('alle');
   const [selectedBb, setSelectedBb] = React.useState(null);
   const [search, setSearch] = React.useState('');
-  const filtered = SoS_BROBYGGERE.filter(b => (filter === 'alle' || b.status === filter) && (!search || b.name.toLowerCase().includes(search.toLowerCase())));
+  const filtered = SoS_BROBYGGERE.filter(b => {
+    const matchStatus = filter === 'alle' || b.status === filter;
+    const matchSearch = !search || b.name.toLowerCase().includes(search.toLowerCase());
+    const matchType = !typeFProp || typeFProp === 'alle' ||
+      Object.values(SoS_MENNESKER).some(m => m.matchedWith === b.id && m.type === typeFProp);
+    return matchStatus && matchSearch && matchType;
+  });
   const afventerCount = SoS_BROBYGGERE.filter(b => b.status === 'afventer').length;
   return (
     <>
+      {typeFProp && typeFProp !== 'alle' && (() => {
+        const t = SoS_TYPER[typeFProp];
+        return (
+          <div style={{ padding: '10px 20px', background: t.soft,
+            borderBottom: `1px solid ${t.color}30`,
+            display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name={t.icon} size={13} color={t.color}/>
+            <span style={{ fontFamily: SoS.sans, fontSize: 12,
+              color: t.color, fontWeight: 600 }}>
+              Filtrerer: kun {t.label.toLowerCase()}brobygninger
+            </span>
+          </div>
+        );
+      })()}
       {/* Search */}
       <div style={{ padding: '16px 20px 8px' }}>
         <div style={{
@@ -8414,7 +8434,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
                 Brobyggere
               </div>
             </div>
-            <AdminBrobyggereScreen hovedsaede={viewingHq} onOpenMatching={onOpenMatching}/>
+            <AdminBrobyggereScreen hovedsaede={viewingHq} onOpenMatching={onOpenMatching} typeFilter={typeFilter}/>
           </div>
         )}
 
@@ -10300,7 +10320,11 @@ const DesktopMennesker = () => {
 
 const DesktopSROI = () => {
   const rates = window.SROI_SETTINGS || { sundhed: 1840, forening: 1420, social: 1260, investment: 8400000 };
-  const sroi = 521 * rates.sundhed + 702 * rates.forening + 911 * rates.social;
+  const snap = window.calcSROISnapshot ? window.calcSROISnapshot() : { byType: {} };
+  const sundhedCount  = snap.byType.sundhed  || 0;
+  const foreningCount = snap.byType.forening || 0;
+  const socialCount   = snap.byType.social   || 0;
+  const sroi = sundhedCount * rates.sundhed + foreningCount * rates.forening + socialCount * rates.social;
   const investment = rates.investment;
   return (
     <>
@@ -10337,9 +10361,9 @@ const DesktopSROI = () => {
         gap: 10, marginBottom: 14 }}>
         <DSCard title="Beregning pr. type">
           {[
-            { k: 'sundhed', count: 521, rate: 1840 },
-            { k: 'forening', count: 702, rate: 1420 },
-            { k: 'social', count: 911, rate: 1260 },
+            { k: 'sundhed',  count: sundhedCount,  rate: rates.sundhed  },
+            { k: 'forening', count: foreningCount, rate: rates.forening },
+            { k: 'social',   count: socialCount,   rate: rates.social   },
           ].map(r => {
             const t = SoS_TYPER[r.k];
             const v = r.count * r.rate;
@@ -10354,7 +10378,7 @@ const DesktopSROI = () => {
                     fontWeight: 600, color: SoS.ink }}>{t.label}</span>
                 </div>
                 <span style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>
-                  {r.count} aftaler
+                  {r.count} mennesker
                 </span>
                 <span style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>
                   × {r.rate.toLocaleString('da-DK')} kr
