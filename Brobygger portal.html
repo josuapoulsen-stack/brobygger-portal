@@ -11412,18 +11412,41 @@ const INTAKE_KILDER = [
   },
 ];
 
-const INTAKE_BEHOV = [
-  'Selskab og samtale',
-  'Gåture / frisk luft',
-  'Hjælp til lægebesøg',
-  'Transport og ledsagelse',
-  'Foreningsliv og fællesskab',
-  'Sproglig støtte',
-  'Kulturelle aktiviteter',
-  'Let motion',
-  'Indkøb og ærinder',
-  'Andet',
-];
+const INTAKE_BEHOV_BY_TYPE = {
+  sundhed: [
+    'Hjælp til lægebesøg',
+    'Følge til behandling',
+    'Transport og ledsagelse',
+    'Medicin og dosering',
+    'Kontakt til sundhedsvæsenet',
+    'Genptræning og motion',
+    'Kost og ernæring',
+    'Praktisk støtte i hverdagen',
+    'Andet',
+  ],
+  forening: [
+    'Foreningsliv og fællesskab',
+    'Sport og motion',
+    'Sproglig støtte',
+    'Kulturelle aktiviteter',
+    'Frivilligt arbejde',
+    'Netværk og socialt fællesskab',
+    'Hobby og interesser',
+    'Integration og tilhørsforhold',
+    'Andet',
+  ],
+  social: [
+    'Selskab og samtale',
+    'Gåture / frisk luft',
+    'Følgeskab og nærvær',
+    'Let motion',
+    'Indkøb og ærinder',
+    'Kulturelle oplevelser',
+    'Praktisk hjælp',
+    'Modvirke ensomhed',
+    'Andet',
+  ],
+};
 
 const FieldLabel = ({ children, note }) => (
   <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700,
@@ -11453,7 +11476,9 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
   const selectedKildeObj = INTAKE_KILDER.find(k => k.id === kilde);
   const kildeHasSub = !!(selectedKildeObj && selectedKildeObj.sub);
   const canNext0 = !!kilde && (!kildeHasSub || !!kildeDetalje);
-  const canNext1 = form.firstName.trim().length > 0 && form.age.trim().length > 0 && form.phone.trim().length > 0;
+  const phoneDigits = form.phone.replace(/\D/g, '');
+  const phoneOk = phoneDigits.length === 8;
+  const canNext1 = form.firstName.trim().length > 0 && form.age.trim().length > 0 && phoneOk;
   const canNext2 = !!type && selectedBehov.length > 0;
   const [brobygDato, setBrobygDato] = React.useState('2026-05-06');
   const [brobygStart, setBrobygStart] = React.useState(null);
@@ -11711,8 +11736,14 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
                   placeholder={field.placeholder}
                   value={form[field.key]}
                   onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
-                  style={inputStyle}
+                  style={{...inputStyle,
+                    borderColor: field.key === 'phone' && form.phone.length > 0 && !phoneOk
+                      ? '#E05252' : inputStyle.borderColor }}
                 />
+                {field.key === 'phone' && form.phone.length > 0 && !phoneOk && (
+                  <div style={{ fontFamily: SoS.sans, fontSize: 11, color: '#E05252',
+                    marginTop: 4 }}>Mobilnummer skal være præcis 8 cifre</div>
+                )}
               </div>
             ))}
           </>
@@ -11736,7 +11767,7 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
               {Object.values(SoS_TYPER).map(t => {
                 const sel = type === t.id;
                 return (
-                  <button key={t.id} onClick={() => setType(t.id)} style={{
+                  <button key={t.id} onClick={() => { setType(t.id); setSelectedBehov([]); }} style={{
                     display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
                     background: sel ? t.soft : '#fff',
                     border: `2px solid ${sel ? t.color : SoS.lineSoft}`,
@@ -11762,9 +11793,16 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
             </div>
 
             {/* Specifikke behov */}
-            <FieldLabel note="vælg alle der passer">Specifikke behov</FieldLabel>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 22 }}>
-              {INTAKE_BEHOV.map(b => {
+            <FieldLabel note={type ? 'vælg alle der passer' : 'vælg en type ovenfor først'}>Specifikke behov</FieldLabel>
+            {!type && (
+              <div style={{ padding: '14px 16px', background: SoS.creamDeep,
+                borderRadius: SoS.r.sm, marginBottom: 22,
+                fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
+                Vælg en brobygningstype ovenfor for at se relevante behov.
+              </div>
+            )}
+            {type && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 22 }}>
+              {(INTAKE_BEHOV_BY_TYPE[type] || []).map(b => {
                 const sel = selectedBehov.includes(b);
                 return (
                   <button key={b} onClick={() => toggleBehov(b)} style={{
@@ -11780,7 +11818,7 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
                   </button>
                 );
               })}
-            </div>
+            </div>}
 
             {/* Sundhedsudfordring — intern klassifikation */}
             <div style={{
@@ -11819,6 +11857,77 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
                 ))}
               </div>
             </div>
+
+            {/* Faglig helbreds-sektion — kun hvis aktiveret i admin */}
+            {(window.SoS_SETTINGS || {}).visHelbredsforhold !== false && (
+              <div style={{
+                background: '#FFF8F0', border: `1.5px solid ${SoS.orange}30`,
+                borderRadius: SoS.r.md, padding: '12px 14px', marginBottom: 14,
+              }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
+                  <Icon name="shield" size={14} color={SoS.orange} style={{ marginTop: 1 }}/>
+                  <div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700,
+                      color: SoS.orange }}>
+                      Relevante helbredsforhold — fagligt brug
+                    </div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft,
+                      marginTop: 2, lineHeight: 1.4 }}>
+                      Frivilligt. GDPR art. 9. Bruges kun af brobygger til at støtte relationen
+                      — bruges udelukkende til at støtte relationen.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Kategori-flervalg */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
+                    color: SoS.inkSoft, marginBottom: 6, letterSpacing: 0.4,
+                    textTransform: 'uppercase' }}>Overordnet kategori</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {(window.HELBREDS_KATEGORIER || []).map(kat => {
+                      const on = helbredsKategorier.includes(kat.id);
+                      return (
+                        <button key={kat.id}
+                          onClick={() => setHelbredsKategorier(prev =>
+                            on ? prev.filter(k => k !== kat.id) : [...prev, kat.id]
+                          )}
+                          style={{
+                            padding: '5px 12px', borderRadius: 999,
+                            border: `1.5px solid ${on ? SoS.orange : SoS.lineSoft}`,
+                            background: on ? SoS.orange + '15' : '#fff',
+                            fontFamily: SoS.sans, fontSize: 12,
+                            color: on ? SoS.orangeDeep : SoS.ink,
+                            fontWeight: on ? 600 : 400,
+                            cursor: 'pointer',
+                          }}>
+                          {kat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Fritekst */}
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
+                  color: SoS.inkSoft, marginBottom: 6, letterSpacing: 0.4,
+                  textTransform: 'uppercase' }}>Faglige noter til brobygger</div>
+                <textarea
+                  placeholder="F.eks. let demens, angst, mobilitetsvanskeligheder, kronisk smerte..."
+                  value={udfordringer}
+                  onChange={e => setUdfordringer(e.target.value)}
+                  rows={3}
+                  style={{
+                    width: '100%', padding: '10px 12px',
+                    fontFamily: SoS.sans, fontSize: 14, color: SoS.ink,
+                    background: '#fff',
+                    border: `1.5px solid ${SoS.orange}40`,
+                    borderRadius: SoS.r.sm, outline: 'none', resize: 'none',
+                    boxSizing: 'border-box', lineHeight: 1.5,
+                  }}
+                />
+              </div>
+            )}
 
             {/* Faglig helbreds-sektion — kun hvis aktiveret i admin */}
             {(window.SoS_SETTINGS || {}).visHelbredsforhold !== false && (
