@@ -2,7 +2,13 @@
 <html lang="da">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="Brobygger"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.svg"/>
   <meta name="theme-color" content="#E87A3E"/>
   <title>Brobygger portal — SoS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -11123,13 +11129,17 @@ const AppWithTweaks = () => {
 
   // Auto-skalér enheden så den altid passer i vinduet
   const [scale, setScale] = useState(1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 500);
   useEffect(() => {
     const DEVICE_H = 844, DEVICE_W = 390, PAD = 32;
-    const calc = () => setScale(Math.min(
-      1,
-      (window.innerHeight - PAD) / DEVICE_H,
-      (window.innerWidth  - PAD) / DEVICE_W,
-    ));
+    const calc = () => {
+      setIsMobile(window.innerWidth <= 500);
+      setScale(Math.min(
+        1,
+        (window.innerHeight - PAD) / DEVICE_H,
+        (window.innerWidth  - PAD) / DEVICE_W,
+      ));
+    };
     calc();
     window.addEventListener('resize', calc);
     return () => window.removeEventListener('resize', calc);
@@ -11263,6 +11273,19 @@ const AppWithTweaks = () => {
           </TweakSection>
         </TweaksPanel>
       </React.Fragment>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, overflow: 'hidden',
+        background: SoS.cream,
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        {content}
+      </div>
     );
   }
 

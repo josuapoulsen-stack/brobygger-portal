@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="110" fill="#E87A3E"/>
+  <!-- Bridge arcs -->
+  <path d="M72 308 Q256 116 440 308" stroke="#fff" stroke-width="26" fill="none" stroke-linecap="round"/>
+  <path d="M128 308 Q256 168 384 308" stroke="rgba(255,255,255,0.4)" stroke-width="18" fill="none" stroke-linecap="round"/>
+  <!-- Pillars -->
+  <line x1="256" y1="200" x2="256" y2="374" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+  <line x1="160" y1="278" x2="160" y2="374" stroke="#fff" stroke-width="16" stroke-linecap="round"/>
+  <line x1="352" y1="278" x2="352" y2="374" stroke="#fff" stroke-width="16" stroke-linecap="round"/>
+  <!-- Road -->
+  <line x1="64" y1="374" x2="448" y2="374" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+</svg>
