@@ -8102,8 +8102,8 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
         {tab === 'arbejde' && (
           <>
             {/* Type-filter — prominent */}
-            {tfProp !== undefined && tfProp !== 'alle' && (() => {
-              const t = SoS_TYPER[tfProp];
+            {typeFilter !== 'alle' && (() => {
+              const t = SoS_TYPER[typeFilter];
               return (
                 <div style={{ padding: '10px 16px', background: t.soft,
                   borderBottom: `1px solid ${t.color}30`,
@@ -8113,7 +8113,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
                     color: t.color, fontWeight: 600 }}>
                     Filtrerer: {t.label}
                   </span>
-                  <button onClick={() => setTfProp('alle')} style={{
+                  <button onClick={() => setTypeFilter('alle')} style={{
                     marginLeft: 'auto', background: 'none', border: 'none',
                     fontFamily: SoS.sans, fontSize: 11, color: t.color,
                     cursor: 'pointer', padding: '2px 8px',
