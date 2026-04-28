@@ -591,6 +591,22 @@ window.SoS_USER        = SoS_USER;
   window.SoS_STORE = { save, load, clear, hydrate };
   hydrate();
 })();
+
+// ── SoS_DEMO — URL-parameter persona (multi-user demo) ──────────────────────
+// Brug: ?rolle=brobygger&navn=Maja  eller  ?rolle=raadgiver&navn=Linda
+// Cross-device chat: tilføj &gist=GIST_ID&token=GITHUB_PAT
+(function () {
+  const p = new URLSearchParams(window.location.search);
+  const rolle  = p.get('rolle');   // 'brobygger' | 'raadgiver'
+  const navn   = p.get('navn');    // visningsnavn, fx 'Maja'
+  const gistId = p.get('gist');    // GitHub Gist ID (valgfri)
+  const token  = p.get('token');   // GitHub PAT (valgfri, kræves for Gist-skrivning)
+  window.SoS_DEMO = { rolle, navn, gistId, token, active: !!rolle };
+  // Anmod om notifikations-tilladelse når der er en URL-rolle
+  if (rolle && 'Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+})();
 </script>
 
 <!-- ui-kit -->
@@ -5078,9 +5094,23 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose }) => {
   const unread = SoS_NOTIFICATIONS.filter(n => n.unread && !dismissed.has(n.id)).length;
   // Rolle-filtrering: brobyggere ser kun tråde fra koordinatorer/SoS,
   // rådgivere/admins ser kun tråde fra brobyggere + broadcasts
-  const visibleThreads = role === 'brobygger'
-    ? SoS_THREADS.filter(t => !t.fromBrobygger)
-    : SoS_THREADS.filter(t => t.fromBrobygger || t.official);
+  // I URL-demo mode: tilføj en LIVE-tråd øverst
+  const _demo = window.SoS_DEMO || {};
+  const _liveThread = _demo.active ? [{
+    id: 't-live',
+    withName: role === 'brobygger' ? 'Koordinator (LIVE)' : (_demo.navn || 'Brobygger') + ' (LIVE)',
+    withRole: role === 'brobygger' ? 'Demo-koordinator · realtid' : 'Demo-brobygger · realtid',
+    avatar: role === 'brobygger' ? 'LT' : (_demo.navn ? _demo.navn.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'BB'),
+    bg: role === 'brobygger' ? '#B8501E' : '#E87A3E',
+    last: 'Åben live-chat mellem de to roller',
+    time: 'LIVE', unread: 0, online: true, live: true,
+  }] : [];
+  const visibleThreads = [
+    ..._liveThread,
+    ...(role === 'brobygger'
+      ? SoS_THREADS.filter(t => !t.fromBrobygger)
+      : SoS_THREADS.filter(t => t.fromBrobygger || t.official)),
+  ];
 
   return (
   <div style={{ position: 'absolute', inset: 0, background: SoS.cream, display: 'flex', flexDirection: 'column' }}>
@@ -5316,18 +5346,108 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose }) => {
 };
 
 const MessageThread = ({ threadId, onBack, role }) => {
-  const thread = SoS_THREADS.find(t => t.id === threadId) || SoS_THREADS[0];
+  const isLive = threadId === 't-live';
+  const _d = window.SoS_DEMO || {};
+  // Live-trad: dynamisk header baseret pa URL-rolle
+  const _liveThreadInfo = isLive ? {
+    id: 't-live',
+    withName: role === 'brobygger' ? 'Koordinator (LIVE)' : (_d.navn || 'Brobygger') + ' (LIVE)',
+    withRole: role === 'brobygger' ? 'Demo-koordinator · realtid' : 'Demo-brobygger · realtid',
+    avatar: role === 'brobygger' ? 'LT' : (_d.navn ? _d.navn.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'BB'),
+    bg: role === 'brobygger' ? '#B8501E' : '#E87A3E',
+    online: true, official: false, live: true,
+  } : null;
+  const thread = isLive ? _liveThreadInfo : (SoS_THREADS.find(t => t.id === threadId) || SoS_THREADS[0]);
   const [draft, setDraft] = React.useState('');
   const [localMessages, setLocalMessages] = React.useState([]);
-  const isBroadcast = !!thread.official;
-  const allMessages = [...SoS_MESSAGES, ...localMessages];
-  const handleSend = () => {
+  const [liveMessages, setLiveMessages] = React.useState([]);
+  const bcRef = React.useRef(null);
+  const seenCountRef = React.useRef(0);
+  const isBroadcast = !isLive && !!thread.official;
+
+  // Live-chat: BroadcastChannel (samme enhed) + Gist-polling (kryds-enheder)
+  React.useEffect(() => {
+    if (!isLive) return;
+    // Indlæs gemte beskeder fra localStorage
+    try {
+      const stored = localStorage.getItem('sos_live_chat');
+      if (stored) { const msgs = JSON.parse(stored); setLiveMessages(msgs); seenCountRef.current = msgs.length; }
+    } catch(e) {}
+
+    // BroadcastChannel: sync i realtid (samme browser, forskellig fane)
+    if ('BroadcastChannel' in window) {
+      bcRef.current = new BroadcastChannel('sos_live_chat');
+      bcRef.current.onmessage = (ev) => {
+        const msgs = ev.data;
+        setLiveMessages(msgs);
+        // Notifikation hvis fanen er i baggrunden
+        if (document.hidden && Notification.permission === 'granted' && msgs.length > seenCountRef.current) {
+          const latest = msgs[msgs.length - 1];
+          if (latest.from !== role) new Notification('Ny besked — Brobygger Portal', { body: (latest.fromName || latest.from) + ': ' + latest.text, icon: 'icon-192.svg' });
+        }
+        seenCountRef.current = msgs.length;
+      };
+    }
+
+    // Gist-polling: cross-device sync (kæver ?gist=ID i URL)
+    let pollInterval = null;
+    if (_d.gistId) {
+      const poll = async () => {
+        try {
+          const headers = _d.token ? { Authorization: 'Bearer ' + _d.token } : {};
+          const r = await fetch('https://api.github.com/gists/' + _d.gistId, { headers });
+          if (!r.ok) return;
+          const data = await r.json();
+          const fileContent = Object.values(data.files)[0]?.content;
+          if (!fileContent) return;
+          const msgs = JSON.parse(fileContent).messages || [];
+          localStorage.setItem('sos_live_chat', JSON.stringify(msgs));
+          setLiveMessages(prev => {
+            if (msgs.length > seenCountRef.current) {
+              const latest = msgs[msgs.length - 1];
+              if (document.hidden && Notification.permission === 'granted' && latest.from !== role)
+                new Notification('Ny besked — Brobygger Portal', { body: (latest.fromName || latest.from) + ': ' + latest.text, icon: 'icon-192.svg' });
+              seenCountRef.current = msgs.length;
+            }
+            return msgs;
+          });
+        } catch(e) {}
+      };
+      poll(); // straks ved mount
+      pollInterval = setInterval(poll, 8000); // derefter hvert 8. sek
+    }
+    return () => { bcRef.current?.close(); if (pollInterval) clearInterval(pollInterval); };
+  }, [isLive]);
+
+  const allMessages = isLive ? liveMessages : [...SoS_MESSAGES, ...localMessages];
+
+  const handleSend = async () => {
     if (!draft.trim()) return;
     const now = new Date();
     const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    setLocalMessages(prev => [...prev, {
-      id: 'local-' + Date.now(), from: 'me', time, text: draft.trim()
-    }]);
+
+    if (isLive && _d.active) {
+      const newMsg = { id: String(Date.now()), from: role, fromName: _d.navn || role, text: draft.trim(), time };
+      const updated = [...liveMessages, newMsg];
+
+      if (_d.gistId && _d.token) {
+        // Cross-device: skriv til Gist
+        try {
+          await fetch('https://api.github.com/gists/' + _d.gistId, {
+            method: 'PATCH',
+            headers: { Authorization: 'Bearer ' + _d.token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ files: { 'sos_chat.json': { content: JSON.stringify({ messages: updated }) } } }),
+          });
+        } catch(e) { console.warn('Gist write failed:', e); }
+      }
+      // Altid: gem lokalt + broadcast til andre faner
+      localStorage.setItem('sos_live_chat', JSON.stringify(updated));
+      bcRef.current?.postMessage(updated);
+      setLiveMessages(updated);
+      seenCountRef.current = updated.length;
+    } else {
+      setLocalMessages(prev => [...prev, { id: 'local-' + Date.now(), from: 'me', time, text: draft.trim() }]);
+    }
     setDraft('');
   };
 
@@ -5382,7 +5502,7 @@ const MessageThread = ({ threadId, onBack, role }) => {
         )}
 
         {allMessages.map(m => {
-          const mine = m.from === 'me';
+          const mine = isLive ? m.from === role : m.from === 'me';
           return (
             <div key={m.id} style={{ display: 'flex',
               justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 6 }}>
@@ -5402,7 +5522,7 @@ const MessageThread = ({ threadId, onBack, role }) => {
           );
         })}
 
-        {!isBroadcast && (
+        {!isBroadcast && !isLive && (
           <div style={{ display: 'flex', gap: 4, padding: '8px 14px', alignItems: 'center' }}>
             {[0,1,2].map(i => (
               <div key={i} style={{ width: 6, height: 6, borderRadius: 3,
@@ -5411,6 +5531,14 @@ const MessageThread = ({ threadId, onBack, role }) => {
             <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginLeft: 4 }}>
               Linda skriver...
             </span>
+          </div>
+        )}
+        {isLive && liveMessages.length === 0 && (
+          <div style={{ padding: '24px 16px', textAlign: 'center', fontFamily: SoS.sans,
+            fontSize: 13, color: SoS.inkMuted, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 28, marginBottom: 10 }}>&#128172;</div>
+            Åben live-chat. Begge parter kan skrive til hinanden i realtid.
+            <br/>Del den anden URL med den anden person for at starte chatten.
           </div>
         )}
       </div>
@@ -11138,6 +11266,10 @@ const AppWithTweaks = () => {
     "flow": "none"
   });
 
+  // URL-demo mode: ?rolle=brobygger&navn=Maja (to-bruger demo)
+  const demo = window.SoS_DEMO || {};
+  const activeRole = demo.active ? demo.rolle : tweaks.role;
+
   // Auto-skalér enheden så den altid passer i vinduet
   const [scale, setScale] = useState(1);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 500);
@@ -11167,21 +11299,32 @@ const AppWithTweaks = () => {
 
   const isNew = tweaks.experience === "new";
   const isBusy = tweaks.busyLevel === "busy";
-  const appts = (tweaks.role === "brobygger" && !isBusy) ? SoS_APPOINTMENTS_EMPTY : SoS_APPOINTMENTS_BUSY;
+  const appts = (activeRole === "brobygger" && !isBusy) ? SoS_APPOINTMENTS_EMPTY : SoS_APPOINTMENTS_BUSY;
 
+  // Brugerpersona: URL-params overskriver tweak-defaults
+  const _demoNavn   = demo.active && demo.navn ? demo.navn : null;
+  const _demoAvatar = _demoNavn ? _demoNavn.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : null;
+  const _defaultNavn = activeRole === 'raadgiver' ? 'Linda Thomsen'
+                      : activeRole === 'admin'    ? 'Admin Bruger'
+                      : isNew ? 'Sofie Lindahl' : 'Maja Holmberg';
+  const _defaultAvatar = activeRole === 'raadgiver' ? 'LT'
+                        : activeRole === 'admin'    ? 'AB'
+                        : isNew ? 'SL' : 'MH';
   const user = { ...SoS_USER,
-    name: isNew ? "Sofie Lindahl" : "Maja Holmberg",
-    firstName: isNew ? "Sofie" : "Maja",
-    avatar: isNew ? "SL" : "MH",
-    avatarBg: isNew ? SoS.sky : SoS.orange,
+    name:      _demoNavn   || _defaultNavn,
+    firstName: (_demoNavn  || _defaultNavn).split(' ')[0],
+    avatar:    _demoAvatar || _defaultAvatar,
+    avatarBg:  demo.active
+      ? (activeRole === 'brobygger' ? SoS.orange : SoS.sky)
+      : (isNew ? SoS.sky : SoS.orange),
   };
 
   useEffect(() => {
     setScreen("hjem");
     setDetailId(null);
     setSettingsOpen(false);
-    if (tweaks.role === "brobygger") setDesktopMode(false);
-  }, [tweaks.role]);
+    if (activeRole === "brobygger") setDesktopMode(false);
+  }, [activeRole]);
 
   const openAppt = (id) => setDetailId(id);
   const backFromAppt = () => setDetailId(null);
@@ -11191,22 +11334,22 @@ const AppWithTweaks = () => {
   let content;
   if (tweaks.flow === "mslogin") {
     content = <MSLogin onDone={() => setTweak("flow", "none")} onCancel={() => setTweak("flow", "none")} />;
-  } else if (tweaks.flow === "export" && tweaks.role !== "brobygger") {
+  } else if (tweaks.flow === "export" && activeRole !== "brobygger") {
     content = <ExportReport onClose={() => setTweak("flow", "none")} />;
   } else if (tweaks.flow === "onboarding") {
     content = <OnboardingWizard onClose={() => setTweak("flow", "none")} />;
-  } else if (tweaks.flow === "register" && tweaks.role === "brobygger") {
+  } else if (tweaks.flow === "register" && activeRole === "brobygger") {
     content = <RegistrerEfterAftale appt={SoS_APPOINTMENTS_BUSY[0]} onClose={() => setTweak("flow", "none")} />;
-  } else if (tweaks.flow === "matching" && tweaks.role !== "brobygger") {
+  } else if (tweaks.flow === "matching" && activeRole !== "brobygger") {
     content = <MatchingFlow onClose={() => setTweak("flow", "none")} />;
-  } else if (tweaks.flow === "intake" && tweaks.role !== "brobygger") {
+  } else if (tweaks.flow === "intake" && activeRole !== "brobygger") {
     content = <IntakeFlow onClose={() => setTweak("flow", "none")} viewingHq={viewingHq}/>;
-  } else if (tweaks.role === "admin" || tweaks.role === "raadgiver") {
+  } else if (activeRole === "admin" || activeRole === "raadgiver") {
     if (settingsOpen) {
       content = <AdminSettings
         currentHq={viewingHq}
         ownHq="Aarhus"
-        isAdmin={tweaks.role === "admin"}
+        isAdmin={activeRole === "admin"}
         onPick={(hq) => { setViewingHq(hq); setSettingsOpen(false); }}
         onClose={() => setSettingsOpen(false)} />;
     } else {
@@ -11214,7 +11357,7 @@ const AppWithTweaks = () => {
         user={user}
         viewingHq={viewingHq}
         ownHq="Aarhus"
-        isAdmin={tweaks.role === "admin"}
+        isAdmin={activeRole === "admin"}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenIntake={() => setTweak("flow", "intake")}
         onOpenMatching={() => setTweak("flow", "matching")}
@@ -11238,20 +11381,20 @@ const AppWithTweaks = () => {
           {screen === "notif" && (
             msgCompose
               ? <ComposeMessage
-                  role={tweaks.role}
+                  role={activeRole}
                   ownHq={viewingHq}
                   onClose={() => setMsgCompose(false)}
                 />
               : msgOpenId
               ? <MessageThread
                   threadId={msgOpenId}
-                  role={tweaks.role}
+                  role={activeRole}
                   onBack={() => setMsgOpenId(null)}
                 />
               : <MessagesList
                   onOpen={(id) => setMsgOpenId(id)}
                   onCompose={() => setMsgCompose(true)}
-                  role={tweaks.role}
+                  role={activeRole}
                   ownHq={viewingHq}
                 />
           )}
@@ -11296,6 +11439,22 @@ const AppWithTweaks = () => {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {content}
+        {/* Persona-badge: vises kun i URL-demo mode */}
+        {demo.active && (
+          <div style={{
+            position: 'fixed', top: 'calc(env(safe-area-inset-top) + 10px)',
+            right: 12, zIndex: 9998, pointerEvents: 'none',
+            background: activeRole === 'brobygger' ? SoS.sage : SoS.sky,
+            color: '#fff', borderRadius: 99, padding: '4px 11px',
+            fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: 3,
+              background: 'rgba(255,255,255,0.7)' }}/>
+            {demo.navn || (activeRole === 'brobygger' ? 'Brobygger' : 'Rådgiver')}
+          </div>
+        )}
       </div>
     );
   }
