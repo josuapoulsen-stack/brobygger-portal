@@ -1,0 +1,83 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# deploy-backend.yml — FastAPI backend CI/CD
+#
+# Deployer backend/ til Azure App Service ved push til master.
+#
+# Kræver GitHub Secrets:
+#   AZURE_WEBAPP_PUBLISH_PROFILE   → hentes fra Azure Portal:
+#     App Service → din app → Get publish profile → download XML → indsæt som secret
+#   DATABASE_URL                   → postgres connection string
+#   AZURE_CLIENT_ID                → fra Entra ID
+#   AZURE_TENANT_ID                → fra Entra ID
+#   SIGNALR_CONNECTION_STRING      → fra Azure SignalR
+#   VAPID_PRIVATE_KEY              → fra .env.example
+#   VAPID_PUBLIC_KEY               → fra .env.example
+#   JWT_SECRET                     → minimum 32 tegn
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Deploy Backend til Azure
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'backend/**'            # Kør kun når backend-filer ændres
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  deploy_backend:
+    name: Test + Deploy FastAPI
+    runs-on: ubuntu-latest
+    if: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Installer afhængigheder
+        run: pip install -r backend/requirements.txt
+
+      - name: Kør tests
+        run: pytest backend/tests/ -v --tb=short
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"   # Stub — ingen DB i CI
+          AZURE_CLIENT_ID: "test"
+          AZURE_TENANT_ID: "test"
+          JWT_SECRET: "test-secret-min-32-tegn-for-at-validere"
+          VAPID_PRIVATE_KEY: ""
+          VAPID_PUBLIC_KEY: ""
+
+      - name: Opret deployment-zip
+        run: |
+          cd backend
+          zip -r ../backend-deploy.zip . \
+            --exclude "*.pyc" \
+            --exclude "__pycache__/*" \
+            --exclude "tests/*" \
+            --exclude "alembic/versions/.gitkeep"
+          cd ..
+
+      - name: Deploy til Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: brobygger-dev-api          # Matcher infra/main.bicep output
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./backend-deploy.zip
+
+      - name: Kør Alembic-migrationer
+        # Kør migrationer mod den rigtige database efter deploy
+        # Kræver at App Service kan nå PostgreSQL
+        run: |
+          echo "Migrationer køres via Azure App Service console eller separat job"
+          echo "Kommando: alembic upgrade head"
+        # TODO (FASE 2): Aktiver dette når App Service er konfigureret:
+        # env:
+        #   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        # run: alembic upgrade head

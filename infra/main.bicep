@@ -196,19 +196,105 @@ resource signalR 'Microsoft.SignalRService/signalR@2023-02-01' = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 5. Azure Key Vault — hemmeligheder (DB-adgangskode, VAPID, JWT-secret)
+// ─────────────────────────────────────────────────────────────────────────────
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
+  name:     '${prefix}-kv'
+  location: location
+  tags:     tags
+  properties: {
+    sku:         { family: 'A', name: 'standard' }
+    tenantId:    tenant().tenantId
+    // App Service får adgang via managed identity (nedenfor)
+    accessPolicies: []
+    enableRbacAuthorization:      true    // brug RBAC frem for access policies
+    enableSoftDelete:             true
+    softDeleteRetentionInDays:    90
+    enablePurgeProtection:        true
+  }
+}
+
+// Gem DB-adgangskode i Key Vault (erstatter hardkodet i appSettings)
+resource kvSecretDb 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name:   'db-admin-password'
+  properties: { value: dbAdminPassword }
+}
+
+resource kvSecretJwt 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name:   'jwt-secret'
+  properties: { value: 'TODO_GENERATE_32CHAR_SECRET' }
+}
+
+resource kvSecretVapid 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name:   'vapid-private-key'
+  properties: { value: 'TODO_SET_VAPID_PRIVATE_KEY' }
+}
+
+// App Service Managed Identity → Key Vault Reader
+resource appServiceIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name:     '${prefix}-api-identity'
+  location: location
+  tags:     tags
+}
+
+// Key Vault Secrets User role til App Service
+resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name:  guid(keyVault.id, appServiceIdentity.id, '4633458b-17de-408a-b874-0445c86b69e6')
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+    principalId:      appServiceIdentity.properties.principalId
+    principalType:    'ServicePrincipal'
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. Application Insights — monitoring + fejlsporing
+// ─────────────────────────────────────────────────────────────────────────────
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name:     '${prefix}-logs'
+  location: location
+  tags:     tags
+  properties: {
+    sku:               { name: 'PerGB2018' }
+    retentionInDays:   30
+  }
+}
+
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name:     '${prefix}-ai'
+  location: location
+  tags:     tags
+  kind:     'web'
+  properties: {
+    Application_Type:             'web'
+    WorkspaceResourceId:          logAnalytics.id
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery:     'Enabled'
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Outputs — bruges af GitHub Actions og msal-config.js
 // ─────────────────────────────────────────────────────────────────────────────
-output staticWebAppUrl       string = 'https://${staticWebApp.properties.defaultHostname}'
-output apiUrl                string = 'https://${appService.properties.defaultHostName}'
-output dbHostname            string = database.properties.fullyQualifiedDomainName
-output signalREndpoint       string = signalR.properties.externalIP
+output staticWebAppUrl          string = 'https://${staticWebApp.properties.defaultHostname}'
+output apiUrl                   string = 'https://${appService.properties.defaultHostName}'
+output dbHostname               string = database.properties.fullyQualifiedDomainName
+output signalREndpoint          string = signalR.properties.externalIP
+output keyVaultName             string = keyVault.name
+output appInsightsConnectionStr string = appInsights.properties.ConnectionString
 
 // Månedlig estimeret pris (dev-miljø, DKK ca.):
 //   Static Web Apps:  0 kr  (Free tier)
 //   App Service B1:  160 kr
 //   PostgreSQL B1ms: 280 kr
 //   SignalR Free:      0 kr
+//   Key Vault:         ~5 kr  (10.000 operations/md gratis)
+//   App Insights:      ~0 kr  (5 GB/md gratis)
 //   ─────────────────────────────
-//   Total dev:       ~440 kr/md
+//   Total dev:       ~445 kr/md
 //
 //   Prod (med HA + B2): ~1.800-2.200 kr/md
