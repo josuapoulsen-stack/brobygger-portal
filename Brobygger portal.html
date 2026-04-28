@@ -3141,6 +3141,23 @@ const NotifScreen = ({ items, onOpen }) => {
 // Profile
 const ProfileScreen = ({ user, onSwitchRole }) => {
   const [subPage, setSubPage] = React.useState(null);
+  // Redigerbare profilfelter — indlæses fra localStorage
+  const [pf, setPf] = React.useState(() => {
+    const s = window.SoS_STORE?.load('profile');
+    return {
+      navn:  s?.navn  || user.name || '',
+      email: s?.email || 'maja.holmberg@socialsundhed.org',
+      mobil: s?.mobil || '+45 23 45 67 89',
+    };
+  });
+  const [pEdit, setPEdit] = React.useState(false);
+  const [pSaved, setPSaved] = React.useState(false);
+  const saveProfile = () => {
+    window.SoS_STORE?.save('profile', pf);
+    setPEdit(false);
+    setPSaved(true);
+    setTimeout(() => setPSaved(false), 2500);
+  };
   const [notifToggles, setNotifToggles] = React.useState({
     nyeAftaler: true, pamindelser: true, beskeder: true, systemOpdateringer: false,
   });
@@ -3231,39 +3248,62 @@ const ProfileScreen = ({ user, onSwitchRole }) => {
   );
 
   // ── Personlige oplysninger-underside
-  if (subPage === 'personlig') return (
-    <>
-      <BackHeader title="Personlige oplysninger"/>
-      <div style={{ padding: '16px 20px 20px' }}>
-        <div style={{ background: '#fff', borderRadius: SoS.r.lg,
-          border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 16 }}>
-          {[
-            { label: 'Navn', value: user.name },
-            { label: 'Rolle', value: 'Brobygger' },
-            { label: 'Hovedsæde', value: user.hovedsaede || 'Aarhus' },
-            { label: 'Startdato', value: 'Oktober 2024' },
-            { label: 'Email', value: 'maja.holmberg@socialsundhed.org' },
-            { label: 'Telefon', value: '+45 23 45 67 89' },
-          ].map((row, i, arr) => (
-            <div key={i} style={{ padding: '13px 16px',
-              borderBottom: i < arr.length - 1 ? `1px solid ${SoS.lineSoft}` : 'none',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontFamily: SoS.sans, fontSize: 13,
-                color: SoS.inkSoft }}>{row.label}</span>
-              <span style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 500,
-                color: SoS.ink }}>{row.value}</span>
+  // ── Personlige oplysninger-underside (redigerbar)
+  if (subPage === 'personlig') {
+    const inpSt = {
+      width: '100%', padding: '11px 13px', border: ,
+      borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 14, color: SoS.ink,
+      background: pEdit ? '#fff' : SoS.creamDeep, outline: 'none', boxSizing: 'border-box',
+      transition: 'border-color 0.2s, background 0.2s',
+    };
+    return (
+      <>
+        <BackHeader title="Personlige oplysninger"/>
+        <div style={{ padding: '16px 20px 20px' }}>
+          <div style={{ background: '#fff', borderRadius: SoS.r.lg,
+            border: , overflow: 'hidden', marginBottom: 16 }}>
+            {[{ label: 'Rolle', value: 'Brobygger' }, { label: 'Hovedsæde', value: user.hoofdsaede || 'Aarhus' }, { label: 'Startdato', value: 'Oktober 2024' }].map((row, i, arr) => (
+              <div key={i} style={{ padding: '13px 16px',
+                borderBottom: i < arr.length-1 ?  : 'none',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft }}>{row.label}</span>
+                <span style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 500, color: SoS.ink }}>{row.value}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+            color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10 }}>Dine oplysninger</div>
+          {[{ label: 'Navn', key: 'navn' }, { label: 'Email', key: 'email' }, { label: 'Mobil', key: 'mobil' }].map(f => (
+            <div key={f.key} style={{ marginBottom: 10 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, marginBottom: 4 }}>{f.label}</div>
+              <input value={pf[f.key]} readOnly={!pEdit}
+                type={f.key === 'email' ? 'email' : f.key === 'mobil' ? 'tel' : 'text'}
+                inputMode={f.key === 'mobil' ? 'tel' : undefined}
+                onChange={e => setPf(prev => ({ ...prev, [f.key]: e.target.value }))}
+                style={inpSt}/>
             </div>
           ))}
+          {pSaved && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+              background: SoS.sageSoft, borderRadius: SoS.r.md, marginBottom: 12 }}>
+              <Icon name="check" size={16} color={SoS.sage} weight={2.5}/>
+              <span style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.sage, fontWeight: 600 }}>Gemt!</span>
+            </div>
+          )}
+          {pEdit ? (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Button full onClick={saveProfile}>Gem ændringer</Button>
+              <Button variant="secondary" onClick={() => setPEdit(false)} style={{ flex: '0 0 auto', padding: '0 18px' }}>Annuller</Button>
+            </div>
+          ) : (
+            <Button full variant="secondary" onClick={() => setPEdit(true)}>Rediger oplysninger</Button>
+          )}
         </div>
-        <div style={{ padding: '12px 14px', background: SoS.creamDeep, borderRadius: SoS.r.md,
-          fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, lineHeight: 1.5 }}>
-          For at ændre dine oplysninger skal du kontakte din koordinator.
-        </div>
-      </div>
-    </>
-  );
+      </>
+    );
+  }
 
-  // ── Privatliv & sikkerhed
+// ── Privatliv & sikkerhed
   if (subPage === 'privatliv') return (
     <>
       <BackHeader title="Privatliv & sikkerhed"/>
@@ -4414,22 +4454,23 @@ const MatchingFlow = ({ onClose }) => {
 const OnboardingWizard = ({ onClose }) => {
   const [step, setStep] = React.useState(0);
   const [data, setData] = React.useState({
+    fornavn: '', efternavn: '', email: '', mobil: '', kon: null,
     hovedsaede: null, types: [], availability: [], transport: null, languages: [],
   });
   const set = (k, v) => setData(d => ({ ...d, [k]: v }));
   const toggle = (k, v) => setData(d => ({ ...d, [k]: d[k].includes(v) ? d[k].filter(x => x !== v) : [...d[k], v] }));
 
-  const steps = ['Velkommen', 'Hovedsæde', 'Typer', 'Rådighed', 'Sprog', 'Færdig'];
+  const steps = ['Velkommen', 'Om dig', 'Hovedsæde', 'Typer', 'Rådighed', 'Sprog', 'Færdig'];
 
   return (
     <div style={{ position: 'absolute', inset: 0,
-      background: step === 0 || step === 5
+      background: step === 0 || step === 6
         ? `linear-gradient(165deg, ${SoS.orangeSoft} 0%, ${SoS.orange} 60%, ${SoS.orangeDeep} 100%)`
         : SoS.cream,
       display: 'flex', flexDirection: 'column',
-      color: step === 0 || step === 5 ? '#fff' : SoS.ink, transition: 'background 0.3s',
+      color: step === 0 || step === 6 ? '#fff' : SoS.ink, transition: 'background 0.3s',
     }}>
-      {step !== 0 && step !== 5 && (
+      {step !== 0 && step !== 6 && (
         <div style={{ padding: '54px 20px 12px', background: '#fff', borderBottom: `1px solid ${SoS.line}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <button onClick={() => setStep(step - 1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
@@ -4459,12 +4500,58 @@ const OnboardingWizard = ({ onClose }) => {
             </div>
             <div style={{ fontFamily: SoS.sans, fontSize: 15, lineHeight: 1.5,
               marginTop: 18, opacity: 0.9, maxWidth: 300 }}>
-              Fem hurtige spørgsmål — så kan vi matche dig med mennesker der passer til dig.
+              Seks hurtige spørgsmål — så kan vi matche dig med mennesker der passer til dig.
             </div>
           </div>
         )}
 
-        {step === 1 && (
+        {/* ── Om dig (step 1) ── */}
+        {step === 1 && (() => {
+          const inpStyle = {
+            width: '100%', padding: '12px 14px', border: `1.5px solid ${SoS.lineSoft}`,
+            borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 15, color: SoS.ink,
+            background: '#fff', outline: 'none', marginBottom: 12, boxSizing: 'border-box',
+          };
+          const KON_OPTIONS = [
+            'Mand', 'Kvinde', 'Non-binær', 'Foretrækker ikke at oplyse',
+          ];
+          return (
+            <>
+              <div style={{ fontFamily: SoS.font, fontSize: 26, fontWeight: 500,
+                color: SoS.ink, marginBottom: 4, letterSpacing: -0.3 }}>Om dig</div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginBottom: 20 }}>
+                Dine oplysninger er kun synlige for din koordinator.
+              </div>
+              <input value={data.fornavn} onChange={e => set('fornavn', e.target.value)}
+                placeholder="Fornavn *" style={inpStyle}/>
+              <input value={data.efternavn} onChange={e => set('efternavn', e.target.value)}
+                placeholder="Efternavn *" style={inpStyle}/>
+              <input value={data.email} onChange={e => set('email', e.target.value)}
+                type="email" placeholder="E-mailadresse *" style={inpStyle}/>
+              <input value={data.mobil} onChange={e => set('mobil', e.target.value)}
+                type="tel" inputMode="tel" placeholder="Mobilnummer (8 cifre) *" style={inpStyle}/>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700,
+                color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase',
+                marginBottom: 10, marginTop: 4 }}>Køn</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                {KON_OPTIONS.map(opt => {
+                  const sel = data.kon === opt;
+                  return (
+                    <button key={opt} onClick={() => set('kon', sel ? null : opt)} style={{
+                      padding: '9px 16px', borderRadius: 999, cursor: 'pointer',
+                      background: sel ? SoS.orange : '#fff',
+                      color: sel ? '#fff' : SoS.ink,
+                      border: `2px solid ${sel ? SoS.orange : SoS.lineSoft}`,
+                      fontFamily: SoS.sans, fontSize: 13, fontWeight: 500,
+                    }}>{opt}</button>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
+
+        {step === 2 && (
           <>
             <div style={{ fontFamily: SoS.font, fontSize: 26, fontWeight: 500,
               color: SoS.ink, marginBottom: 8, letterSpacing: -0.3 }}>
@@ -4495,7 +4582,7 @@ const OnboardingWizard = ({ onClose }) => {
           </>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <>
             <div style={{ fontFamily: SoS.font, fontSize: 26, fontWeight: 500,
               color: SoS.ink, marginBottom: 8, letterSpacing: -0.3 }}>
@@ -4534,7 +4621,7 @@ const OnboardingWizard = ({ onClose }) => {
           </>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <>
             <div style={{ fontFamily: SoS.font, fontSize: 26, fontWeight: 500,
               color: SoS.ink, marginBottom: 8, letterSpacing: -0.3 }}>
@@ -4564,7 +4651,7 @@ const OnboardingWizard = ({ onClose }) => {
           </>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <>
             <div style={{ fontFamily: SoS.font, fontSize: 26, fontWeight: 500,
               color: SoS.ink, marginBottom: 8, letterSpacing: -0.3 }}>
@@ -4590,7 +4677,7 @@ const OnboardingWizard = ({ onClose }) => {
           </>
         )}
 
-        {step === 5 && (
+        {step === 6 && (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center' }}>
             <div style={{ width: 88, height: 88, borderRadius: 44,
               background: 'rgba(255,255,255,0.2)', margin: '0 auto 24px',
@@ -4603,22 +4690,45 @@ const OnboardingWizard = ({ onClose }) => {
             </div>
             <div style={{ fontFamily: SoS.sans, fontSize: 15, lineHeight: 1.5,
               marginTop: 14, opacity: 0.92, padding: '0 20px' }}>
-              Din koordinator i {data.hovedsaede || 'dit hovedsæde'} kigger på dine svar og vender tilbage inden for få dage.
+              {data.fornavn && <span>Hej {data.fornavn}! </span>}Din koordinator i {data.hovedsaede || 'dit hovedsæde'} kigger på dine svar og vender tilbage inden for få dage.
             </div>
           </div>
         )}
       </div>
 
       <div style={{ padding: '16px 20px 34px', display: 'flex', gap: 10,
-        background: step === 0 || step === 5 ? 'transparent' : '#fff',
-        borderTop: step === 0 || step === 5 ? 'none' : `1px solid ${SoS.line}` }}>
+        background: step === 0 || step === 6 ? 'transparent' : '#fff',
+        borderTop: step === 0 || step === 6 ? 'none' : `1px solid ${SoS.line}` }}>
+        {/* Forrige-knap (ikke på trin 0, 1 og 6) */}
+        {step > 1 && step < 6 && (
+          <Button onClick={() => setStep(step - 1)} variant="secondary"
+            style={{ flex: '0 0 auto', padding: '0 18px' }}>
+            <Icon name="chevronL" size={18} color={SoS.ink}/>
+          </Button>
+        )}
         <Button full
-          onClick={() => step === 5 ? onClose() : setStep(step + 1)}
-          variant={step === 0 || step === 5 ? 'secondary' : 'primary'}
-          style={step === 0 || step === 5
+          disabled={step === 1 && (!data.fornavn.trim() || !data.email.trim() || !data.mobil.trim())}
+          onClick={() => {
+            if (step === 6) {
+              // Gem til localStorage
+              window.SoS_STORE?.save('profile', {
+                navn:      (data.fornavn + ' ' + data.efternavn).trim(),
+                fornavn:   data.fornavn,
+                efternavn: data.efternavn,
+                email:     data.email,
+                mobil:     data.mobil,
+                kon:       data.kon,
+              });
+              onClose();
+            } else {
+              setStep(step + 1);
+            }
+          }}
+          variant={step === 0 || step === 6 ? 'secondary' : 'primary'}
+          style={step === 0 || step === 6
             ? { background: '#fff', color: SoS.orange, boxShadow: SoS.shadow.md }
             : {}}>
-          {step === 0 ? 'Kom i gang' : step === 5 ? 'Gå til appen' : 'Fortsæt'}
+          {step === 0 ? 'Kom i gang' : step === 6 ? 'Gå til appen' : 'Fortsæt'}
         </Button>
       </div>
     </div>
@@ -11379,7 +11489,11 @@ const AppWithTweaks = () => {
     setScreen("hjem");
     setDetailId(null);
     setSettingsOpen(false);
-    if (activeRole === "brobygger") setDesktopMode(false);
+    if (activeRole === "brobygger") {
+      setDesktopMode(false);
+      // Nulstil til erfaren-tilstand (Maja) når man skifter til brobygger
+      if (tweaks.experience === "new") setTweak("experience", "experienced");
+    }
   }, [activeRole]);
 
   const openAppt = (id) => setDetailId(id);
@@ -11577,6 +11691,17 @@ const AppWithTweaks = () => {
           />
         </TweakSection>
         <TweakSection label="Testdata">
+          <button onClick={() => {
+            localStorage.removeItem('sos_live_chat');
+            alert('Live-chat ryddet.');
+          }} style={{
+            width: '100%', padding: '8px 0', borderRadius: 8, border: 'none',
+            background: '#E8F0FE', color: '#1A56DB',
+            fontFamily: 'system-ui', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            marginBottom: 6,
+          }}>
+            Ryd live-chat
+          </button>
           <button onClick={() => {
             if (window.confirm('Nulstil al testdata og genindlæs prototypen?')) {
               window.SoS_STORE?.clear();
