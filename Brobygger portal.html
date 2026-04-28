@@ -7647,6 +7647,7 @@ window.AdminHome = AdminHome;
 const RaadgiverKalender = ({ viewingHq }) => {
   const [selDay, setSelDay] = React.useState(2); // onsdag = i dag (mock)
   const [selectedAppt, setSelectedAppt] = React.useState(null);
+  const [typeFilter, setTypeFilter] = React.useState('alle');
   const weekDays = ['Man','Tir','Ons','Tor','Fre','L\u00f8r','S\u00f8n'];
   const weekDates = [21,22,23,24,25,26,27];
 
@@ -8010,7 +8011,8 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
   const [selectedBb, setSelectedBb] = React.useState(null);
   const [selectedAppt, setSelectedAppt] = React.useState(null);
 
-  // Filter brobyggere "as if" they're at the current viewing hq
+ 
+  const [typeFilter, setTypeFilter] = React.useState('alle'); // Filter brobyggere "as if" they're at the current viewing hq
   const brobyggere = SoS_BROBYGGERE;
   const todayAppts = SoS_APPOINTMENTS_BUSY.slice(0, 3);
   const pendingMatches = SoS_BROBYGGERE.filter(b => b.pending > 0).length;
@@ -8076,6 +8078,77 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
 
         {tab === 'arbejde' && (
           <>
+            {/* Type-filter — prominent */}
+            <div style={{ padding: '16px 16px 12px', background: '#fff',
+              borderBottom: `1px solid ${SoS.lineSoft}` }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+                color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase',
+                marginBottom: 10 }}>Vis brobygningstype</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                {[
+                  { id: 'alle',    label: 'Alle',    color: SoS.ink,    soft: SoS.creamDeep, icon: null },
+                  { id: 'sundhed', label: 'Sundhed', color: SoS_TYPER.sundhed.color, soft: SoS_TYPER.sundhed.soft, icon: 'sundhed' },
+                  { id: 'forening',label: 'Forening',color: SoS_TYPER.forening.color,soft: SoS_TYPER.forening.soft,icon: 'forening' },
+                  { id: 'social',  label: 'Social',  color: SoS_TYPER.social.color,  soft: SoS_TYPER.social.soft,  icon: 'social' },
+                ].map(f => {
+                  const sel = typeFilter === f.id;
+                  return (
+                    <button key={f.id} onClick={() => setTypeFilter(f.id)} style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      justifyContent: 'center', gap: 6,
+                      padding: '12px 4px',
+                      background: sel ? f.color : f.soft,
+                      border: `2px solid ${sel ? f.color : 'transparent'}`,
+                      borderRadius: SoS.r.md,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      boxShadow: sel ? SoS.shadow.sm : 'none',
+                    }}>
+                      {f.icon && (
+                        <Icon name={f.icon === 'sundhed' ? 'heart' : f.icon === 'forening' ? 'users' : 'heart'}
+                          size={18} color={sel ? '#fff' : f.color}/>
+                      )}
+                      {!f.icon && (
+                        <div style={{ width: 18, height: 18, borderRadius: 9,
+                          background: sel ? 'rgba(255,255,255,0.3)' : SoS.lineSoft,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 6, height: 6, borderRadius: 3,
+                            background: sel ? '#fff' : SoS.inkSoft }}/>
+                        </div>
+                      )}
+                      <span style={{
+                        fontFamily: SoS.sans, fontSize: 11, fontWeight: sel ? 700 : 500,
+                        color: sel ? '#fff' : f.color,
+                        letterSpacing: 0.2,
+                      }}>{f.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {typeFilter !== 'alle' && (() => {
+                const t = SoS_TYPER[typeFilter];
+                const count = Object.values(SoS_MENNESKER).filter(m =>
+                  m.type === typeFilter && m.status === 'aktiv').length;
+                return (
+                  <div style={{ marginTop: 10, padding: '8px 12px',
+                    background: t.soft, borderRadius: SoS.r.sm,
+                    display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Icon name={t.icon} size={14} color={t.color}/>
+                    <span style={{ fontFamily: SoS.sans, fontSize: 12,
+                      color: t.color, fontWeight: 600 }}>
+                      {count} aktive mennesker · {t.label}
+                    </span>
+                    <button onClick={() => setTypeFilter('alle')} style={{
+                      marginLeft: 'auto', background: 'none', border: 'none',
+                      fontFamily: SoS.sans, fontSize: 11, color: t.color,
+                      cursor: 'pointer', padding: '2px 8px',
+                      borderRadius: 999, fontWeight: 600,
+                    }}>× Nulstil</button>
+                  </div>
+                );
+              })()}
+            </div>
+
             {/* Handlinger */}
             <div style={{ padding: '16px 20px 8px' }}>
               <SectionHead title="Skal handles på"/>
@@ -8197,7 +8270,10 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
               <SectionHead title="Aftaler i dag"/>
             </div>
             <div style={{ padding: '0 20px 16px' }}>
-              {todayAppts.map(a => {
+              {todayAppts.filter(a => {
+                const m = SoS_MENNESKER[a.menneskeId];
+                return !m || typeFilter === 'alle' || m.type === typeFilter;
+              }).map(a => {
                 const menneske = SoS_MENNESKER[a.menneskeId];
                 const type = SoS_TYPER[menneske.type];
                 return (
@@ -8232,6 +8308,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
               const now = new Date('2026-04-27T10:00:00');
               const overdueList = Object.values(SoS_MENNESKER).filter(m => {
                 if (m.matchedWith || !m.registeredAt) return false;
+                if (typeFilter !== 'alle' && m.type !== typeFilter) return false;
                 const hrs = (now - new Date(m.registeredAt)) / 3600000;
                 return hrs > frist;
               });
