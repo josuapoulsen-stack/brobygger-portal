@@ -1962,21 +1962,32 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
   const next = appointments[0];
   const rest = appointments.slice(1, 4);
   const greet = (() => {
-    const h = 14; // mock afternoon
+    const h = new Date().getHours();
     if (h < 10) return 'Godmorgen';
     if (h < 18) return 'God eftermiddag';
     return 'God aften';
   })();
 
-  const monthStats = variant === 'new' ? [
-    { value: '0', label: 'Aftaler', color: SoS.orange },
-    { value: '1', label: 'Matches', color: SoS.sage },
-    { value: '0t', label: 'Timer', color: SoS.sky },
-  ] : [
-    { value: '9', label: 'Aftaler', color: SoS.orange },
-    { value: '4', label: 'Mennesker', color: SoS.sage },
-    { value: '11t', label: 'Timer', color: SoS.sky },
-  ];
+  const monthStats = (() => {
+    const apptCount = appointments.length;
+    const uniqueM = new Set(appointments.map(a => a.menneskeId)).size;
+    const mins = appointments.reduce((s, a) => {
+      if (!a.start || !a.end) return s + 60;
+      const [sh,sm] = a.start.split(':').map(Number);
+      const [eh,em] = a.end.split(':').map(Number);
+      return s + Math.max(0,(eh*60+em)-(sh*60+sm));
+    }, 0);
+    const timer = mins >= 60 ? Math.round(mins/60)+'t' : mins+'m';
+    return variant === 'new' ? [
+      { value: '0', label: 'Aftaler', color: SoS.orange },
+      { value: '0', label: 'Mennesker', color: SoS.sage },
+      { value: '0t', label: 'Timer', color: SoS.sky },
+    ] : [
+      { value: String(apptCount), label: 'Aftaler', color: SoS.orange },
+      { value: String(uniqueM), label: 'Mennesker', color: SoS.sage },
+      { value: timer, label: 'Timer', color: SoS.sky },
+    ];
+  })();
 
   return (
     <>
