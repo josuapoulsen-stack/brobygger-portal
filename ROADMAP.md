@@ -1,5 +1,5 @@
 # SoS Brobygger Portal — Roadmap & Implementeringslog
-> Social Sundhed · Sidst opdateret: 2026-04-27  
+> Social Sundhed · Sidst opdateret: 2026-04-28  
 > Microsoft 365: **Ja** — SoS har eksisterende M365-tenant + Azure Nonprofit-kreditter
 
 ---
@@ -43,7 +43,9 @@
 Prototypen er en single-file HTML-fil med React/Babel via CDN og fiktive data.
 Den bruges til at afklare flows, UI og logik — ikke til produktion.
 
-**Aktuel filstørrelse:** ~541 KB · alle tre roller fungerer (brobygger, rådgiver, admin)
+**Aktuel filstørrelse:** ~597 KB · alle tre roller fungerer (brobygger, rådgiver, admin)  
+**Live prototype:** https://josuapoulsen-stack.github.io/brobygger-portal/  
+**GitHub:** https://github.com/josuapoulsen-stack/brobygger-portal
 
 ---
 
@@ -72,6 +74,18 @@ Den bruges til at afklare flows, UI og logik — ikke til produktion.
 - [x] Søgning: fungerer i både brobygger- og menneskelister (mobil + desktop)
 - [x] Mobilnummer påkrævet for mennesker (med opt-out) og brobyggere
 - [x] Al UI viser "mennesker" — ingen steder står der "borgere"
+- [x] Brobygningsønske i intake: dato, starttidspunkt, varighed, frekvens, notat *(allerede markeret ovenfor)*
+- [x] **Helbredsdata-arkitektur (to lag):**
+  - Lag 1 — SROI-målgruppe: analytisk enum-felt (`sroiMaalgruppe`) — aggregeres kun, aldrig per-borger
+  - Lag 2 — Faglig helbreds-sektion: kategorier (`helbredsKategorier`) + fritekst (`health`) — togglable i admin-indstillinger (`visHelbredsforhold`)
+  - `calcSROISnapshot()` returnerer kun aggregerede tal (byNiveau, byType, byMaalgruppe, byIntensitet) — ingen per-person-objekter
+- [x] **Admin-indstillinger:** Brobygningstyper on/off pr. HQ + faglig helbreds-sektion on/off
+- [x] **DesktopMennesker:** Fuldt implementeret — søgning, type-filter, status-filter, indsatsniveau-kolonne, klik → MenneskeDetailPanel overlay + "Registrer nyt menneske"-knap
+- [x] **DesktopBrobygninger:** Fuldt implementeret — type-stats-kort + filtrerbar aftaletabel (status + type)
+- [x] **MessagesList (notifikationer + beskeder):** To tabs — Notifikationer (handlingskort med ikon + knapper) + Beskeder (tråde med avatar + preview)
+- [x] **ProfileScreen:** Fire funktionelle undersider — Notifikationsindstillinger, Personlige oplysninger, Privatliv & sikkerhed, Præferencer
+- [x] **AdminMobile — type-filter:** Prominent 4-knaps grid øverst på arbejde-fanen (Alle / Sundhed / Forening / Social) — filtrerer både aftaler og match-frist-advarsler
+- [x] **GitHub Pages:** Live på https://josuapoulsen-stack.github.io/brobygger-portal/ (index.html redirect til "Brobygger portal.html")
 
 ### Mangler i prototypen ✗
 - [ ] **Tilgængelighed (a11y)** — ingen aria-labels, fokus-management, tastaturnavigation
