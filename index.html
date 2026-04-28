@@ -1976,8 +1976,10 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
     <>
       <TopBar
         subtitle={greet}
-        title={user.firstName}
-        leading={<SSLogo size={44} color={SoS.orange} />}
+        title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+          {user.firstName}
+          <SSLogo size={34} />
+        </span>}
         trailing={
           <button style={{
             width: 44, height: 44, borderRadius: 22, background: '#fff',
