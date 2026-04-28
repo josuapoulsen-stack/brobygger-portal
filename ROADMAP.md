@@ -114,8 +114,8 @@ Den bruges til at afklare flows, UI og logik — ikke til produktion.
   - `aftaler` (dato, aktivitet, sted)
   - `brugere` (medarbejdere med roller)
   - *Tilføj tabeller når behovet opstår — ikke på forhånd*
-- [ ] REST API: FastAPI + PostgreSQL (samme stack som Bifrost)
-- [ ] Migrationer fra dag ét (Alembic) — nemt at udvide skemaet ved vækst
+- [x] REST API: FastAPI + PostgreSQL — skeleton klar (`backend/`)
+- [x] Migrationer fra dag ét (Alembic) — `alembic.ini` + `backend/alembic/` klar
 - [ ] Datakryptering: Azure håndterer at-rest; følsomme felter (helbred) krypteres på applikationsniveau
 - [ ] Backup: Azure automatisk backup, 7-dages restore (inkluderet)
 
@@ -136,7 +136,7 @@ Den bruges til at afklare flows, UI og logik — ikke til produktion.
 - [ ] Betinget adgang: kræv MFA for admin-rollen (anbefalet)
 
 **Brobyggere (frivillige — har ikke org-konto)**
-- [ ] **Anbefalet: Magic link via email**
+- [x] **Anbefalet: Magic link via email**
   - Rådgiver inviterer → brobygger modtager link → logger ind uden kodeord
   - Kræver kun en email-adresse (privat gmail, hotmail osv. er fint)
   - Ingen app-installation nødvendig for at komme i gang
@@ -150,9 +150,9 @@ Den bruges til at afklare flows, UI og logik — ikke til produktion.
 - [ ] Logout fra alle enheder
 
 ### 2c. Frontend — fra prototype til rigtig app
-- [ ] Flyt fra single-file HTML til et build-setup (forslag: Vite + React)
-- [ ] PWA-manifest + service worker → brobyggere kan installere på telefon
-- [ ] Push-notifikationer (Web Push API eller native via PWA)
+- [x] Flyt fra single-file HTML til et build-setup — `package.json` + `vite.config.js` klar
+- [x] PWA-manifest + service worker — `vite.config.js` (Workbox) + `public/sw.js` klar
+- [x] Push-notifikationer (Web Push API) — VAPID-nøgler genereret, `sw.js` push-handler klar
 - [ ] Responsivt design testet på rigtige enheder (Android + iOS)
 - [ ] Bundle-optimering (lazy loading af admin-views)
 
@@ -192,8 +192,8 @@ Den bruges til at afklare flows, UI og logik — ikke til produktion.
 - [x] GDPR-informationsboks i intake-flow
 
 ### Mangler
-- [ ] Samtykke-log i databasen (hvornår, hvad, IP/enhed)
-- [ ] Automatisk sletning efter konfigurerbar periode
+- [x] Samtykke-log i databasen — `audit_log`-tabel i migration 003
+- [x] Automatisk sletning efter konfigurerbar periode — `anonymiser_slettede_mennesker()` i migration 004
 - [ ] Data minimering — review af hvilke felter der faktisk er nødvendige
 - [ ] Privacy policy og cookiepolitik
 

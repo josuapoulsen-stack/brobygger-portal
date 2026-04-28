@@ -1,0 +1,683 @@
+openapi: "3.1.0"
+
+info:
+  title: SoS Brobygger Portal API
+  version: "0.1.0"
+  description: |
+    REST API til Brobygger-portalen.
+
+    **FASE 1 (prototype):** Alle endpoints returnerer HTTP 503.
+    Sæt `USE_BACKEND = false` i `src/api/index.js`.
+
+    **FASE 2 (med backend):** Sæt `USE_BACKEND = true` + deploy til Azure App Service.
+
+    ### Autentifikation
+    Alle beskyttede endpoints kræver `Authorization: Bearer <token>`.
+    Token hentes fra Microsoft Entra ID via MSAL.js i frontenden.
+  contact:
+    name: SoS Teknisk Team
+    email: admin@sosbrobygger.dk
+  license:
+    name: Privat — alle rettigheder forbeholdt SoS
+
+servers:
+  - url: http://localhost:8000
+    description: Lokal udvikling
+  - url: https://brobygger-dev-api.azurewebsites.net
+    description: Azure Dev
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Azure Entra ID access token (MSAL.js)
+
+  schemas:
+    # ── Fælles ────────────────────────────────────────────────────────────────
+    OkResponse:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
+    # ── Mennesker ─────────────────────────────────────────────────────────────
+    MenneskStatus:
+      type: string
+      enum: [ny, matched, aktiv, afsluttet, venteliste]
+
+    MenneskCreate:
+      type: object
+      required: [navn]
+      properties:
+        navn:          { type: string, example: "Ali Hassan" }
+        alder:         { type: integer, example: 34 }
+        kon:           { type: string, enum: [mand, kvinde, ikke-binær, ønsker ikke at oplyse] }
+        email:         { type: string, format: email }
+        telefon:       { type: string, example: "+45 12 34 56 78" }
+        adresse:       { type: string }
+        typer:         { type: array, items: { type: string }, example: ["en-til-en"] }
+        sprog:         { type: array, items: { type: string }, example: ["dansk", "arabisk"] }
+        noter:         { type: string }
+        helbredsnoter: { type: string, description: "Art. 9-data — krypteres i DB" }
+        hq:            { type: string, example: "København N" }
+
+    MenneskUpdate:
+      type: object
+      properties:
+        navn:          { type: string }
+        alder:         { type: integer }
+        kon:           { type: string }
+        email:         { type: string, format: email }
+        telefon:       { type: string }
+        status:        { $ref: "#/components/schemas/MenneskStatus" }
+        matchedWith:   { type: string, description: "Brobygger-ID" }
+        noter:         { type: string }
+
+    Menneske:
+      allOf:
+        - $ref: "#/components/schemas/MenneskCreate"
+        - type: object
+          required: [id, createdAt, status]
+          properties:
+            id:        { type: string, format: uuid }
+            status:    { $ref: "#/components/schemas/MenneskStatus" }
+            createdAt: { type: string, format: date-time }
+
+    # ── Brobyggere ────────────────────────────────────────────────────────────
+    BrobyggerStatus:
+      type: string
+      enum: [ny, aktiv, pause, inaktiv]
+
+    BrobyggerUpdate:
+      type: object
+      properties:
+        status:        { $ref: "#/components/schemas/BrobyggerStatus" }
+        maxActive:     { type: integer, minimum: 1, example: 3 }
+        noter:         { type: string }
+        naesteTid:     { type: string, example: "Tirsdag kl. 14-17" }
+
+    Brobygger:
+      type: object
+      required: [id, navn, status, active, maxActive, createdAt]
+      properties:
+        id:            { type: string, format: uuid }
+        navn:          { type: string, example: "Maja Lindberg" }
+        email:         { type: string, format: email }
+        telefon:       { type: string }
+        typer:         { type: array, items: { type: string } }
+        sprog:         { type: array, items: { type: string } }
+        hq:            { type: string }
+        status:        { $ref: "#/components/schemas/BrobyggerStatus" }
+        active:        { type: integer }
+        maxActive:     { type: integer }
+        naesteTid:     { type: string }
+        createdAt:     { type: string, format: date-time }
+
+    # ── Aftaler ───────────────────────────────────────────────────────────────
+    AftaleStatus:
+      type: string
+      enum: [planlagt, gennemfoert, aflyst, udsat]
+
+    AftaleCreate:
+      type: object
+      required: [brobyggerId, menneskeId, dato]
+      properties:
+        brobyggerId:   { type: string, format: uuid }
+        menneskeId:    { type: string, format: uuid }
+        dato:          { type: string, format: date-time }
+        varighed:      { type: integer, default: 60, description: "Minutter" }
+        type:          { type: string, enum: [moede, aktivitet, telefonopkald, online] }
+        sted:          { type: string }
+        beskrivelse:   { type: string }
+
+    AftaleStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:        { $ref: "#/components/schemas/AftaleStatus" }
+        notes:         { type: string, default: "" }
+
+    Aftale:
+      allOf:
+        - $ref: "#/components/schemas/AftaleCreate"
+        - type: object
+          required: [id, status, createdAt]
+          properties:
+            id:        { type: string, format: uuid }
+            status:    { $ref: "#/components/schemas/AftaleStatus" }
+            notes:     { type: string }
+            createdAt: { type: string, format: date-time }
+
+    # ── Beskeder ──────────────────────────────────────────────────────────────
+    Thread:
+      type: object
+      required: [id, titel, updatedAt]
+      properties:
+        id:            { type: string }
+        titel:         { type: string, example: "Generel info — maj 2025" }
+        sidstebesked:  { type: string }
+        ulaest:        { type: integer, default: 0 }
+        fromBrobygger: { type: boolean }
+        official:      { type: boolean }
+        updatedAt:     { type: string, format: date-time }
+
+    Message:
+      type: object
+      required: [id, threadId, from_role, text, sentAt]
+      properties:
+        id:            { type: string }
+        threadId:      { type: string }
+        from_role:     { type: string, enum: [brobygger, raadgiver, admin] }
+        text:          { type: string }
+        time:          { type: string, example: "14:37" }
+        sentAt:        { type: string, format: date-time }
+
+    MessageCreate:
+      type: object
+      required: [text, from_role]
+      properties:
+        text:          { type: string }
+        from_role:     { type: string, enum: [brobygger, raadgiver, admin] }
+
+    # ── Profil ────────────────────────────────────────────────────────────────
+    ProfilUpdate:
+      type: object
+      properties:
+        navn:          { type: string }
+        fornavn:       { type: string }
+        efternavn:     { type: string }
+        email:         { type: string, format: email }
+        mobil:         { type: string }
+        kon:           { type: string }
+        bio:           { type: string }
+
+    Profil:
+      allOf:
+        - $ref: "#/components/schemas/ProfilUpdate"
+        - type: object
+          required: [id, navn]
+          properties:
+            id:        { type: string, format: uuid }
+            azureOid:  { type: string }
+
+    # ── Matching ──────────────────────────────────────────────────────────────
+    MatchSuggestion:
+      type: object
+      properties:
+        brobygger:     { $ref: "#/components/schemas/Brobygger" }
+        score:         { type: number, minimum: 0, maximum: 1, example: 0.87 }
+        begrundelse:   { type: string, example: "Samme sprog og type" }
+
+    MatchConfirm:
+      type: object
+      required: [menneske_id, brobygger_id]
+      properties:
+        menneske_id:   { type: string, format: uuid }
+        brobygger_id:  { type: string, format: uuid }
+
+    # ── Statistik ─────────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      properties:
+        totalMennesker:   { type: integer }
+        totalBrobyggere:  { type: integer }
+        totalAftaler:     { type: integer }
+        aktiveBrobyggere: { type: integer }
+        matchRate:        { type: number, description: "Pct. matchede" }
+
+    SROISnapshot:
+      type: object
+      properties:
+        totalForloeb:     { type: integer }
+        totalTimer:       { type: number }
+        estimatedValueDKK: { type: number }
+        investmentDKK:    { type: number }
+        sroiRatio:        { type: number, description: "Fx 4.2 = 4,2 kr per investeret kr" }
+
+# ══════════════════════════════════════════════════════════════════════════════
+paths:
+
+  # ── Auth ────────────────────────────────────────────────────────────────────
+  /v1/auth/me:
+    get:
+      summary: Hent egne token-claims
+      operationId: getMe
+      tags: [Auth]
+      responses:
+        "200":
+          description: Token-claims
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  oid:   { type: string }
+                  name:  { type: string }
+                  email: { type: string }
+                  roles: { type: array, items: { type: string } }
+        "401": { description: Uautoriseret }
+
+  # ── Mennesker ────────────────────────────────────────────────────────────────
+  /v1/mennesker:
+    get:
+      summary: Liste alle mennesker
+      operationId: listMennesker
+      tags: [Mennesker]
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/MenneskStatus" }
+        - name: hq
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Menneske" } }
+
+    post:
+      summary: Opret menneske
+      operationId: createMeneske
+      tags: [Mennesker]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MenneskCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Menneske" }
+
+  /v1/mennesker/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Hent ét menneske
+      operationId: getMeneske
+      tags: [Mennesker]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Menneske" }
+        "404": { description: Ikke fundet }
+    patch:
+      summary: Opdatér menneske
+      operationId: updateMeneske
+      tags: [Mennesker]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MenneskUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Menneske" }
+    delete:
+      summary: Slet menneske (soft delete)
+      operationId: deleteMeneske
+      tags: [Mennesker]
+      responses:
+        "204": { description: Slettet }
+
+  # ── Brobyggere ───────────────────────────────────────────────────────────────
+  /v1/brobyggere:
+    get:
+      summary: Liste alle brobyggere
+      operationId: listBrobyggere
+      tags: [Brobyggere]
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/BrobyggerStatus" }
+        - name: hq
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Brobygger" } }
+
+  /v1/brobyggere/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Hent én brobygger
+      operationId: getBrobygger
+      tags: [Brobyggere]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Brobygger" }
+    patch:
+      summary: Opdatér brobygger
+      operationId: updateBrobygger
+      tags: [Brobyggere]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BrobyggerUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Brobygger" }
+
+  # ── Aftaler ──────────────────────────────────────────────────────────────────
+  /v1/aftaler:
+    get:
+      summary: Liste aftaler
+      operationId: listAftaler
+      tags: [Aftaler]
+      parameters:
+        - name: brobygger_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: menneske_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/AftaleStatus" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Aftale" } }
+    post:
+      summary: Opret aftale
+      operationId: createAftale
+      tags: [Aftaler]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AftaleCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Aftale" }
+
+  /v1/aftaler/{id}/status:
+    patch:
+      summary: Opdatér aftale-status
+      operationId: updateAftaleStatus
+      tags: [Aftaler]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AftaleStatusUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  # ── Beskeder ─────────────────────────────────────────────────────────────────
+  /v1/beskeder/threads:
+    get:
+      summary: Liste beskedtråde
+      operationId: listThreads
+      tags: [Beskeder]
+      parameters:
+        - name: role
+          in: query
+          required: true
+          schema: { type: string, enum: [brobygger, raadgiver, admin] }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Thread" } }
+
+  /v1/beskeder/threads/{threadId}/messages:
+    get:
+      summary: Hent beskeder i tråd
+      operationId: getMessages
+      tags: [Beskeder]
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Message" } }
+    post:
+      summary: Send besked
+      operationId: sendMessage
+      tags: [Beskeder]
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MessageCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+
+  /v1/beskeder/threads/{threadId}/read:
+    post:
+      summary: Markér tråd som læst
+      operationId: markThreadRead
+      tags: [Beskeder]
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  # ── Profil ───────────────────────────────────────────────────────────────────
+  /v1/profil/me:
+    get:
+      summary: Hent egen profil
+      operationId: getMyProfile
+      tags: [Profil]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profil" }
+    patch:
+      summary: Opdatér egen profil
+      operationId: updateMyProfile
+      tags: [Profil]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfilUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profil" }
+
+  # ── Matching ─────────────────────────────────────────────────────────────────
+  /v1/matching/suggestions:
+    get:
+      summary: Foreslå brobyggere til et menneske
+      operationId: getMatchSuggestions
+      tags: [Matching]
+      parameters:
+        - name: menneske_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/MatchSuggestion" } }
+
+  /v1/matching/confirm:
+    post:
+      summary: Bekræft match
+      operationId: confirmMatch
+      tags: [Matching]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MatchConfirm" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  # ── Statistik ────────────────────────────────────────────────────────────────
+  /v1/statistik/dashboard:
+    get:
+      summary: Dashboard-nøgletal
+      operationId: getDashboard
+      tags: [Statistik]
+      parameters:
+        - name: hq
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardStats" }
+
+  /v1/statistik/sroi:
+    get:
+      summary: SROI-snapshot
+      operationId: getSROI
+      tags: [Statistik]
+      parameters:
+        - name: hq
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SROISnapshot" }
+
+  # ── Notifikationer ───────────────────────────────────────────────────────────
+  /v1/notifikationer:
+    get:
+      summary: Liste notifikationer
+      operationId: listNotifikationer
+      tags: [Notifikationer]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:     { type: string }
+                    type:   { type: string }
+                    titel:  { type: string }
+                    tekst:  { type: string }
+                    unread: { type: boolean }
+
+  /v1/notifikationer/{id}/read:
+    post:
+      summary: Markér notifikation som læst
+      operationId: markNotifikationRead
+      tags: [Notifikationer]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  /v1/push/subscribe:
+    post:
+      summary: Registrér Web Push-subscription
+      operationId: subscribePush
+      tags: [Notifikationer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint, keys]
+              properties:
+                endpoint: { type: string, format: uri }
+                keys:
+                  type: object
+                  properties:
+                    p256dh: { type: string }
+                    auth:   { type: string }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  # ── Health ───────────────────────────────────────────────────────────────────
+  /health:
+    get:
+      summary: Health-check
+      operationId: healthCheck
+      tags: [Meta]
+      security: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:      { type: string, example: ok }
+                  environment: { type: string }
+                  version:     { type: string }

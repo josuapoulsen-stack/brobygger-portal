@@ -1,12 +1,48 @@
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# OS
+# ── Node / Vite ───────────────────────────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+
+# ── Environment & hemmeligheder ───────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example        # .env.example MÅ godt committes
+
+# ── Azure / Infrastruktur ─────────────────────────────────────────────────────
+infra/parameters.json   # indeholder DB-adgangskode — aldrig commit
+*.tfstate
+*.tfstate.backup
+
+# ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# Editor
+# ── Editor ────────────────────────────────────────────────────────────────────
 .vscode/
 *.swp
+*.swo
+.idea/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Lokale genveje (indeholder tokens) ───────────────────────────────────────
+*.url

@@ -1,0 +1,347 @@
+import sys, re
+
+path = r'C:\Users\Josua Poulsen\Documents\Claude Code\brobygger-portal\Brobygger portal.html'
+with open(path, encoding='utf-8') as f:
+    html = f.read()
+original_len = len(html)
+ok = []
+err = []
+
+def patch(label, old, new):
+    global html
+    if old in html:
+        html = html.replace(old, new, 1)
+        ok.append(label)
+    else:
+        err.append(label)
+
+# ── 1. Expand SS_APPOINTMENTS_BUSY with brobyggerId + more entries ─────────────
+patch('Expand appointments',
+"const SS_APPOINTMENTS_BUSY = [\n"
+"  { id: 'a-1', menneskeId: 'b-1', date: '2026-04-24', start: '10:00', end: '11:30', activity: 'Gåtur i Risskov', location: 'Risskov strand', status: 'confirmed' },\n"
+"  { id: 'a-2', menneskeId: 'b-2', date: '2026-04-25', start: '14:00', end: '15:00', activity: 'Sprogøvelse', location: 'Gellerup bibliotek', status: 'confirmed' },\n"
+"  { id: 'a-3', menneskeId: 'b-3', date: '2026-04-26', start: '11:00', end: '12:00', activity: 'Læsehøjt', location: 'Plejehjemmet Solgården', status: 'confirmed' },\n"
+"  { id: 'a-4', menneskeId: 'b-4', date: '2026-04-28', start: '15:30', end: '16:30', activity: 'Rolig gåtur', location: 'Botanisk Have', status: 'pending' },\n"
+"  { id: 'a-5', menneskeId: 'b-1', date: '2026-04-30', start: '10:00', end: '11:00', activity: 'Kaffe hjemme', location: 'Skovvejen 14', status: 'confirmed' },\n"
+"];",
+# ─────────────────────────────────────────────────────────────────────────────
+"const SS_APPOINTMENTS_BUSY = [\n"
+"  // Uge 17 (21–27. apr)\n"
+"  { id: 'a-1',  menneskeId: 'b-1', brobyggerId: 'bb-1', date: '2026-04-24', start: '10:00', end: '11:30', activity: 'Gåtur i Risskov',       location: 'Risskov strand',          status: 'confirmed' },\n"
+"  { id: 'a-2',  menneskeId: 'b-2', brobyggerId: 'bb-3', date: '2026-04-25', start: '14:00', end: '15:00', activity: 'Sprogøvelse',            location: 'Gellerup bibliotek',      status: 'confirmed' },\n"
+"  { id: 'a-3',  menneskeId: 'b-3', brobyggerId: 'bb-5', date: '2026-04-26', start: '11:00', end: '12:00', activity: 'Læsehøjt',               location: 'Plejehjemmet Solgården',  status: 'confirmed' },\n"
+"  { id: 'a-6',  menneskeId: 'b-2', brobyggerId: 'bb-5', date: '2026-04-27', start: '09:30', end: '10:30', activity: 'Morgenwalk',             location: 'Brabrand Sø',             status: 'confirmed' },\n"
+"  { id: 'a-7',  menneskeId: 'b-4', brobyggerId: 'bb-7', date: '2026-04-27', start: '13:00', end: '14:00', activity: 'Biblioteksbesøg',        location: 'Dokk1',                   status: 'confirmed' },\n"
+"  // Uge 18 (28. apr – 4. maj)\n"
+"  { id: 'a-4',  menneskeId: 'b-4', brobyggerId: 'bb-1', date: '2026-04-28', start: '15:30', end: '16:30', activity: 'Rolig gåtur',            location: 'Botanisk Have',           status: 'pending'   },\n"
+"  { id: 'a-8',  menneskeId: 'b-3', brobyggerId: 'bb-3', date: '2026-04-29', start: '11:00', end: '12:30', activity: 'Sprogcafé',              location: 'VokalFolk, Mejlgade',     status: 'confirmed' },\n"
+"  { id: 'a-9',  menneskeId: 'b-1', brobyggerId: 'bb-8', date: '2026-04-29', start: '15:00', end: '16:00', activity: 'Bankkontakt',            location: 'Sydbank, Søndergade',     status: 'confirmed' },\n"
+"  { id: 'a-5',  menneskeId: 'b-1', brobyggerId: 'bb-8', date: '2026-04-30', start: '10:00', end: '11:00', activity: 'Kaffe hjemme',           location: 'Skovvejen 14',            status: 'confirmed' },\n"
+"  { id: 'a-10', menneskeId: 'b-2', brobyggerId: 'bb-1', date: '2026-05-01', start: '10:30', end: '11:30', activity: 'Gåtur i Botanisk Have',  location: 'Botanisk Have',           status: 'pending'   },\n"
+"  { id: 'a-11', menneskeId: 'b-3', brobyggerId: 'bb-5', date: '2026-05-01', start: '14:00', end: '15:00', activity: 'Sangeftermiddag',        location: 'Musikhuset Aarhus',       status: 'confirmed' },\n"
+"  { id: 'a-12', menneskeId: 'b-4', brobyggerId: 'bb-7', date: '2026-05-02', start: '10:00', end: '11:00', activity: 'Læsehøjt',               location: 'Hjemme hos Hans',         status: 'confirmed' },\n"
+"  // Uge 19 (5–11. maj)\n"
+"  { id: 'a-13', menneskeId: 'b-1', brobyggerId: 'bb-3', date: '2026-05-04', start: '11:00', end: '12:00', activity: 'Gåtur ved åen',          location: 'Åboulevarden',            status: 'confirmed' },\n"
+"  { id: 'a-14', menneskeId: 'b-2', brobyggerId: 'bb-8', date: '2026-05-05', start: '09:00', end: '10:30', activity: 'Lægekontakt',            location: 'Klinik Trøjborg',         status: 'pending'   },\n"
+"  { id: 'a-15', menneskeId: 'b-3', brobyggerId: 'bb-1', date: '2026-05-06', start: '13:00', end: '14:00', activity: 'Kulturcafé',             location: 'Godsbanen',               status: 'confirmed' },\n"
+"  { id: 'a-16', menneskeId: 'b-4', brobyggerId: 'bb-5', date: '2026-05-07', start: '10:00', end: '11:30', activity: 'Gåtur Marselisborg',     location: 'Marselisborg Skov',       status: 'confirmed' },\n"
+"];"
+)
+
+# ── 2. Add DesktopKalender component (before DesktopRapport) ─────────────────
+desktop_kalender = (
+"\nconst DesktopKalender = () => {\n"
+"  const [weekOffset, setWeekOffset] = React.useState(0);\n"
+"  const [bbFilter, setBbFilter] = React.useState('alle');\n"
+"\n"
+"  const today = new Date('2026-04-26');\n"
+"  const startOfWeek = new Date(today);\n"
+"  const dow = today.getDay();\n"
+"  startOfWeek.setDate(today.getDate() + (dow === 0 ? -6 : 1 - dow) + weekOffset * 7);\n"
+"\n"
+"  const days = Array.from({ length: 7 }, (_, i) => {\n"
+"    const d = new Date(startOfWeek);\n"
+"    d.setDate(startOfWeek.getDate() + i);\n"
+"    return d;\n"
+"  });\n"
+"\n"
+"  const mdr = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];\n"
+"  const dayNames = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];\n"
+"  const pad = n => String(n).padStart(2,'0');\n"
+"  const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;\n"
+"  const weekLabel = `${days[0].getDate()}. ${mdr[days[0].getMonth()]}` +\n"
+"    ` \u2013 ${days[6].getDate()}. ${mdr[days[6].getMonth()]} ${days[6].getFullYear()}`;\n"
+"\n"
+"  const aktiveBb = SS_BROBYGGERE.filter(b => ['aktiv','ny'].includes(b.status));\n"
+"\n"
+"  // Week stats\n"
+"  const weekDates = new Set(days.map(fmtDate));\n"
+"  const weekAppts = SS_APPOINTMENTS_BUSY.filter(a => weekDates.has(a.date));\n"
+"  const confirmedCount = weekAppts.filter(a => a.status === 'confirmed').length;\n"
+"  const pendingCount   = weekAppts.filter(a => a.status === 'pending').length;\n"
+"\n"
+"  const btnBase = {\n"
+"    padding: '6px 12px', borderRadius: 999, border: '1px solid ' + SS.line,\n"
+"    fontFamily: SS.sans, fontSize: 12, fontWeight: 500, cursor: 'pointer',\n"
+"  };\n"
+"\n"
+"  return (\n"
+"    <>\n"
+"      {/* Week navigation */}\n"
+"      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14,\n"
+"        background:'#fff', borderRadius:12, padding:'12px 16px',\n"
+"        border:`1px solid ${SS.lineSoft}` }}>\n"
+"        <button onClick={() => setWeekOffset(w => w-1)} style={{ ...btnBase,\n"
+"          background:'transparent', color:SS.inkSoft }}>\u2190</button>\n"
+"        <div style={{ flex:1, textAlign:'center', fontFamily:SS.sans,\n"
+"          fontSize:14, fontWeight:600, color:SS.ink }}>{weekLabel}</div>\n"
+"        <button onClick={() => setWeekOffset(0)} style={{ ...btnBase,\n"
+"          background: weekOffset===0 ? SS.orange : 'transparent',\n"
+"          color: weekOffset===0 ? '#fff' : SS.inkSoft,\n"
+"          borderColor: weekOffset===0 ? SS.orange : SS.line }}>I dag</button>\n"
+"        <button onClick={() => setWeekOffset(w => w+1)} style={{ ...btnBase,\n"
+"          background:'transparent', color:SS.inkSoft }}>\u2192</button>\n"
+"      </div>\n"
+"\n"
+"      {/* Stats row */}\n"
+"      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)',\n"
+"        gap:10, marginBottom:14 }}>\n"
+"        {[\n"
+"          { l:'Aftaler denne uge', v:weekAppts.length, c:SS.ink },\n"
+"          { l:'Bekr\u00e6ftede', v:confirmedCount, c:SS.sage },\n"
+"          { l:'Afventer', v:pendingCount, c:SS.sun },\n"
+"        ].map((s,i) => (\n"
+"          <div key={i} style={{ background:'#fff', borderRadius:10,\n"
+"            border:`1px solid ${SS.lineSoft}`, padding:'12px 14px' }}>\n"
+"            <div style={{ fontFamily:SS.sans, fontSize:10, fontWeight:700,\n"
+"              color:SS.inkMuted, letterSpacing:0.8, textTransform:'uppercase',\n"
+"              marginBottom:4 }}>{s.l}</div>\n"
+"            <div style={{ fontFamily:SS.font, fontSize:28, fontWeight:500,\n"
+"              color:s.c }}>{s.v}</div>\n"
+"          </div>\n"
+"        ))}\n"
+"      </div>\n"
+"\n"
+"      {/* Brobygger filter */}\n"
+"      <div style={{ display:'flex', gap:6, marginBottom:12, flexWrap:'wrap' }}>\n"
+"        <button onClick={() => setBbFilter('alle')} style={{ ...btnBase,\n"
+"          background: bbFilter==='alle' ? SS.ink : 'transparent',\n"
+"          color: bbFilter==='alle' ? '#fff' : SS.inkSoft,\n"
+"          borderColor: bbFilter==='alle' ? SS.ink : SS.line }}>Alle</button>\n"
+"        {aktiveBb.map(b => (\n"
+"          <button key={b.id} onClick={() => setBbFilter(b.id)} style={{ ...btnBase,\n"
+"            background: bbFilter===b.id ? b.bg : 'transparent',\n"
+"            color: bbFilter===b.id ? '#fff' : SS.inkSoft,\n"
+"            borderColor: bbFilter===b.id ? b.bg : SS.line }}>\n"
+"            {b.name.split(' ')[0]}\n"
+"          </button>\n"
+"        ))}\n"
+"      </div>\n"
+"\n"
+"      {/* Calendar grid */}\n"
+"      <div style={{ background:'#fff', borderRadius:12,\n"
+"        border:`1px solid ${SS.lineSoft}`, overflow:'hidden' }}>\n"
+"        {/* Day headers */}\n"
+"        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)',\n"
+"          borderBottom:`1px solid ${SS.lineSoft}` }}>\n"
+"          {days.map((day, i) => {\n"
+"            const isToday = fmtDate(day) === '2026-04-26';\n"
+"            return (\n"
+"              <div key={i} style={{ padding:'10px 8px', textAlign:'center',\n"
+"                borderRight: i<6 ? `1px solid ${SS.lineSoft}` : 'none',\n"
+"                background: isToday ? SS.orange+'0F' : 'transparent' }}>\n"
+"                <div style={{ fontFamily:SS.sans, fontSize:10, fontWeight:700,\n"
+"                  color:SS.inkMuted, letterSpacing:0.6,\n"
+"                  textTransform:'uppercase' }}>{dayNames[i]}</div>\n"
+"                <div style={{\n"
+"                  width:28, height:28, borderRadius:14,\n"
+"                  background: isToday ? SS.orange : 'transparent',\n"
+"                  color: isToday ? '#fff' : SS.ink,\n"
+"                  display:'flex', alignItems:'center', justifyContent:'center',\n"
+"                  margin:'4px auto 0',\n"
+"                  fontFamily:SS.sans, fontSize:14, fontWeight:600\n"
+"                }}>{day.getDate()}</div>\n"
+"              </div>\n"
+"            );\n"
+"          })}\n"
+"        </div>\n"
+"\n"
+"        {/* Appointment slots */}\n"
+"        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)',\n"
+"          minHeight:320, alignItems:'start' }}>\n"
+"          {days.map((day, i) => {\n"
+"            const dateStr = fmtDate(day);\n"
+"            const isToday = dateStr === '2026-04-26';\n"
+"            const dayAppts = SS_APPOINTMENTS_BUSY.filter(a =>\n"
+"              a.date === dateStr &&\n"
+"              (bbFilter === 'alle' || a.brobyggerId === bbFilter)\n"
+"            ).sort((a,b) => a.start.localeCompare(b.start));\n"
+"            return (\n"
+"              <div key={i} style={{\n"
+"                padding:'8px 6px', minHeight:120,\n"
+"                borderRight: i<6 ? `1px solid ${SS.lineSoft}` : 'none',\n"
+"                background: isToday ? SS.orange+'06' : 'transparent',\n"
+"              }}>\n"
+"                {dayAppts.length === 0 && (\n"
+"                  <div style={{ textAlign:'center', paddingTop:16,\n"
+"                    fontFamily:SS.sans, fontSize:11, color:SS.lineSoft }}>—</div>\n"
+"                )}\n"
+"                {dayAppts.map(a => {\n"
+"                  const m = SS_MENNESKER[a.menneskeId];\n"
+"                  const bb = SS_BROBYGGERE.find(b => b.id === a.brobyggerId);\n"
+"                  const confirmed = a.status === 'confirmed';\n"
+"                  return (\n"
+"                    <div key={a.id} style={{\n"
+"                      background: confirmed ? SS.sageSoft : SS.sun+'33',\n"
+"                      borderLeft: `3px solid ${confirmed ? SS.sage : SS.sun}`,\n"
+"                      borderRadius:'0 6px 6px 0',\n"
+"                      padding:'5px 7px', marginBottom:6,\n"
+"                    }}>\n"
+"                      <div style={{ fontFamily:SS.sans, fontSize:10,\n"
+"                        fontWeight:700, color:SS.inkSoft }}>{a.start}</div>\n"
+"                      <div style={{ fontFamily:SS.sans, fontSize:11,\n"
+"                        fontWeight:600, color:SS.ink,\n"
+"                        lineHeight:1.2, marginBottom:2 }}>\n"
+"                        {m ? m.firstName : '\u2014'}\n"
+"                      </div>\n"
+"                      <div style={{ fontFamily:SS.sans, fontSize:10,\n"
+"                        color:SS.inkSoft, lineHeight:1.2 }}>{a.activity}</div>\n"
+"                      {bb && (\n"
+"                        <div style={{ display:'flex', alignItems:'center',\n"
+"                          gap:4, marginTop:4 }}>\n"
+"                          <div style={{ width:14, height:14, borderRadius:7,\n"
+"                            background:bb.bg, flexShrink:0,\n"
+"                            display:'flex', alignItems:'center', justifyContent:'center',\n"
+"                            fontFamily:SS.sans, fontSize:7, fontWeight:700,\n"
+"                            color:'#fff' }}>{bb.avatar[0]}</div>\n"
+"                          <div style={{ fontFamily:SS.sans, fontSize:9,\n"
+"                            color:SS.inkMuted }}>{bb.name.split(' ')[0]}</div>\n"
+"                        </div>\n"
+"                      )}\n"
+"                    </div>\n"
+"                  );\n"
+"                })}\n"
+"              </div>\n"
+"            );\n"
+"          })}\n"
+"        </div>\n"
+"      </div>\n"
+"    </>\n"
+"  );\n"
+"};\n"
+"\n"
+)
+
+patch('Add DesktopKalender component',
+"const DesktopRapport = () => (",
+desktop_kalender + "const DesktopRapport = () => ("
+)
+
+# ── 3. Add 'kalender' to sidebar nav ─────────────────────────────────────────
+patch('Add kalender to sidebar',
+"              { k: 'dashboard', l: 'Dashboard', i: 'chart' },\n"
+"              { k: 'brobygninger', l: 'Brobygninger', i: 'match' },\n"
+"              { k: 'brobyggere', l: 'Brobyggere', i: 'users' },\n"
+"              { k: 'mennesker', l: 'Mennesker', i: 'heart' },\n"
+"              { k: 'sroi', l: 'SROI & Effekt', i: 'sparkle' },\n"
+"              { k: 'rapport', l: 'Rapport & eksport', i: 'note' },\n"
+"            ].map(n => (",
+"              { k: 'dashboard',    l: 'Dashboard',          i: 'chart'    },\n"
+"              { k: 'kalender',     l: 'Kalender',           i: 'calendar' },\n"
+"              { k: 'brobygninger', l: 'Brobygninger',       i: 'match'    },\n"
+"              { k: 'brobyggere',   l: 'Brobyggere',         i: 'users'    },\n"
+"              { k: 'mennesker',    l: 'Mennesker',          i: 'heart'    },\n"
+"              { k: 'sroi',         l: 'SROI & Effekt',      i: 'sparkle'  },\n"
+"              ...(isAdmin ? [{ k: 'rapport', l: 'Rapport & eksport', i: 'note' }] : []),\n"
+"            ].map(n => ("
+)
+
+# ── 4. Add 'kalender' to title mapping ───────────────────────────────────────
+patch('Add kalender to title map',
+"                   sroi: 'SROI & Effekt', rapport: 'Rapport & eksport' }[section]}",
+"                   kalender: 'Kalender', sroi: 'SROI & Effekt', rapport: 'Rapport & eksport' }[section]}"
+)
+
+# ── 5. Add kalender section render ───────────────────────────────────────────
+patch('Add kalender section render',
+"          {section === 'sroi' && <DesktopSROI/>}",
+"          {section === 'kalender' && <DesktopKalender/>}\n"
+"          {section === 'sroi' && <DesktopSROI/>}"
+)
+
+# ── 6. Add .ics download button to AppointmentDetailScreen ───────────────────
+ics_button = (
+"\n"
+"      {/* Kalender-download */}\n"
+"      {(() => {\n"
+"        const downloadICS = () => {\n"
+"          const dt = appt.date.replace(/-/g, '');\n"
+"          const ts = appt.start.replace(':', '') + '00';\n"
+"          const te = appt.end.replace(':', '') + '00';\n"
+"          const lines = [\n"
+"            'BEGIN:VCALENDAR',\n"
+"            'VERSION:2.0',\n"
+"            'PRODID:-//SoS Brobygger Portal//DA',\n"
+"            'BEGIN:VEVENT',\n"
+"            'DTSTART:' + dt + 'T' + ts,\n"
+"            'DTEND:' + dt + 'T' + te,\n"
+"            'SUMMARY:Brobygning \\u2013 ' + (menneske ? menneske.firstName : '') + ' (' + appt.activity + ')',\n"
+"            'DESCRIPTION:' + appt.activity,\n"
+"            'LOCATION:' + appt.location,\n"
+"            'STATUS:' + (appt.status === 'confirmed' ? 'CONFIRMED' : 'TENTATIVE'),\n"
+"            'END:VEVENT',\n"
+"            'END:VCALENDAR',\n"
+"          ];\n"
+"          const blob = new Blob([lines.join('\\r\\n')],\n"
+"            { type: 'text/calendar;charset=utf-8' });\n"
+"          const url = URL.createObjectURL(blob);\n"
+"          const a = document.createElement('a');\n"
+"          a.href = url; a.download = 'brobygning-' + appt.date + '.ics'; a.click();\n"
+"          URL.revokeObjectURL(url);\n"
+"        };\n"
+"        return (\n"
+"          <div style={{ padding: '0 20px 4px' }}>\n"
+"            <button onClick={downloadICS} style={{\n"
+"              width: '100%', padding: '13px 0',\n"
+"              background: '#fff', border: `1px solid ${SS.line}`,\n"
+"              borderRadius: SS.r.md, cursor: 'pointer',\n"
+"              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,\n"
+"              fontFamily: SS.sans, fontSize: 14, fontWeight: 600, color: SS.ink,\n"
+"            }}>\n"
+"              <Icon name=\"calendar\" size={16} color={SS.sky} weight={2}/>\n"
+"              Gem i kalender (.ics)\n"
+"            </button>\n"
+"            <div style={{ fontFamily: SS.sans, fontSize: 11, color: SS.inkMuted,\n"
+"              textAlign: 'center', marginTop: 6 }}>\n"
+"              \u00c5bner i Outlook, Apple Kalender og Google Kalender\n"
+"            </div>\n"
+"          </div>\n"
+"        );\n"
+"      })()}\n"
+"\n"
+)
+
+patch('Add .ics download to AppointmentDetailScreen',
+"      {/* Actions */}\n"
+"      <div style={{ padding: '0 20px 30px', display: 'flex',\n"
+"        flexDirection: 'column', gap: 10 }}>",
+ics_button +
+"      {/* Actions */}\n"
+"      <div style={{ padding: '0 20px 30px', display: 'flex',\n"
+"        flexDirection: 'column', gap: 10 }}>"
+)
+
+# ── Report ────────────────────────────────────────────────────────────────────
+for label in ok:
+    sys.stdout.buffer.write(f"  OK  {label}\n".encode('utf-8'))
+for label in err:
+    sys.stdout.buffer.write(f"  ERR {label}\n".encode('utf-8'))
+
+sys.stdout.buffer.write(
+    f"\n{len(ok)} ok, {len(err)} fejl\n"
+    f"Fil: {original_len:,} -> {len(html):,} bytes\n".encode('utf-8')
+)
+
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(html)
+sys.stdout.buffer.write(b"Gemt.\n")
