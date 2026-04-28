@@ -8313,10 +8313,22 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
               <SectionHead title="Aftaler i dag"/>
             </div>
             <div style={{ padding: '0 20px 16px' }}>
-              {todayAppts.filter(a => {
-                const m = SoS_MENNESKER[a.menneskeId];
-                return !m || typeFilter === 'alle' || m.type === typeFilter;
-              }).map(a => {
+              {(() => {
+                const appts = todayAppts.filter(a => {
+                  const m = SoS_MENNESKER[a.menneskeId];
+                  return !m || typeFilter === 'alle' || m.type === typeFilter;
+                });
+                if (appts.length === 0) return (
+                  <div style={{ padding: '24px 20px', textAlign: 'center' }}>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 13,
+                      color: SoS.inkMuted, lineHeight: 1.6 }}>
+                      {typeFilter !== 'alle'
+                        ? `Ingen aftaler i dag for ${SoS_TYPER[typeFilter]?.label?.toLowerCase()}brobygninger`
+                        : 'Ingen aftaler planlagt i dag'}
+                    </div>
+                  </div>
+                );
+                return appts.map(a => {
                 const menneske = SoS_MENNESKER[a.menneskeId];
                 const type = SoS_TYPER[menneske.type];
                 return (
@@ -8342,7 +8354,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
                     </div>
                   </div>
                 );
-              })}
+              });})()}
             </div>
 
             {/* Match-frist advarsel */}
@@ -8435,7 +8447,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
                 cursor: 'pointer', padding: 0, marginBottom: 10,
                 fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft,
               }}>
-                <Icon name="chevron-left" size={16} color={SoS.inkSoft}/> Arbejde
+                <Icon name="chevronL" size={16} color={SoS.inkSoft}/> Arbejde
               </button>
               <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 500, color: SoS.ink }}>
                 Brobyggere
@@ -8453,7 +8465,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
                 cursor: 'pointer', padding: 0, marginBottom: 0,
                 fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft,
               }}>
-                <Icon name="chevron-left" size={16} color={SoS.inkSoft}/> Arbejde
+                <Icon name="chevronL" size={16} color={SoS.inkSoft}/> Arbejde
               </button>
             </div>
             <AdminMenneskeListe viewingHq={viewingHq} onOpenMatching={onOpenMatching} typeFilter={typeFilter}/>
@@ -11537,6 +11549,11 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
             color: SoS.ink, letterSpacing: -0.2 }}>
             Registrer menneske
           </div>
+          <button onClick={onClose} style={{
+            marginLeft: 'auto', background: 'none', border: 'none',
+            fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+            color: SoS.inkSoft, cursor: 'pointer', padding: '6px 4px',
+          }}>Annuller</button>
         </div>
         {/* Step bar */}
         <div style={{ display: 'flex', gap: 6 }}>
