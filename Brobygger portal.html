@@ -5133,9 +5133,10 @@ const ComposeMessage = ({ role, ownHq, onClose }) => {
 };
 
 // \u2500\u2500 Thread list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose }) => {
+const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate }) => {
   const [tab, setTab] = React.useState('notifikationer');
   const [dismissed, setDismissed] = React.useState(new Set());
+  const [accepted,  setAccepted]  = React.useState(new Set());
   const [expanded, setExpanded]   = React.useState(null); // notif-id der vises udvidet
   const NOTIF_ICON  = { match: 'match', reminder: 'clock', message: 'bell' };
   const NOTIF_COLOR = { match: SoS.orange, reminder: SoS.sage, message: SoS.sky };
@@ -5220,12 +5221,15 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose }) => {
             ? (window.SoS_APPOINTMENTS_BUSY || []).find(a => a.status === 'confirmed') || null
             : null;
           return (
-          <div key={n.id} style={{
-            marginBottom: 8, background: isUnread ? '#fff' : 'transparent',
-            borderRadius: SoS.r.lg, boxShadow: isUnread ? SoS.shadow.sm : 'none',
-            border: `1px solid ${isUnread ? SoS.lineSoft : 'transparent'}`,
-            overflow: 'hidden',
-          }}>
+          <div key={n.id}
+            onClick={n.type === 'reminder' && onNavigate ? () => onNavigate('kalender') : undefined}
+            style={{
+              marginBottom: 8, background: isUnread ? '#fff' : 'transparent',
+              borderRadius: SoS.r.lg, boxShadow: isUnread ? SoS.shadow.sm : 'none',
+              border: `1px solid ${isUnread ? SoS.lineSoft : 'transparent'}`,
+              overflow: 'hidden',
+              cursor: n.type === 'reminder' ? 'pointer' : 'default',
+            }}>
             <div style={{ display: 'flex', gap: 12, padding: '14px 16px', alignItems: 'flex-start' }}>
               <div style={{ width: 40, height: 40, borderRadius: 20, flexShrink: 0,
                 background: (NOTIF_COLOR[n.type] || SoS.orange) + '18',
@@ -5265,7 +5269,11 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose }) => {
                 )}
                 {isDismissed && (
                   <div style={{ fontFamily: SoS.sans, fontSize: 11,
-                    color: SoS.inkMuted, marginTop: 6 }}>Afvist</div>
+                    color: accepted.has(n.id) ? SoS.sage : SoS.inkMuted,
+                    fontWeight: accepted.has(n.id) ? 600 : 400,
+                    marginTop: 6 }}>
+                    {accepted.has(n.id) ? 'Accepteret ✓' : 'Afvist'}
+                  </div>
                 )}
               </div>
               {isUnread && <div style={{ width: 8, height: 8, borderRadius: 4,
@@ -5295,7 +5303,7 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose }) => {
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button
-                    onClick={() => { setExpanded(null); setDismissed(prev => new Set([...prev, n.id])); }}
+                    onClick={() => { setExpanded(null); setAccepted(prev => new Set([...prev, n.id])); setDismissed(prev => new Set([...prev, n.id])); }}
                     style={{ flex: 1, padding: '9px 0', background: SoS.sage,
                       color: '#fff', border: 'none', borderRadius: SoS.r.sm,
                       fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -11444,6 +11452,7 @@ const AppWithTweaks = () => {
                   onCompose={() => setMsgCompose(true)}
                   role={activeRole}
                   ownHq={viewingHq}
+                  onNavigate={navigate}
                 />
           )}
           {screen === "profil" && <ProfileScreen user={user} onSwitchRole={() => setTweak("role", "raadgiver")} />}
