@@ -11723,7 +11723,7 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
               { key: 'firstName', label: 'Fornavn',   placeholder: 'f.eks. Erik',  required: true },
               { key: 'lastName',  label: 'Efternavn', placeholder: 'Valgfrit' },
               { key: 'age',       label: 'Alder',     placeholder: 'f.eks. 72',    required: true, type: 'number' },
-              { key: 'phone',     label: 'Telefon',   placeholder: 'f.eks. +45 28 34 56 78', required: true },
+              { key: 'phone',     label: 'Telefon',   type: 'tel', placeholder: '12 34 56 78', required: true },
             ].map(field => (
               <div key={field.key} style={{ marginBottom: 14 }}>
                 <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
@@ -11733,6 +11733,7 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
                 </div>
                 <input
                   type={field.type || 'text'}
+                  inputMode={field.key === 'phone' ? 'tel' : 'text'}
                   placeholder={field.placeholder}
                   value={form[field.key]}
                   onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
@@ -11820,6 +11821,33 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
               })}
             </div>}
 
+            {/* GDPR-følsomme felter — Art. 9 */}
+            <div style={{
+              border: `1.5px solid ${SoS.orange}30`,
+              borderRadius: SoS.r.lg,
+              overflow: 'hidden',
+              marginBottom: 20,
+            }}>
+              {/* GDPR-header */}
+              <div style={{
+                background: `${SoS.orange}12`,
+                borderBottom: `1px solid ${SoS.orange}25`,
+                padding: '10px 14px',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <Icon name="shield" size={14} color={SoS.orange}/>
+                <div>
+                  <span style={{ fontFamily: SoS.sans, fontSize: 12,
+                    fontWeight: 700, color: SoS.orange }}>
+                    Følsomme oplysninger — GDPR art. 9
+                  </span>
+                  <span style={{ fontFamily: SoS.sans, fontSize: 11,
+                    color: SoS.inkSoft, marginLeft: 8 }}>
+                    Frivilligt · kun til fagligt brug
+                  </span>
+                </div>
+              </div>
+              <div style={{ padding: '14px 14px 4px' }}>
             {/* Sundhedsudfordring — intern klassifikation */}
             <div style={{
               background: SoS.creamDeep, borderRadius: SoS.r.md,
@@ -11999,6 +12027,9 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
                 />
               </div>
             )}
+
+              </div>
+            </div>
 
             {/* Kontekstnote */}
             <FieldLabel note="valgfrit">Kontekstnote</FieldLabel>
