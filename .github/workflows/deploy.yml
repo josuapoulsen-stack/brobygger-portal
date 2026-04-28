@@ -1,0 +1,75 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# deploy.yml — Brobygger Portal CI/CD
+#
+# Kører ved hvert push til master:
+#   1. Bygger React-appen med Vite
+#   2. Deployer til Azure Static Web Apps
+#
+# OPSÆTNING (én gang, når Azure-adgang er klar):
+#   1. Kør Bicep-deployment (se infra/main.bicep)
+#   2. Hent deployment-token fra Azure Portal:
+#      Static Web Apps → din app → Manage deployment token
+#   3. Gem token som GitHub Secret:
+#      GitHub repo → Settings → Secrets → New secret
+#      Navn: AZURE_STATIC_WEB_APPS_API_TOKEN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Deploy til Azure
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, closed]
+
+jobs:
+  # ── Build og deploy frontend ──────────────────────────────────────────────
+  build_and_deploy:
+    name: Build + Deploy
+    runs-on: ubuntu-latest
+    # Kun deploy på push til master (ikke ved PR-luk)
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Installer afhængigheder
+        run: npm ci
+
+      - name: Byg med Vite
+        run: npm run build
+        env:
+          # Disse injiceres i Vite-buildet som import.meta.env.VITE_*
+          VITE_CLIENT_ID:   ${{ secrets.AZURE_CLIENT_ID }}
+          VITE_TENANT_ID:   ${{ secrets.AZURE_TENANT_ID }}
+          VITE_API_URL:     ${{ secrets.API_URL }}
+          VITE_ENVIRONMENT: production
+
+      - name: Deploy til Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token:                      ${{ secrets.GITHUB_TOKEN }}
+          action:                          upload
+          app_location:                    '/'
+          output_location:                 'dist'
+          skip_app_build:                  true  # Vi har allerede bygget ovenfor
+
+  # ── Ryd PR-preview-miljø ved PR-luk ──────────────────────────────────────
+  close_pull_request:
+    name: Luk PR-preview
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    steps:
+      - uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action:                          close

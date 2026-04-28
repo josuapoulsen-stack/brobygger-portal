@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "dev"
+    },
+    "location": {
+      "value": "northeurope"
+    },
+    "appName": {
+      "value": "brobygger"
+    },
+    "dbAdminUsername": {
+      "value": "bbadmin"
+    },
+    "dbAdminPassword": {
+      "value": "TODO_CHANGE_THIS_PASSWORD_Min12Tegn!"
+    },
+    "githubRepo": {
+      "value": "josuapoulsen-stack/brobygger-portal"
+    },
+    "githubBranch": {
+      "value": "master"
+    }
+  }
+}
