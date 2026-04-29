@@ -83,12 +83,12 @@ Opdateres løbende. Marker med ✅ når done.
 
 | # | Status | Fil | Beskrivelse |
 |---|--------|-----|-------------|
-| 4 | ⬜ | `src/components/shared/TopBar.jsx` | Bruges på alle skærme; mangler i shared-laget |
-| 5 | ⬜ | `src/components/shared/Pill.jsx` | Status-pills brugt overalt (aktiv, ny, afventer, ...) |
-| 6 | ⬜ | `src/components/shared/Icon.jsx` | Fælles ikon-komponent (erstatter inline SVG i alle filer) |
-| 7 | ⬜ | `src/components/brobygger/HomeScreen.jsx` | Rigtig migration fra prototype (FASE 1, ingen backend) |
-| 8 | ⬜ | `backend/tests/test_matching.py` | Unit-test af scoring-algoritme (ingen database) |
-| 9 | ⬜ | `src/hooks/useMatching.js` | React hook der wrapper matching-API + loading/error |
+| 4 | ✅ | `src/components/shared/TopBar.jsx` | Bruges på alle skærme; mangler i shared-laget |
+| 5 | ✅ | `src/components/shared/Pill.jsx` | Status-pills brugt overalt (aktiv, ny, afventer, ...) |
+| 6 | ✅ | `src/components/shared/Icon.jsx` | Fælles ikon-komponent (erstatter inline SVG i alle filer) |
+| 7 | ✅ | `src/components/brobygger/HomeScreen.jsx` | Rigtig migration fra prototype (FASE 1, ingen backend) |
+| 8 | ✅ | `backend/tests/test_matching.py` | Unit-test af scoring-algoritme (ingen database) |
+| 9 | ✅ | `src/hooks/useMatching.js` | React hook der wrapper matching-API + loading/error |
 
 ## 🟡 Nyttigt — kan vente
 
