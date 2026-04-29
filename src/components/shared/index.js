@@ -12,3 +12,4 @@ export { EmptyState }              from './EmptyState';
 export { Icon, SSLogo }            from './Icon';
 export { TopBar, SectionHead }     from './TopBar';
 export { Pill }                    from './Pill';
+export { ErrorBoundary }           from './ErrorBoundary';
