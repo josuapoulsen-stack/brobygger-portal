@@ -99,8 +99,8 @@ Opdateres løbende. Marker med ✅ når done.
 | 12 | ✅ | `backend/alembic/versions/001–005` | Konverteret til rigtige Alembic Python-migrations |
 | 13 | ✅ | `src/components/brobygger/KalenderScreen.jsx` | Fuld migration: månedsgrid, dag-valg, aftaler/vagter |
 | 14 | ✅ | `src/components/brobygger/ProfileScreen.jsx` | Fuld migration: profil, notif-toggles, push, privatliv |
-| 15 | ⬜ | `src/components/admin/MatchingFlow.jsx` | Rigtig migration fra prototype (manuel matching) |
-| 16 | ⬜ | `src/components/admin/IntakeFlow.jsx` | Rigtig migration fra prototype (ny-menneske-flow) |
+| 15 | ✅ | `src/components/admin/MatchingFlow.jsx` | Rigtig migration fra prototype (manuel matching) |
+| 16 | ✅ | `src/components/admin/IntakeFlow.jsx` | Rigtig migration fra prototype (ny-menneske-flow) |
 | 17 | ✅ | `backend/middleware/logging.py` | Request-logging + correlation ID |
 | 18 | ✅ | `src/components/shared/ErrorBoundary.jsx` | React error boundary til graceful fejlhåndtering |
 
