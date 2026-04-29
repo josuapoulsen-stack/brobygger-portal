@@ -17,11 +17,20 @@
 name: Deploy til Azure
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
-    types: [opened, synchronize, reopened, closed]
+  # ── FASE 1 (pre-Azure): kun manuel kørsel — ingen spam ved hvert commit ────
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Årsag til manuel deploy'
+        required: false
+        default: 'Test-deploy'
+
+  # ── FASE 2 (efter Azure-opsætning): genaktivér disse linjer ───────────────
+  # push:
+  #   branches: [master]
+  # pull_request:
+  #   branches: [master]
+  #   types: [opened, synchronize, reopened, closed]
 
 jobs:
   # ── Build frontend ────────────────────────────────────────────────────────
