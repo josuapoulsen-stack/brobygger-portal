@@ -94,15 +94,15 @@ Opdateres løbende. Marker med ✅ når done.
 
 | # | Status | Fil | Beskrivelse |
 |---|--------|-----|-------------|
-| 10 | ⬜ | `src/components/admin/AdminApp.jsx` | Admin/rådgiver shell parallel til BrobyggerApp |
-| 11 | ⬜ | `Makefile` | `make dev`, `make migrate`, `make seed`, `make test` |
-| 12 | ⬜ | `backend/alembic/versions/` | Konvertér SQL-migrationer til rigtige Alembic-filer |
-| 13 | ⬜ | `src/components/brobygger/KalenderScreen.jsx` | Rigtig migration fra prototype |
-| 14 | ⬜ | `src/components/brobygger/ProfileScreen.jsx` | Rigtig migration fra prototype |
+| 10 | ✅ | `src/components/admin/AdminApp.jsx` | Admin/rådgiver shell parallel til BrobyggerApp |
+| 11 | ✅ | `Makefile` | `make dev`, `make migrate`, `make seed`, `make test` |
+| 12 | ✅ | `backend/alembic/versions/001–005` | Konverteret til rigtige Alembic Python-migrations |
+| 13 | ✅ | `src/components/brobygger/KalenderScreen.jsx` | Fuld migration: månedsgrid, dag-valg, aftaler/vagter |
+| 14 | ✅ | `src/components/brobygger/ProfileScreen.jsx` | Fuld migration: profil, notif-toggles, push, privatliv |
 | 15 | ⬜ | `src/components/admin/MatchingFlow.jsx` | Rigtig migration fra prototype (manuel matching) |
 | 16 | ⬜ | `src/components/admin/IntakeFlow.jsx` | Rigtig migration fra prototype (ny-menneske-flow) |
-| 17 | ⬜ | `backend/middleware/logging.py` | Request-logging + correlation ID |
-| 18 | ⬜ | `src/components/shared/ErrorBoundary.jsx` | React error boundary til graceful fejlhåndtering |
+| 17 | ✅ | `backend/middleware/logging.py` | Request-logging + correlation ID |
+| 18 | ✅ | `src/components/shared/ErrorBoundary.jsx` | React error boundary til graceful fejlhåndtering |
 
 ---
 
