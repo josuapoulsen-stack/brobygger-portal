@@ -3251,7 +3251,7 @@ const ProfileScreen = ({ user, onSwitchRole }) => {
   // ── Personlige oplysninger-underside (redigerbar)
   if (subPage === 'personlig') {
     const inpSt = {
-      width: '100%', padding: '11px 13px', border: ,
+      width: '100%', padding: '11px 13px', border: `1.5px solid ${pEdit ? SoS.orange : SoS.lineSoft}`,
       borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 14, color: SoS.ink,
       background: pEdit ? '#fff' : SoS.creamDeep, outline: 'none', boxSizing: 'border-box',
       transition: 'border-color 0.2s, background 0.2s',
@@ -3261,10 +3261,10 @@ const ProfileScreen = ({ user, onSwitchRole }) => {
         <BackHeader title="Personlige oplysninger"/>
         <div style={{ padding: '16px 20px 20px' }}>
           <div style={{ background: '#fff', borderRadius: SoS.r.lg,
-            border: , overflow: 'hidden', marginBottom: 16 }}>
+            border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 16 }}>
             {[{ label: 'Rolle', value: 'Brobygger' }, { label: 'Hovedsæde', value: user.hoofdsaede || 'Aarhus' }, { label: 'Startdato', value: 'Oktober 2024' }].map((row, i, arr) => (
               <div key={i} style={{ padding: '13px 16px',
-                borderBottom: i < arr.length-1 ?  : 'none',
+                borderBottom: i < arr.length-1 ? `1px solid ${SoS.lineSoft}` : 'none',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft }}>{row.label}</span>
                 <span style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 500, color: SoS.ink }}>{row.value}</span>
