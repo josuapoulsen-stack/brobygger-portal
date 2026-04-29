@@ -1,0 +1,124 @@
+version: "3.9"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# docker-compose.yml — SoS Brobygger Portal, lokal udvikling
+#
+# Start hele stacken med:
+#   docker compose up
+#
+# Første gang (opret DB-tabeller + seed-data):
+#   docker compose up -d db
+#   docker compose run --rm migrate
+#   docker compose run --rm seed
+#   docker compose up
+#
+# Services:
+#   db       → PostgreSQL 16 på localhost:5432
+#   api      → FastAPI på localhost:8000  (http://localhost:8000/docs)
+#   frontend → Vite dev-server på localhost:5173
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: sos-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     bbadmin
+      POSTGRES_PASSWORD: devpassword123
+      POSTGRES_DB:       brobygger
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Kør extensions ved første opstart
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bbadmin -d brobygger"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Alembic migrationer (kør én gang) ────────────────────────────────────────
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sos-migrate
+    command: alembic upgrade head
+    environment:
+      DATABASE_URL: postgresql://bbadmin:devpassword123@db:5432/brobygger
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: ["tools"]
+
+  # ── Seed-data ─────────────────────────────────────────────────────────────────
+  seed:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sos-seed
+    command: psql $DATABASE_URL -f /app/backend/seeds/demo_data.sql
+    environment:
+      DATABASE_URL: postgresql://bbadmin:devpassword123@db:5432/brobygger
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: ["tools"]
+
+  # ── FastAPI backend ──────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sos-api
+    restart: unless-stopped
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app          # live-reload: kode-ændringer afspejles straks
+    environment:
+      DATABASE_URL:    postgresql://bbadmin:devpassword123@db:5432/brobygger
+      ENVIRONMENT:     development
+      AZURE_CLIENT_ID: TODO_CLIENT_ID
+      AZURE_TENANT_ID: TODO_TENANT_ID
+      JWT_SECRET:      dev-secret-min-32-tegn-for-lokal-test-kun
+      VAPID_PRIVATE_KEY: ""
+      VAPID_PUBLIC_KEY:  ""
+      SIGNALR_CONNECTION_STRING: ""
+      ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Vite frontend ─────────────────────────────────────────────────────────────
+  frontend:
+    image: node:20-alpine
+    container_name: sos-frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules    # undgå at overskrive container's node_modules
+    environment:
+      VITE_API_URL:          http://localhost:8000
+      VITE_CLIENT_ID:        TODO_CLIENT_ID
+      VITE_TENANT_ID:        TODO_TENANT_ID
+      VITE_ENVIRONMENT:      development
+      VITE_VAPID_PUBLIC_KEY: ""
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
