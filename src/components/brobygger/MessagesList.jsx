@@ -521,7 +521,7 @@ export const MessagesList = ({
         <div style={{ margin: '0 16px 16px', padding: 14, background: SoS.creamDeep, borderRadius: SoS.r.md, display: 'flex', gap: 10, flexShrink: 0 }}>
           <Icon name="lock" size={16} color={SoS.orangeDeep} />
           <div style={{ flex: 1, fontFamily: SoS.sans, fontSize: 11, color: SoS.orangeDeep, lineHeight: 1.5 }}>
-            Al kommunikation til borgere sker via koordinator.
+            Al kommunikation til mennesker sker via koordinator.
           </div>
         </div>
       )}

@@ -33,12 +33,12 @@ const escCsv = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
 const toCsvCases = (records) => {
   const headers = [
-    'borger_id', 'age_range', 'gender', 'municipality',
+    'menneske_id', 'age_range', 'gender', 'municipality',
     'bridging_category', 'bridging_target', 'current_status',
     'situation_og_behov', 'fritekst_antal', 'kontakt_antal',
   ];
   const rows = records.map(r => [
-    r.borger_id,
+    r.menneske_id,
     r.age_range          || '',
     r.gender             || '',
     r.municipality       || '',
@@ -53,11 +53,11 @@ const toCsvCases = (records) => {
 };
 
 const toCsvKontakter = (records) => {
-  const headers = ['borger_id', 'type', 'direction', 'month_year', 'duration', 'fritekst', 'source'];
+  const headers = ['menneske_id', 'type', 'direction', 'month_year', 'duration', 'fritekst', 'source'];
   const rows = [];
   records.forEach(r => {
     (r.contact_log || []).forEach(k => {
-      rows.push([r.borger_id, k.type, k.direction, k.month_year, k.duration, k.fritekst, k.source].map(escCsv).join(','));
+      rows.push([r.menneske_id, k.type, k.direction, k.month_year, k.duration, k.fritekst, k.source].map(escCsv).join(','));
     });
   });
   return [headers.join(','), ...rows].join('\r\n');
@@ -313,7 +313,7 @@ export const ExportPanel = ({ user }) => {
         <Icon name="shield" size={14} color={SoS.orange} />
         <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, lineHeight: 1.55, flex: 1 }}>
           Eksporten indeholder <strong>ingen personhenførbare oplysninger.</strong>{' '}
-          Borgere kan ikke identificeres. Borger-ID er et pseudonymt systemID.
+          Mennesker kan ikke identificeres. Menneske-ID er et pseudonymt systemID.
           Alle eksporter logges med brugernavn, tidspunkt og filter.
         </div>
       </div>

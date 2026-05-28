@@ -390,7 +390,7 @@ export const AnonymExport = {
         const caseKontakter = kontakter.filter(k => k.menneskeId === aftale.menneskeId);
 
         return {
-          borger_id:          aftale.menneskeId,
+          menneske_id:        aftale.menneskeId,
           age_range:          _ageRange(m.age),
           gender:             m.gender      || null,
           municipality:       m.municipality || m.district || null,

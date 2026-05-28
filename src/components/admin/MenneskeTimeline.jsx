@@ -1,7 +1,7 @@
 /**
- * src/components/admin/BorgerTimeline.jsx
+ * src/components/admin/MenneskeTimeline.jsx
  *
- * Kronologisk tidslinje per borger.
+ * Kronologisk tidslinje per menneske.
  * Vertikal midterlinje — hændelser veksler venstre/højre.
  * Klik på hændelse → inline detaljevisning.
  *
@@ -220,7 +220,7 @@ const ItemDetail = ({ item }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // Hoved-komponent
 // ═══════════════════════════════════════════════════════════════════════════════
-export const BorgerTimeline = ({ menneske }) => {
+export const MenneskeTimeline = ({ menneske }) => {
   const [items,      setItems]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [expandedId, setExpandedId] = useState(null);
@@ -408,4 +408,4 @@ export const BorgerTimeline = ({ menneske }) => {
   );
 };
 
-export default BorgerTimeline;
+export default MenneskeTimeline;

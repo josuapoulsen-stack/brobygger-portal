@@ -17,7 +17,7 @@ import { Avatar, Icon, Pill } from '../shared';
 import { SoS } from '../../styles/tokens';
 import { TYPER, TYPER_LIST } from '../../constants/typer';
 import { BrobygningNotater, Aftaler } from '../../api';
-import { BorgerTimeline } from './BorgerTimeline';
+import { MenneskeTimeline } from './MenneskeTimeline';
 
 // ─── Status-farver ────────────────────────────────────────────────────────────
 const STATUS_FARVER = {
@@ -324,7 +324,7 @@ const MenneskeDetailPanel = ({ m, onClose, onMatch }) => {
 
         {/* ══ TAB 2: TIDSLINJE ══════════════════════════════════════════════ */}
         {activeTab === 2 && (
-          <BorgerTimeline menneske={m} />
+          <MenneskeTimeline menneske={m} />
         )}
 
         {/* Luft i bunden */}
