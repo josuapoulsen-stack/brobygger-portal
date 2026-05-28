@@ -8087,14 +8087,15 @@ const TelefonSoegWidget = ({ onOpenMenneske }) => {
   const SoS_T = window.SoS_TYPER || {};
 
   return (
-    <div style={{ position: 'absolute', bottom: 96, right: 18, zIndex: 60 }}>
+    <div style={{ position: 'fixed', bottom: 96, right: 18, zIndex: 60 }}>
       {/* Søgekort */}
       {open && (
         <div style={{
-          position: 'absolute', bottom: 56, right: 0, width: 290,
+          position: 'fixed', bottom: 152, right: 18, width: 290,
           background: '#fff', borderRadius: 16,
           boxShadow: '0 8px 32px rgba(0,0,0,0.15)', overflow: 'hidden',
           border: `1px solid ${SoS.lineSoft}`,
+          zIndex: 60,
         }}>
           {/* Header */}
           <div style={{ padding: '11px 14px 9px', borderBottom: `1px solid ${SoS.lineSoft}`, background: SoS.creamDeep }}>
