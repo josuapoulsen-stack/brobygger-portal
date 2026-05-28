@@ -355,11 +355,20 @@ const MenneskeDetailPanel = ({ m, onClose, onMatch }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // Hoved-komponent
 // ═══════════════════════════════════════════════════════════════════════════════
-export const DesktopMennesker = ({ mennesker = {}, onIntake, onMatch }) => {
+export const DesktopMennesker = ({ mennesker = {}, onIntake, onMatch, initialSelectedId }) => {
   const [search,       setSearch]       = useState('');
   const [typeFilter,   setTypeFilter]   = useState('alle');
   const [statusFilter, setStatusFilter] = useState('alle');
-  const [selected,     setSelected]     = useState(null);
+  const [selected,     setSelected]     = useState(
+    initialSelectedId ? (mennesker[initialSelectedId] ?? null) : null
+  );
+
+  // Åbn person udefra (fx fra TelefonSøg) — opdater selected hvis ID skifter
+  useEffect(() => {
+    if (!initialSelectedId) return;
+    const m = mennesker[initialSelectedId];
+    if (m) setSelected(m);
+  }, [initialSelectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const alle = Object.values(mennesker);
 

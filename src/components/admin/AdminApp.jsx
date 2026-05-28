@@ -18,8 +18,10 @@ import { SoS }         from '../../styles/tokens';
 import { Icon }        from '../shared/Icon';
 import { hqColor }     from '../../styles/tokens';
 import { TYPER }       from '../../constants/typer';
-import { Notifikationer } from '../../api/index';
-import { ExportPanel }    from './ExportPanel';
+import { Notifikationer, Mennesker } from '../../api/index';
+import { ExportPanel }       from './ExportPanel';
+import { DesktopMennesker }  from './DesktopMennesker';
+import { TelefonSøg }        from './TelefonSøg';
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 const TABS = [
@@ -36,19 +38,40 @@ const TABS = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function AdminApp({ user, viewingHq, onLogout, onSettings }) {
-  const [tab,    setTab]    = useState('oversigt');
-  const [unread, setUnread] = useState(0);
+  const [tab,              setTab]              = useState('oversigt');
+  const [unread,           setUnread]           = useState(0);
+  const [menneskeListe,    setMenneskeListe]     = useState({});
+  const [openMenneskeId,   setOpenMenneskeId]   = useState(null);
 
   const isTemporary = viewingHq && user?.hq && viewingHq !== user.hq;
   const isAdmin     = user?.isAdmin ?? false;
 
+  // Hent notifikationer ved tab-skift
   useEffect(() => {
     Notifikationer.list()
       .then(data => setUnread((data || []).filter(n => !n.laest).length))
       .catch(() => {});
   }, [tab]);
 
+  // Hent menneskeoversigt (til TelefonSøg + DesktopMennesker)
+  useEffect(() => {
+    Mennesker.getAll()
+      .then(liste => {
+        const som_obj = Array.isArray(liste)
+          ? Object.fromEntries(liste.map(m => [m.id, m]))
+          : (liste || {});
+        setMenneskeListe(som_obj);
+      })
+      .catch(() => {});
+  }, [tab]); // genindlæs ved tab-skift så nye oprettelser vises
+
   const navigate = useCallback((t) => setTab(t), []);
+
+  // Åbn specifikt menneske fra TelefonSøg
+  const handleOpenMenneske = useCallback((id) => {
+    setOpenMenneskeId(id);
+    setTab('mennesker');
+  }, []);
 
   return (
     <div style={{
@@ -119,6 +142,15 @@ export function AdminApp({ user, viewingHq, onLogout, onSettings }) {
           <div style={{ padding: '20px 20px 24px' }}>
             <ExportPanel user={user} />
           </div>
+        ) : tab === 'mennesker' ? (
+          <div style={{ padding: '20px 20px 24px' }}>
+            <DesktopMennesker
+              mennesker={menneskeListe}
+              onIntake={() => {/* TODO: åbn IntakeFlow */}}
+              onMatch={() => {}}
+              initialSelectedId={openMenneskeId}
+            />
+          </div>
         ) : (
           <AdminPlaceholder
             tab={tab}
@@ -129,6 +161,12 @@ export function AdminApp({ user, viewingHq, onLogout, onSettings }) {
           />
         )}
       </div>
+
+      {/* Flydende telefon-søg (kun rådgiver/admin-tabs) */}
+      <TelefonSøg
+        mennesker={menneskeListe}
+        onOpenProfil={handleOpenMenneske}
+      />
 
       {/* TabBar */}
       <AdminTabBar active={tab} onChange={navigate} />
