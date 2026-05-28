@@ -7216,10 +7216,160 @@ const AddKontaktFlow = ({ menneskeId, onClose, onSaved }) => {
   );
 };
 
+// ── Inline tidslinje (vekselnde venstre/højre layout) ────────────────────────
+const MenneskeTimelineInline = ({ m }) => {
+  const [expanded, setExpanded] = React.useState(null);
+
+  const MND = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  const fmtDato = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return String(iso);
+    return `${d.getDate()}. ${MND[d.getMonth()]} ${d.getFullYear()}`;
+  };
+
+  const K_FARVER = {
+    'telefonisk':      '#6B8CAE',
+    'mode-brobygger':  '#7FA089',
+    'folge-primaer':   SoS.orange,
+    'folge-sekundaer': '#D64545',
+    'andet':           '#9E9E9E',
+    'notat':           '#5A9E78',
+    'registr':         '#78909C',
+  };
+  const K_LABELS = {
+    'telefonisk':      'Telefonisk',
+    'mode-brobygger':  'Møde med brobygger',
+    'folge-primaer':   'Følgeskab – primær',
+    'folge-sekundaer': 'Følgeskab – sekundær',
+    'andet':           'Kontakt',
+    'notat':           'Notat',
+    'registr':         'Registrering',
+  };
+  const S_FARVER = {
+    gennemfoert: { bg: '#E8F5E9', color: '#388E3C', label: 'Gennemført' },
+    aflyst:      { bg: '#FFF3E0', color: '#E87A3E', label: 'Aflyst'     },
+    udeblev:     { bg: '#FCE4EC', color: '#C62828', label: 'Udeblev'    },
+  };
+
+  // Byg items
+  const items = React.useMemo(() => {
+    const list = [];
+    if (m.startedAt) {
+      list.push({ id: 'reg', type: 'registr', dato: m.startedAt, titel: 'Registreret i systemet', detalje: { kilde: m.kilde, hq: m.hq } });
+    }
+    (window.SoS_KONTAKTER || [])
+      .filter(k => k.menneskeId === m.id)
+      .forEach(k => {
+        const meta = (KONTAKT_TYPE_META || {})[k.type] || {};
+        list.push({ id: k.id, type: k.type, dato: k.dato, titel: meta.label || k.type, status: k.status, note: k.note, detalje: { type: meta.label || k.type, status: k.status, note: k.note, dato: k.dato } });
+      });
+    (window.SoS_BROBYG_NOTATER || [])
+      .filter(n => n.menneskeId === m.id)
+      .forEach(n => {
+        const approxDato = n.aar ? new Date(n.aar, (n.maaned || 1) - 1, 15).toISOString() : (n.createdAt || '');
+        list.push({ id: 'n-' + n.id, type: 'notat', dato: approxDato, titel: 'Notat fra brobygger', detalje: { fritekst: n.fritekst, initialer: n.initialer } });
+      });
+    return list.sort((a, b) => new Date(b.dato) - new Date(a.dato));
+  }, [m.id]);
+
+  if (items.length === 0) return (
+    <div style={{ padding: '32px 0', textAlign: 'center', fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted, lineHeight: 1.6 }}>
+      Ingen aktivitet registreret endnu.
+    </div>
+  );
+
+  return (
+    <div style={{ position: 'relative', padding: '8px 0 24px' }}>
+      {/* Center-linje */}
+      <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: '#1a1a1a', transform: 'translateX(-50%)', zIndex: 0 }} />
+
+      {items.map((item, idx) => {
+        const isLeft   = idx % 2 === 0;
+        const color    = K_FARVER[item.type] || '#9E9E9E';
+        const label    = K_LABELS[item.type] || item.titel;
+        const dato     = fmtDato(item.dato);
+        const sf       = S_FARVER[item.status] || null;
+        const isExp    = expanded === item.id;
+        const hasD     = !!(item.detalje && Object.values(item.detalje).some(Boolean));
+        const d        = item.detalje || {};
+
+        return (
+          React.createElement(React.Fragment, { key: item.id },
+            React.createElement('div', {
+              style: { display: 'flex', alignItems: 'flex-start', marginBottom: isExp ? 0 : 22, position: 'relative', zIndex: 1 }
+            },
+              // Venstre side
+              React.createElement('div', { style: { width: '44%', paddingRight: 16, textAlign: 'right' } },
+                isLeft
+                  ? React.createElement('button', {
+                      onClick: () => hasD && setExpanded(isExp ? null : item.id),
+                      style: { background: 'none', border: 'none', cursor: hasD ? 'pointer' : 'default', textAlign: 'right', padding: 0, width: '100%' }
+                    },
+                      React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink, lineHeight: 1.4 } }, item.titel),
+                      sf && React.createElement('div', { style: { marginTop: 2 } },
+                        React.createElement('span', { style: { fontFamily: SoS.sans, fontSize: 10, fontWeight: 700, background: sf.bg, color: sf.color, borderRadius: 99, padding: '1px 7px' } }, sf.label)
+                      ),
+                      hasD && React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 11, color, marginTop: 2 } }, isExp ? 'Skjul ↑' : 'Se detaljer ↓')
+                    )
+                  : React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, paddingTop: 2 } }, dato)
+              ),
+              // Center markør
+              React.createElement('div', { style: { width: '12%', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 2, flexShrink: 0 } },
+                React.createElement('div', { style: { width: 10, height: 10, flexShrink: 0, background: isExp ? color : '#fff', border: `2.5px solid ${color}`, transform: 'rotate(45deg)', marginTop: 3, transition: 'all 0.15s', boxShadow: isExp ? `0 0 0 3px ${color}25` : 'none' } })
+              ),
+              // Højre side
+              React.createElement('div', { style: { width: '44%', paddingLeft: 16 } },
+                isLeft
+                  ? React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, paddingTop: 2 } }, dato)
+                  : React.createElement('button', {
+                      onClick: () => hasD && setExpanded(isExp ? null : item.id),
+                      style: { background: 'none', border: 'none', cursor: hasD ? 'pointer' : 'default', textAlign: 'left', padding: 0, width: '100%' }
+                    },
+                      React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink, lineHeight: 1.4 } }, item.titel),
+                      sf && React.createElement('div', { style: { marginTop: 2 } },
+                        React.createElement('span', { style: { fontFamily: SoS.sans, fontSize: 10, fontWeight: 700, background: sf.bg, color: sf.color, borderRadius: 99, padding: '1px 7px' } }, sf.label)
+                      ),
+                      hasD && React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 11, color, marginTop: 2 } }, isExp ? 'Skjul ↑' : 'Se detaljer ↓')
+                    )
+              )
+            ),
+            // Ekspanderet detalje
+            isExp && React.createElement('div', { style: { marginBottom: 22, position: 'relative', zIndex: 1 } },
+              React.createElement('div', {
+                style: { background: '#fff', borderRadius: 10, border: `1px solid ${SoS.lineSoft}`, padding: '10px 14px' }
+              },
+                item.type === 'registr' && React.createElement(React.Fragment, null,
+                  d.kilde && React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft } }, 'Kilde: ', React.createElement('span', { style: { color: SoS.ink, fontWeight: 500 } }, d.kilde)),
+                  d.hq    && React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginTop: 4 } }, 'HQ: ',    React.createElement('span', { style: { color: SoS.ink, fontWeight: 500 } }, d.hq))
+                ),
+                item.type === 'notat' && React.createElement(React.Fragment, null,
+                  d.fritekst && React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: d.initialer ? 8 : 0 } }, d.fritekst),
+                  d.initialer && React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted } }, d.initialer)
+                ),
+                !['registr','notat'].includes(item.type) && React.createElement(React.Fragment, null,
+                  d.type   && React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft } }, 'Type: ', React.createElement('span', { style: { color: SoS.ink, fontWeight: 500 } }, d.type)),
+                  d.note   && React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, lineHeight: 1.55, marginTop: 6, whiteSpace: 'pre-wrap' } }, d.note),
+                  !d.note  && React.createElement('div', { style: { fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted, fontStyle: 'italic' } }, 'Ingen note')
+                )
+              )
+            )
+          )
+        );
+      })}
+      {/* Bund-markør */}
+      <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', zIndex: 1 }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1a1a1a' }} />
+      </div>
+    </div>
+  );
+};
+
 const MenneskeDetailPanel = ({ menneske: m, onClose }) => {
   const type = SoS_TYPER[m.type];
   const [addOpen, setAddOpen]       = React.useState(false);
   const [refreshKey, setRefreshKey] = React.useState(0);
+  const [activeTab, setActiveTab]   = React.useState(0);
   const stats       = React.useMemo(() => calcMenneskeStats(m.id), [m.id, refreshKey]);
   const niveauMeta  = INDSATS_META[stats.indsatsniveau];
   const recentKontakter = [...stats.alle]
@@ -7299,6 +7449,31 @@ const MenneskeDetailPanel = ({ menneske: m, onClose }) => {
         ))}
       </div>
 
+      {/* ── Tab-bar: Profil / Tidslinje ──────────────────────────────────── */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <div style={{ display: 'flex', gap: 2, background: SoS.creamDeep, borderRadius: 10, padding: 3 }}>
+          {['Profil', 'Tidslinje'].map((tab, i) => (
+            <button key={tab} onClick={() => setActiveTab(i)} style={{
+              flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
+              fontFamily: SoS.sans, fontSize: 13, fontWeight: activeTab === i ? 600 : 400,
+              background: activeTab === i ? '#fff' : 'transparent',
+              color: activeTab === i ? SoS.ink : SoS.inkSoft,
+              boxShadow: activeTab === i ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              transition: 'all 0.15s',
+            }}>{tab}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── TIDSLINJE-tab ──────────────────────────────────────────────────── */}
+      {activeTab === 1 && (
+        <div style={{ padding: '16px 16px 24px' }}>
+          <MenneskeTimelineInline m={m} />
+        </div>
+      )}
+
+      {/* ── PROFIL-tab ─────────────────────────────────────────────────────── */}
+      {activeTab === 0 && (
       <div style={{ padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
         {/* Behov */}
@@ -7441,12 +7616,23 @@ const MenneskeDetailPanel = ({ menneske: m, onClose }) => {
 
         <Button full onClick={onClose} variant="secondary">Luk</Button>
       </div>
+      )}
     </div>
   );
 };
 
 const AdminMenneskerScreen = ({ onOpenMatching }) => {
   const [selected, setSelected] = React.useState(null);
+
+  // Åbn direkte fra TelefonSøg (window._openMenneskeId sættes af widgetten)
+  React.useEffect(() => {
+    if (window._openMenneskeId) {
+      const m = (window.SoS_MENNESKER || {})[window._openMenneskeId];
+      if (m) setSelected(m);
+      window._openMenneskeId = null;
+    }
+  });
+
   return (
   <>
     <div style={{ padding: '16px 20px 8px' }}>
@@ -7873,6 +8059,127 @@ const KontaktLogFlow = ({ onClose, onSave }) => {
   );
 };
 
+// ── Flydende telefon-søg widget ───────────────────────────────────────────────
+const TelefonSoegWidget = ({ onOpenMenneske }) => {
+  const [open,   setOpen]   = React.useState(false);
+  const [query,  setQuery]  = React.useState('');
+  const [match,  setMatch]  = React.useState(null); // null | false | obj
+  const inputRef = React.useRef(null);
+
+  const norm = (s) => (s || '').replace(/\D/g,'').replace(/^45/,'');
+
+  React.useEffect(() => {
+    if (open) { setTimeout(() => inputRef.current?.focus(), 60); }
+    else { setQuery(''); setMatch(null); }
+  }, [open]);
+
+  React.useEffect(() => {
+    const q = norm(query);
+    if (q.length < 2) { setMatch(null); return; }
+    const alle = Object.values(window.SoS_MENNESKER || {});
+    const found = alle.find(m => {
+      const tel = norm(m.mobil || '');
+      return tel.length >= 2 && tel.includes(q);
+    });
+    setMatch(found ?? false);
+  }, [query]);
+
+  const SoS_T = window.SoS_TYPER || {};
+
+  return (
+    <div style={{ position: 'absolute', bottom: 96, right: 18, zIndex: 60 }}>
+      {/* Søgekort */}
+      {open && (
+        <div style={{
+          position: 'absolute', bottom: 56, right: 0, width: 290,
+          background: '#fff', borderRadius: 16,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.15)', overflow: 'hidden',
+          border: `1px solid ${SoS.lineSoft}`,
+        }}>
+          {/* Header */}
+          <div style={{ padding: '11px 14px 9px', borderBottom: `1px solid ${SoS.lineSoft}`, background: SoS.creamDeep }}>
+            <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              Opslag på telefonnummer
+            </div>
+          </div>
+          {/* Input */}
+          <div style={{ padding: '12px 14px 10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: SoS.cream, borderRadius: 999, padding: '9px 14px', border: `1.5px solid ${SoS.line}` }}>
+              <Icon name="phone" size={15} color={SoS.inkMuted} />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Tast nummer…  12 34 56 78"
+                type="tel" inputMode="tel"
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: SoS.sans, fontSize: 15, color: SoS.ink, letterSpacing: 0.5 }}
+              />
+              {query && <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: SoS.inkMuted, fontSize: 18, padding: 0 }}>×</button>}
+            </div>
+          </div>
+          {/* Resultat */}
+          {match === false && (
+            <div style={{ padding: '0 14px 14px' }}>
+              <div style={{ background: SoS.creamDeep, borderRadius: 10, padding: '12px 14px', fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted, textAlign: 'center' }}>
+                Ingen menneske fundet med dette nummer
+              </div>
+            </div>
+          )}
+          {match && match !== false && (() => {
+            const t = SoS_T[match.type] || SoS_T['social'] || { label: match.type, color: SoS.orange, soft: SoS.creamDeep, icon: 'heart' };
+            return (
+              <div style={{ padding: '0 14px 14px' }}>
+                <div style={{ borderRadius: 12, border: `1.5px solid ${SoS.line}`, overflow: 'hidden' }}>
+                  <div style={{ height: 3, background: t.color }} />
+                  <div style={{ padding: '12px 14px 10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 18, background: t.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Icon name={t.icon} size={18} color={t.color} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 15, fontWeight: 700, color: SoS.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {match.firstName} {match.lastName}
+                        </div>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 12, color: t.color, fontWeight: 600 }}>{t.label}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                      {match.status && <span style={{ background: SoS.creamDeep, color: SoS.inkSoft, borderRadius: 999, padding: '3px 10px', fontFamily: SoS.sans, fontSize: 11, fontWeight: 700 }}>{match.status}</span>}
+                      {match.age    && <span style={{ background: SoS.creamDeep, color: SoS.inkSoft, borderRadius: 999, padding: '3px 10px', fontFamily: SoS.sans, fontSize: 11 }}>{match.age} år</span>}
+                    </div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted, marginBottom: 10 }}>📞 {match.mobil}</div>
+                    <button
+                      onClick={() => { setOpen(false); onOpenMenneske?.(match.id); }}
+                      style={{ width: '100%', padding: '10px 0', background: SoS.orange, color: '#fff', border: 'none', borderRadius: 10, fontFamily: SoS.sans, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Åbn profil →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          {!match && !query && (
+            <div style={{ padding: '0 14px 14px' }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, textAlign: 'center', lineHeight: 1.5 }}>
+                Brug mens du er i et opkald —<br/>systemet slår op med det samme
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {/* Knap */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        aria-label="Søg på telefonnummer"
+        style={{ width: 48, height: 48, borderRadius: 24, background: open ? SoS.ink : SoS.orange, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.18)', transition: 'background 0.15s' }}
+      >
+        <Icon name={open ? 'x' : 'phone'} size={22} color="#fff" />
+      </button>
+    </div>
+  );
+};
+
 const AdminHome = ({ hovedsaede, tab, setTab, onSwitchRole, isAdmin = false, onOpenDesktop, onOpenMatching, onOpenIntake }) => {
   const [kontaktLog, setKontaktLog] = React.useState(false);
   const titles = {
@@ -7960,6 +8267,9 @@ const AdminHome = ({ hovedsaede, tab, setTab, onSwitchRole, isAdmin = false, onO
           onSave={() => setKontaktLog(false)}
         />
       )}
+      {/* ── Flydende telefon-søg ─────────────────────────────────────────── */}
+      <TelefonSoegWidget onOpenMenneske={(id) => { setTab('mennesker'); window._openMenneskeId = id; }} />
+
       <AdminTabBar active={tab} onChange={setTab} />
     </div>
   );
