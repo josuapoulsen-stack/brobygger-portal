@@ -19,6 +19,7 @@ import { Icon }        from '../shared/Icon';
 import { hqColor }     from '../../styles/tokens';
 import { TYPER }       from '../../constants/typer';
 import { Notifikationer } from '../../api/index';
+import { ExportPanel }    from './ExportPanel';
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 const TABS = [
@@ -114,13 +115,19 @@ export function AdminApp({ user, viewingHq, onLogout, onSettings }) {
 
       {/* Indhold */}
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 88 }}>
-        <AdminPlaceholder
-          tab={tab}
-          user={user}
-          viewingHq={viewingHq}
-          isAdmin={isAdmin}
-          onLogout={onLogout}
-        />
+        {tab === 'rapport' ? (
+          <div style={{ padding: '20px 20px 24px' }}>
+            <ExportPanel user={user} />
+          </div>
+        ) : (
+          <AdminPlaceholder
+            tab={tab}
+            user={user}
+            viewingHq={viewingHq}
+            isAdmin={isAdmin}
+            onLogout={onLogout}
+          />
+        )}
       </div>
 
       {/* TabBar */}

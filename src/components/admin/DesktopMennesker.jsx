@@ -12,10 +12,12 @@
  *   onIntake()  — åbner IntakeFlow (håndteres i AdminApp)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, Icon, Pill } from '../shared';
 import { SoS } from '../../styles/tokens';
 import { TYPER, TYPER_LIST } from '../../constants/typer';
+import { BrobygningNotater, Aftaler } from '../../api';
+import { BorgerTimeline } from './BorgerTimeline';
 
 // ─── Status-farver ────────────────────────────────────────────────────────────
 const STATUS_FARVER = {
@@ -33,105 +35,318 @@ const indsatsNiveau = (kontakter) => {
   return                      { label: 'Ventende',  color: SoS.inkMuted };
 };
 
-// ─── Menneske-detalje-panel (side-overlay) ───────────────────────────────────
-const MenneskeDetailPanel = ({ m, onClose, onMatch }) => {
-  const t = TYPER[m.type] || TYPER.social;
-  const kontakter = (m.activeCount || 0) + (m.completedCount || 0);
-  const niveau = indsatsNiveau(kontakter);
-  const sf = STATUS_FARVER[m.status] || {};
+// ─── Dansk måned-select ───────────────────────────────────────────────────────
+const MAANEDER = ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
 
+// ─── Menneske-detalje-panel (tabbed bottom-sheet) ────────────────────────────
+const MenneskeDetailPanel = ({ m, onClose, onMatch }) => {
+  const t   = TYPER[m.type] || TYPER.social;
+  const sf  = STATUS_FARVER[m.status] || {};
+  const kontakter = (m.activeCount || 0) + (m.completedCount || 0);
+  const niveau    = indsatsNiveau(kontakter);
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState(0);
+  const TABS = ['Profil', 'Notater', 'Tidslinje'];
+
+  // ── Notater-tab state ─────────────────────────────────────────────────────
+  const [notater,        setNotater]        = useState([]);
+  const [notaterLoading, setNotaterLoading] = useState(false);
+  const now = new Date();
+  const [newNotat, setNewNotat] = useState({
+    fritekst: '', maaned: now.getMonth() + 1, aar: now.getFullYear(), initialer: '',
+  });
+  const [showForm, setShowForm] = useState(false);
+  const [saving,   setSaving]   = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== 1) return;
+    setNotaterLoading(true);
+    BrobygningNotater.getByMenneske(m.id)
+      .then(n => setNotater([...n].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))))
+      .catch(() => setNotater([]))
+      .finally(() => setNotaterLoading(false));
+  }, [activeTab, m.id]);
+
+  const handleAddNotat = async () => {
+    if (!newNotat.fritekst.trim()) return;
+    setSaving(true);
+    try {
+      const created = await BrobygningNotater.create({ menneskeId: m.id, ...newNotat });
+      setNotater(prev => [created, ...prev]);
+      setNewNotat({ fritekst: '', maaned: now.getMonth() + 1, aar: now.getFullYear(), initialer: '' });
+      setShowForm(false);
+    } catch (err) {
+      console.error('BrobygningNotater.create:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteNotat = async (id) => {
+    await BrobygningNotater.delete(id).catch(() => {});
+    setNotater(prev => prev.filter(n => n.id !== id));
+  };
+
+  // ── Profil-rækker ─────────────────────────────────────────────────────────
   const rows = [
-    { label: 'Alder',          value: m.age ? `${m.age} år` : '—' },
-    { label: 'Sprog',          value: m.language || 'Dansk' },
-    { label: 'Brobygningstype',value: t.label },
-    { label: 'Kilde',          value: m.kilde || '—' },
-    { label: 'Kontakter',      value: kontakter },
-    { label: 'Indsatsniveau',  value: niveau.label, color: niveau.color },
-    { label: 'Registreret',    value: m.createdAt ? new Date(m.createdAt).toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' },
-    { label: 'HQ',             value: m.hq || '—' },
+    { label: 'Alder',           value: m.age ? `${m.age} år` : '—' },
+    { label: 'Sprog',           value: m.language || 'Dansk' },
+    { label: 'Brobygningstype', value: t.label },
+    { label: 'Kilde',           value: m.kilde || '—' },
+    { label: 'Kontakter',       value: kontakter },
+    { label: 'Indsatsniveau',   value: niveau.label, color: niveau.color },
+    { label: 'Registreret',     value: m.createdAt ? new Date(m.createdAt).toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' },
+    { label: 'HQ',              value: m.hq || '—' },
   ];
 
   return (
-    <div style={{ padding: '24px 20px 40px' }}>
-      {/* Handle */}
-      <div style={{ width: 40, height: 4, borderRadius: 2, background: SoS.lineSoft, margin: '0 auto 20px' }} />
+    <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+      {/* ── Sticky header ─────────────────────────────────────────────────── */}
+      <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
+        {/* Handle */}
+        <div style={{ width: 40, height: 4, borderRadius: 2, background: SoS.lineSoft, margin: '0 auto 16px' }} />
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-        <Avatar initials={m.initials || (m.firstName[0] + (m.lastName?.[0] || ''))} bg={t.color} size={56} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: SoS.font, fontSize: 20, fontWeight: 500, color: SoS.ink, letterSpacing: -0.2 }}>
-            {m.firstName} {m.lastName}
+        {/* Navn + luk */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+          <Avatar initials={m.initials || ((m.firstName?.[0] || '') + (m.lastName?.[0] || ''))} bg={t.color} size={48} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: SoS.font, fontSize: 19, fontWeight: 500, color: SoS.ink, letterSpacing: -0.2 }}>
+              {m.firstName} {m.lastName}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
+              <Pill variant="custom" bg={t.soft} color={t.color}>{t.short}</Pill>
+              {m.status && <Pill variant="custom" bg={sf.bg || SoS.creamDeep} color={sf.color || SoS.inkSoft}>{m.status}</Pill>}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-            <Pill variant="custom" bg={t.soft} color={t.color}>{t.short}</Pill>
-            {m.status && <Pill variant="custom" bg={sf.bg || SoS.creamDeep} color={sf.color || SoS.inkSoft}>{m.status}</Pill>}
-          </div>
+          <button
+            onClick={onClose}
+            style={{ width: 36, height: 36, borderRadius: 18, background: SoS.creamDeep, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          >
+            <Icon name="x" size={16} color={SoS.ink} />
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          style={{ width: 36, height: 36, borderRadius: 18, background: SoS.creamDeep, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Icon name="x" size={16} color={SoS.ink} />
-        </button>
+
+        {/* Tab-bar */}
+        <div style={{ display: 'flex', gap: 2, background: SoS.creamDeep, borderRadius: 10, padding: 3 }}>
+          {TABS.map((tab, i) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(i)}
+              style={{
+                flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
+                fontFamily: SoS.sans, fontSize: 13, fontWeight: activeTab === i ? 600 : 400,
+                background: activeTab === i ? '#fff' : 'transparent',
+                color: activeTab === i ? SoS.ink : SoS.inkSoft,
+                boxShadow: activeTab === i ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Behov */}
-      {m.needs && m.needs.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 }}>
-            Behov
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {m.needs.map(b => (
-              <span key={b} style={{ padding: '4px 12px', background: t.soft, color: t.color, borderRadius: 999, fontFamily: SoS.sans, fontSize: 12, fontWeight: 500 }}>
-                {b}
-              </span>
+      {/* ── Scrollbar indhold ─────────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 0' }}>
+
+        {/* ══ TAB 0: PROFIL ══════════════════════════════════════════════════ */}
+        {activeTab === 0 && (
+          <>
+            {/* Situation og behov */}
+            {m.situationOgBehov && (
+              <div style={{ background: '#fff', borderRadius: SoS.r.md, border: `1px solid ${SoS.lineSoft}`, padding: '12px 14px', marginBottom: 14 }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 }}>
+                  Situation og behov
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                  {m.situationOgBehov}
+                </div>
+              </div>
+            )}
+
+            {/* Behov-chips */}
+            {m.needs && m.needs.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 }}>
+                  Behov
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {m.needs.map(b => (
+                    <span key={b} style={{ padding: '4px 12px', background: t.soft, color: t.color, borderRadius: 999, fontFamily: SoS.sans, fontSize: 12, fontWeight: 500 }}>
+                      {b}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Detalje-rækker */}
+            <div style={{ background: '#fff', borderRadius: SoS.r.lg, border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 14 }}>
+              {rows.map((row, i) => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', borderBottom: i < rows.length - 1 ? `1px solid ${SoS.lineSoft}` : 'none' }}>
+                  <span style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, fontWeight: 600 }}>{row.label}</span>
+                  <span style={{ fontFamily: SoS.sans, fontSize: 13, color: row.color || SoS.ink, fontWeight: row.color ? 600 : 400, textAlign: 'right', maxWidth: 200 }}>
+                    {row.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Brobygningsønske */}
+            {m.brobygning && m.brobygning.dato && (
+              <div style={{ background: SoS.orange + '0F', border: `1px solid ${SoS.orange}30`, borderRadius: SoS.r.md, padding: '12px 14px', marginBottom: 14 }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.orange, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>
+                  Brobygningsønske
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.orangeDeep }}>
+                  {new Date(m.brobygning.dato).toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {m.brobygning.start && ` kl. ${m.brobygning.start}`}
+                  {m.brobygning.frekvens && ` · ${m.brobygning.frekvens}`}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══ TAB 1: NOTATER ════════════════════════════════════════════════ */}
+        {activeTab === 1 && (
+          <>
+            {/* Tilføj-knap */}
+            {!showForm && (
+              <button
+                onClick={() => setShowForm(true)}
+                style={{
+                  width: '100%', padding: '11px 0', marginBottom: 14,
+                  background: '#fff', color: SoS.orange,
+                  border: `1.5px dashed ${SoS.orange}60`, borderRadius: SoS.r.md,
+                  fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                + Tilføj notat
+              </button>
+            )}
+
+            {/* Notat-formular */}
+            {showForm && (
+              <div style={{ background: '#fff', borderRadius: SoS.r.md, border: `1.5px solid ${SoS.orange}50`, padding: 14, marginBottom: 14 }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700, color: SoS.inkSoft, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10 }}>
+                  Nyt notat
+                </div>
+                <textarea
+                  placeholder="Beskriv situationen – undgå navn, CPR, adresse og andre personlige oplysninger"
+                  value={newNotat.fritekst}
+                  onChange={e => setNewNotat(n => ({ ...n, fritekst: e.target.value }))}
+                  rows={4}
+                  style={{
+                    width: '100%', padding: '10px 12px', marginBottom: 10,
+                    fontFamily: SoS.sans, fontSize: 14, color: SoS.ink, lineHeight: 1.5,
+                    background: SoS.cream, border: `1.5px solid ${SoS.lineSoft}`,
+                    borderRadius: SoS.r.sm, outline: 'none', resize: 'vertical', boxSizing: 'border-box',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <select
+                    value={newNotat.maaned}
+                    onChange={e => setNewNotat(n => ({ ...n, maaned: parseInt(e.target.value) }))}
+                    style={{ flex: 2, padding: '8px 10px', fontFamily: SoS.sans, fontSize: 13, border: `1px solid ${SoS.lineSoft}`, borderRadius: SoS.r.sm, background: '#fff', color: SoS.ink }}
+                  >
+                    {MAANEDER.map((mn, i) => (
+                      <option key={mn} value={i + 1}>{mn}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="År"
+                    value={newNotat.aar}
+                    onChange={e => setNewNotat(n => ({ ...n, aar: parseInt(e.target.value) || now.getFullYear() }))}
+                    style={{ flex: 1, padding: '8px 10px', fontFamily: SoS.sans, fontSize: 13, border: `1px solid ${SoS.lineSoft}`, borderRadius: SoS.r.sm, textAlign: 'center' }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Initialer"
+                    maxLength={4}
+                    value={newNotat.initialer}
+                    onChange={e => setNewNotat(n => ({ ...n, initialer: e.target.value.toUpperCase() }))}
+                    style={{ flex: 1, padding: '8px 10px', fontFamily: SoS.sans, fontSize: 13, border: `1px solid ${SoS.lineSoft}`, borderRadius: SoS.r.sm, textAlign: 'center' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => setShowForm(false)}
+                    style={{ flex: 1, padding: '10px 0', background: '#fff', color: SoS.inkSoft, border: `1px solid ${SoS.lineSoft}`, borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13, cursor: 'pointer' }}
+                  >
+                    Annuller
+                  </button>
+                  <button
+                    onClick={handleAddNotat}
+                    disabled={!newNotat.fritekst.trim() || saving}
+                    style={{ flex: 2, padding: '10px 0', background: newNotat.fritekst.trim() ? SoS.orange : SoS.lineSoft, color: '#fff', border: 'none', borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, cursor: newNotat.fritekst.trim() ? 'pointer' : 'default' }}
+                  >
+                    {saving ? 'Gemmer…' : 'Gem notat'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Notatliste */}
+            {notaterLoading ? (
+              <div style={{ padding: '20px 0', textAlign: 'center', fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
+                Indlæser notater…
+              </div>
+            ) : notater.length === 0 ? (
+              <div style={{ padding: '20px 0', textAlign: 'center', fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
+                Ingen notater endnu — tilføj det første ovenfor.
+              </div>
+            ) : notater.map(n => (
+              <div key={n.id} style={{ background: '#fff', borderRadius: SoS.r.md, border: `1px solid ${SoS.lineSoft}`, padding: '12px 14px', marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>
+                    {MAANEDER[(n.maaned || 1) - 1]} {n.aar}
+                    {n.initialer && <span style={{ marginLeft: 8, fontWeight: 700, color: SoS.ink }}>{n.initialer}</span>}
+                  </div>
+                  <button
+                    onClick={() => handleDeleteNotat(n.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: SoS.inkMuted, padding: 0, lineHeight: 1 }}
+                    title="Slet notat"
+                  >
+                    <Icon name="x" size={13} color={SoS.inkMuted} />
+                  </button>
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                  {n.fritekst}
+                </div>
+              </div>
             ))}
-          </div>
-        </div>
-      )}
+          </>
+        )}
 
-      {/* Detalje-rækker */}
-      <div style={{ background: '#fff', borderRadius: SoS.r.lg, border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 16 }}>
-        {rows.map((row, i) => (
-          <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', borderBottom: i < rows.length - 1 ? `1px solid ${SoS.lineSoft}` : 'none' }}>
-            <span style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, fontWeight: 600 }}>{row.label}</span>
-            <span style={{ fontFamily: SoS.sans, fontSize: 13, color: row.color || SoS.ink, fontWeight: row.color ? 600 : 400, textAlign: 'right', maxWidth: 200 }}>
-              {row.value}
-            </span>
-          </div>
-        ))}
+        {/* ══ TAB 2: TIDSLINJE ══════════════════════════════════════════════ */}
+        {activeTab === 2 && (
+          <BorgerTimeline menneske={m} />
+        )}
+
+        {/* Luft i bunden */}
+        <div style={{ height: 80 }} />
       </div>
 
-      {/* Brobygningsønske */}
-      {m.brobygning && m.brobygning.dato && (
-        <div style={{ background: SoS.orange + '0F', border: `1px solid ${SoS.orange}30`, borderRadius: SoS.r.md, padding: '12px 14px', marginBottom: 16 }}>
-          <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.orange, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>
-            Brobygningsønske
-          </div>
-          <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.orangeDeep }}>
-            {new Date(m.brobygning.dato).toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' })}
-            {m.brobygning.start && ` kl. ${m.brobygning.start}`}
-            {m.brobygning.frekvens && ` · ${m.brobygning.frekvens}`}
-          </div>
+      {/* ── Sticky footer — handlinger ────────────────────────────────────── */}
+      <div style={{ padding: '12px 20px 28px', borderTop: `1px solid ${SoS.lineSoft}`, background: SoS.cream, flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{ flex: 1, padding: '13px 0', background: '#fff', color: SoS.ink, border: `1.5px solid ${SoS.lineSoft}`, borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 14, cursor: 'pointer' }}
+          >
+            Luk
+          </button>
+          <button
+            onClick={() => { onClose(); if (onMatch) onMatch(m); }}
+            style={{ flex: 2, padding: '13px 0', background: SoS.orange, color: '#fff', border: 'none', borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          >
+            Start matching
+          </button>
         </div>
-      )}
-
-      {/* Handlinger */}
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button
-          onClick={onClose}
-          style={{ flex: 1, padding: '13px 0', background: '#fff', color: SoS.ink, border: `1.5px solid ${SoS.lineSoft}`, borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 14, cursor: 'pointer' }}
-        >
-          Luk
-        </button>
-        <button
-          onClick={() => { onClose(); if (onMatch) onMatch(m); }}
-          style={{ flex: 2, padding: '13px 0', background: SoS.orange, color: '#fff', border: 'none', borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-        >
-          Start matching
-        </button>
       </div>
     </div>
   );
@@ -287,7 +502,7 @@ export const DesktopMennesker = ({ mennesker = {}, onIntake, onMatch }) => {
           style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
           onClick={e => { if (e.target === e.currentTarget) setSelected(null); }}
         >
-          <div style={{ width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', background: SoS.cream, borderRadius: '20px 20px 0 0' }}>
+          <div style={{ width: '100%', maxWidth: 560, maxHeight: '85vh', background: SoS.cream, borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <MenneskeDetailPanel
               m={selected}
               onClose={() => setSelected(null)}

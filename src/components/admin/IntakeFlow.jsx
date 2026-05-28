@@ -127,6 +127,7 @@ export const IntakeFlow = ({ onClose, viewingHq = 'Aarhus' }) => {
   // ── Trin 2: Behov ──────────────────────────────────────────────────────────
   const [type, setType] = useState(null);
   const [selectedBehov, setSelectedBehov] = useState([]);
+  const [situationOgBehov, setSituationOgBehov] = useState('');
   const [udfordringer, setUdfordringer] = useState('');
   const [note, setNote] = useState('');
 
@@ -177,6 +178,7 @@ export const IntakeFlow = ({ onClose, viewingHq = 'Aarhus' }) => {
         kilde: kilde || 'andet',
         kildeDetalje: kildeDetalje || null,
         needs: selectedBehov,
+        situationOgBehov: situationOgBehov.trim() || null,
         health: udfordringer.trim() || 'Ingen særlige forhold.',
         address: '', meetPoint: '', language: 'Dansk',
         activeCount: 0, completedCount: 0, cancelledCount: 0,
@@ -563,6 +565,18 @@ export const IntakeFlow = ({ onClose, viewingHq = 'Aarhus' }) => {
               </div>
             )}
 
+            {/* Situation og behov */}
+            <div style={{ marginBottom: 22 }}>
+              <FieldLabel note="valgfrit">Situation og behov</FieldLabel>
+              <textarea
+                placeholder="Beskriv situationen – undgå navn, CPR, adresse og andre personlige oplysninger"
+                value={situationOgBehov}
+                onChange={e => setSituationOgBehov(e.target.value)}
+                rows={3}
+                style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }}
+              />
+            </div>
+
             {/* Art. 9 GDPR-felt */}
             <div style={{
               border: `1.5px solid ${SoS.orange}30`,
@@ -807,6 +821,7 @@ export const IntakeFlow = ({ onClose, viewingHq = 'Aarhus' }) => {
                         : ''}`
                     : '—',
                 },
+                ...(situationOgBehov ? [{ label: 'Situation og behov', value: situationOgBehov }] : []),
                 ...(udfordringer ? [{ label: 'Udfordringer', value: udfordringer, sensitive: true }] : []),
                 ...(note ? [{ label: 'Note', value: note }] : []),
               ].map(row => (

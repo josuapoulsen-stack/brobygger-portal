@@ -265,7 +265,196 @@ export const Statistik = {
   },
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// BROBYGNING NOTATER — fritekst per forløbs-skridt
+// ═══════════════════════════════════════════════════════════════════════════════
+export const BrobygningNotater = {
+
+  getByMenneske(menneskeId) {
+    if (USE_BACKEND) return apiFetch(`/v1/brobygning-notater?menneske_id=${menneskeId}`);
+    return Promise.resolve(
+      (window.SoS_BROBYG_NOTATER || []).filter(n => n.menneskeId === menneskeId)
+    );
+  },
+
+  getByAftale(aftaleId) {
+    if (USE_BACKEND) return apiFetch(`/v1/brobygning-notater?aftale_id=${aftaleId}`);
+    return Promise.resolve(
+      (window.SoS_BROBYG_NOTATER || []).filter(n => n.aftaleId === aftaleId)
+    );
+  },
+
+  create(data) {
+    // data: { menneskeId, aftaleId?, fritekst, maaned, aar, initialer }
+    if (USE_BACKEND) return apiFetch("/v1/brobygning-notater", { method: "POST", body: JSON.stringify(data) });
+    const record = { id: `bn-${Date.now()}`, source: "manual", ...data, createdAt: new Date().toISOString() };
+    window.SoS_BROBYG_NOTATER = [...(window.SoS_BROBYG_NOTATER || []), record];
+    window.SoS_STORE?.save("brobyg_notater", window.SoS_BROBYG_NOTATER);
+    return Promise.resolve(record);
+  },
+
+  delete(id) {
+    if (USE_BACKEND) return apiFetch(`/v1/brobygning-notater/${id}`, { method: "DELETE" });
+    window.SoS_BROBYG_NOTATER = (window.SoS_BROBYG_NOTATER || []).filter(n => n.id !== id);
+    window.SoS_STORE?.save("brobyg_notater", window.SoS_BROBYG_NOTATER);
+    return Promise.resolve({ ok: true });
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// KONTAKT LOG — individuelle kontakter med source-felt
+// ═══════════════════════════════════════════════════════════════════════════════
+export const KontaktLog = {
+
+  getByMenneske(menneskeId) {
+    if (USE_BACKEND) return apiFetch(`/v1/kontakt-log?menneske_id=${menneskeId}`);
+    return Promise.resolve(
+      (window.SoS_KONTAKT_LOG || []).filter(k => k.menneskeId === menneskeId)
+    );
+  },
+
+  create(data) {
+    // data: { menneskeId, type, note, source?: "manual" | "telecom_api" }
+    if (USE_BACKEND) return apiFetch("/v1/kontakt-log", { method: "POST", body: JSON.stringify(data) });
+    const record = { id: `kl-${Date.now()}`, source: "manual", ...data, createdAt: new Date().toISOString() };
+    window.SoS_KONTAKT_LOG = [...(window.SoS_KONTAKT_LOG || []), record];
+    window.SoS_STORE?.save("kontakt_log", window.SoS_KONTAKT_LOG);
+    return Promise.resolve(record);
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANONYM EKSPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Hjælpere — aldrig eksporteret, kun brugt internt
+const _ageRange = (age) => {
+  const n = parseInt(age, 10);
+  if (isNaN(n)) return "ukendt";
+  if (n < 18)  return "0-17";
+  if (n < 30)  return "18-29";
+  if (n < 40)  return "30-39";
+  if (n < 50)  return "40-49";
+  if (n < 60)  return "50-59";
+  if (n < 70)  return "60-69";
+  if (n < 80)  return "70-79";
+  return "80+";
+};
+
+const _toMonthYear = (iso) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d)) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
+export const AnonymExport = {
+
+  /**
+   * Genererer anonymiseret eksport-array.
+   * PII udelades: navn, CPR, telefon, præcis adresse, fødselsdato.
+   */
+  generate({ dateFrom = "", dateTo = "", category = "", status = "" } = {}) {
+    if (USE_BACKEND) {
+      const p = new URLSearchParams();
+      if (dateFrom)  p.set("date_from",  dateFrom);
+      if (dateTo)    p.set("date_to",    dateTo);
+      if (category)  p.set("category",   category);
+      if (status)    p.set("status",     status);
+      return apiFetch(`/v1/export/anonym?${p}`);
+    }
+
+    const aftaler   = [
+      ...(window.SoS_APPOINTMENTS_BUSY || []),
+      ...(window.SoS_HISTORIK         || []),
+    ];
+    const mennesker = window.SoS_MENNESKER      || {};
+    const notater   = window.SoS_BROBYG_NOTATER || [];
+    const kontakter = window.SoS_KONTAKT_LOG    || [];
+
+    const records = aftaler
+      .filter(a => {
+        if (status   && a.status           !== status)   return false;
+        if (dateFrom && (a.createdAt || "") <  dateFrom) return false;
+        if (dateTo   && (a.createdAt || "") > dateTo + "T23:59:59") return false;
+        return true;
+      })
+      .map(aftale => {
+        const m = mennesker[aftale.menneskeId];
+        if (!m) return null;
+        if (category && m.type !== category) return null;
+
+        const caseNotater   = notater.filter(n =>
+          n.aftaleId === aftale.id || n.menneskeId === aftale.menneskeId
+        );
+        const caseKontakter = kontakter.filter(k => k.menneskeId === aftale.menneskeId);
+
+        return {
+          borger_id:          aftale.menneskeId,
+          age_range:          _ageRange(m.age),
+          gender:             m.gender      || null,
+          municipality:       m.municipality || m.district || null,
+          bridging_category:  m.type        || null,
+          bridging_target:    aftale.target  || aftale.title || null,
+          current_status:     aftale.status  || null,
+          situation_og_behov: m.situationOgBehov || null,
+          status_changes: (aftale.statusHistory || []).length > 0
+            ? aftale.statusHistory.map(sc => ({
+                status:     sc.status,
+                month_year: sc.changedAt ? _toMonthYear(sc.changedAt) : null,
+              }))
+            : [{ status: aftale.status, month_year: _toMonthYear(aftale.createdAt) }],
+          fritekst_entries: caseNotater.map(n => ({
+            month_year: n.aar
+              ? `${n.aar}-${String(n.maaned || 1).padStart(2, "0")}`
+              : _toMonthYear(n.createdAt),
+            initialer:  n.initialer || null,
+            fritekst:   n.fritekst  || null,
+          })),
+          contact_log: caseKontakter.map(k => ({
+            type:       k.type      || null,
+            direction:  k.direction || null,
+            month_year: _toMonthYear(k.createdAt),
+            duration:   k.duration  || null,
+            fritekst:   k.note      || null,
+            source:     k.source    || "manual",
+          })),
+        };
+      })
+      .filter(Boolean);
+
+    return Promise.resolve(records);
+  },
+
+  /** Henter gemte eksport-log-poster fra localStorage */
+  getLogs() {
+    try {
+      return JSON.parse(localStorage.getItem("sos_export_log") || "[]");
+    } catch {
+      return [];
+    }
+  },
+
+  /** Tilføjer en post til eksport-loggen. Returnerer den nye post. */
+  addLog({ user_id, user_name, filters, record_count, format }) {
+    const entry = {
+      id:           `el-${Date.now()}`,
+      timestamp:    new Date().toISOString(),
+      user_id:      user_id      || "unknown",
+      user_name:    user_name    || "Ukendt",
+      filters:      filters      || {},
+      record_count: record_count || 0,
+      format:       format       || "json",
+    };
+    try {
+      const existing = JSON.parse(localStorage.getItem("sos_export_log") || "[]");
+      localStorage.setItem("sos_export_log", JSON.stringify([entry, ...existing].slice(0, 100)));
+    } catch {}
+    return entry;
+  },
+};
+
 // Gør tilgængeligt globalt i prototype (fjernes ved Vite-migration)
 if (typeof window !== "undefined") {
-  window.SoS_API = { Mennesker, Brobyggere, Aftaler, Beskeder, Notifikationer, Profil, Matching, Statistik };
+  window.SoS_API = { Mennesker, Brobyggere, Aftaler, Beskeder, Notifikationer, Profil, Matching, Statistik, BrobygningNotater, KontaktLog, AnonymExport };
 }
