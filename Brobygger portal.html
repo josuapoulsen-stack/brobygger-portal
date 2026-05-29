@@ -10374,7 +10374,7 @@ window.STIGE_TRIN = STIGE_TRIN;
 // Shown as a full browser window; mobile can't reach these screens.
 
 const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
-  const [section, setSection] = React.useState('dashboard');
+  const [section, setSection] = React.useState('kalender');
   const [viewingHq, setViewingHq] = React.useState(isAdmin ? 'Alle hovedsæder' : ownHq);
   const [deskExported, setDeskExported] = React.useState(false);
   const handleDeskExport = () => { setDeskExported(true); setTimeout(() => setDeskExported(false), 2500); };
