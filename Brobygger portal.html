@@ -6040,7 +6040,7 @@ const ExportReport = ({ onClose }) => {
                   return (
                     <div key={i} style={{ flex: 1,
                       height: `${(v / max) * 100}%`,
-                      background: i >= 9 ? SoS.orange : SoS.orangeSoft,
+                      background: i >= 9 ? SoS.accent : SoS.accent + '40',
                       borderRadius: '3px 3px 0 0',
                       position: 'relative',
                     }}/>
@@ -10380,17 +10380,17 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
   const handleDeskExport = () => { setDeskExported(true); setTimeout(() => setDeskExported(false), 2500); };
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: '#1A130D',
+    <div style={{ position: 'absolute', inset: 0, background: SoS.paper,
       display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Browser chrome */}
-      <div style={{ height: 38, background: '#2A1F17', display: 'flex',
+      <div style={{ height: 38, background: SoS.ink, display: 'flex',
         alignItems: 'center', padding: '0 14px', gap: 8, flexShrink: 0 }}>
         <button onClick={onClose} style={{ width: 12, height: 12, borderRadius: 6,
           background: '#FF5F57', border: 'none', cursor: 'pointer' }}/>
         <div style={{ width: 12, height: 12, borderRadius: 6, background: '#FEBC2E' }}/>
         <div style={{ width: 12, height: 12, borderRadius: 6, background: '#28C840' }}/>
         <div style={{ flex: 1, maxWidth: 480, margin: '0 auto',
-          background: 'rgba(255,255,255,0.08)', borderRadius: 6,
+          background: 'rgba(255,255,255,0.10)', borderRadius: SoS.r.sm,
           padding: '5px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Icon name="lock" size={12} color="rgba(255,255,255,0.6)"/>
           <span style={{ fontFamily: SoS.sans, fontSize: 12,
@@ -10402,20 +10402,20 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
       </div>
 
       {/* App body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', background: SoS.cream }}>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', background: SoS.paper }}>
         {/* Sidebar */}
-        <div style={{ width: 210, background: '#fff',
+        <div style={{ width: 210, background: SoS.surface,
           borderRight: `1px solid ${SoS.line}`, display: 'flex',
           flexDirection: 'column', flexShrink: 0 }}>
-          <div style={{ padding: '16px 16px 18px', borderBottom: `1px solid ${SoS.lineSoft}` }}>
+          <div style={{ padding: '16px 16px 18px', borderBottom: `1px solid ${SoS.line}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <SSLogo size={28}/>
               <div>
                 <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700, color: SoS.ink }}>
                   Social Sundhed
                 </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkSoft }}>
-                  {isAdmin ? 'Administration' : 'Rådgiver-portal'}
+                <div style={{ fontFamily: SoS.mono, fontSize: 9.5, color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  {isAdmin ? 'ADMINISTRATION' : 'RÅDGIVER-PORTAL'}
                 </div>
               </div>
             </div>
@@ -10432,19 +10432,20 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
             ].concat(isAdmin ? [{ k: 'rapport', l: 'Rapport & eksport', i: 'note' }] : []).map(n => (
               <button key={n.k} onClick={() => setSection(n.k)} style={{
                 display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                padding: '9px 12px', borderRadius: 8, marginBottom: 2,
-                background: section === n.k ? SoS.orange + '18' : 'transparent',
-                color: section === n.k ? SoS.orange : SoS.inkSoft,
-                border: 'none', cursor: 'pointer', textAlign: 'left',
-                fontFamily: SoS.sans, fontSize: 13, fontWeight: section === n.k ? 600 : 500,
+                padding: '9px 12px 9px 10px', borderRadius: 0, marginBottom: 2,
+                background: 'transparent',
+                color: section === n.k ? SoS.ink : SoS.inkSoft,
+                border: 'none', borderLeft: `2px solid ${section === n.k ? SoS.accent : 'transparent'}`,
+                cursor: 'pointer', textAlign: 'left',
+                fontFamily: SoS.sans, fontSize: 13, fontWeight: section === n.k ? 700 : 500,
               }}>
-                <Icon name={n.i} size={16} color={section === n.k ? SoS.orange : SoS.inkSoft}/>
+                <Icon name={n.i} size={16} color={section === n.k ? SoS.accent : SoS.inkSoft}/>
                 {n.l}
               </button>
             ))}
           </div>
 
-          <div style={{ padding: 12, borderTop: `1px solid ${SoS.lineSoft}`,
+          <div style={{ padding: 12, borderTop: `1px solid ${SoS.line}`,
             display: 'flex', alignItems: 'center', gap: 10 }}>
             <Avatar initials="LT" bg={SoS.sky} size={30}/>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -10464,12 +10465,12 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
           <div style={{ display: 'flex', alignItems: 'center',
             justifyContent: 'space-between', marginBottom: 18 }}>
             <div>
-              <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
-                letterSpacing: 1.2, color: SoS.inkSoft, textTransform: 'uppercase' }}>
+              <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                letterSpacing: 1, color: SoS.accent, textTransform: 'uppercase' }}>
                 {isAdmin ? 'Admin' : 'Rådgiver'} · {viewingHq}
               </div>
-              <div style={{ fontFamily: SoS.font, fontSize: 26, fontWeight: 500,
-                color: SoS.ink, letterSpacing: -0.3, marginTop: 2 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 26, fontWeight: 700,
+                color: SoS.ink, letterSpacing: -0.5, marginTop: 2 }}>
                 {{ dashboard: 'Dashboard', brobygninger: 'Brobygninger',
                    brobyggere: 'Brobyggere', mennesker: 'Mennesker',
                    kalender: 'Kalender', sroi: 'Effekt & Dokumentation', rapport: 'Rapport & eksport' }[section]}
@@ -10477,16 +10478,17 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <select value={viewingHq} onChange={e => setViewingHq(e.target.value)} style={{
-                padding: '7px 12px', borderRadius: 999,
-                background: '#fff', border: `1px solid ${SoS.line}`,
+                padding: '7px 12px', borderRadius: SoS.r.sm,
+                background: SoS.surface, border: `1px solid ${SoS.line}`,
                 fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink,
                 cursor: 'pointer',
               }}>
                 {isAdmin && <option value="Alle hovedsæder">Alle hovedsæder</option>}
                 {SoS_HOVEDSAEDER.map(h => <option key={h} value={h}>{h}</option>)}
               </select>
-              <button onClick={handleDeskExport} style={{ padding: '7px 14px', borderRadius: 999,
-                background: deskExported ? SoS.sage : SoS.orange, color: '#fff', border: 'none',
+              <button onClick={handleDeskExport} style={{ padding: '7px 14px', borderRadius: SoS.r.sm,
+                background: deskExported ? SoS.green : SoS.ink, color: '#fff', border: 'none',
+                borderRadius: SoS.r.sm,
                 fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 6, transition: 'background 0.2s' }}>
                 <Icon name={deskExported ? 'check' : 'download'} size={12} color="#fff" weight={2.3}/>
@@ -10509,16 +10511,16 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
 };
 
 const DSCard = ({ children, title, subtitle, style = {}, action }) => (
-  <div style={{ background: '#fff', borderRadius: 12,
-    border: `1px solid ${SoS.lineSoft}`, padding: 18, ...style }}>
+  <div style={{ background: SoS.surface, borderRadius: 0,
+    border: `1px solid ${SoS.line}`, padding: 18, ...style }}>
     {title && (
       <div style={{ display: 'flex', justifyContent: 'space-between',
         alignItems: 'baseline', marginBottom: 14 }}>
         <div>
-          <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
-            color: SoS.inkSoft, letterSpacing: 1, textTransform: 'uppercase' }}>{title}</div>
-          {subtitle && <div style={{ fontFamily: SoS.font, fontSize: 20,
-            fontWeight: 500, color: SoS.ink, marginTop: 4 }}>{subtitle}</div>}
+          <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+            color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase' }}>{title}</div>
+          {subtitle && <div style={{ fontFamily: SoS.sans, fontSize: 18,
+            fontWeight: 700, color: SoS.ink, marginTop: 4 }}>{subtitle}</div>}
         </div>
         {action}
       </div>
@@ -10540,11 +10542,11 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
         { l: 'Ventetid til match', v: '5.2d', d: '−1.1d', c: SoS.roseSoft, tc: SoS.rose },
       ].map((k, i) => (
         <DSCard key={i}>
-          <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
-            color: SoS.inkSoft, letterSpacing: 1, textTransform: 'uppercase' }}>{k.l}</div>
+          <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+            color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase' }}>{k.l}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
-            <span style={{ fontFamily: SoS.font, fontSize: 28, fontWeight: 500,
-              color: SoS.ink, letterSpacing: -0.5 }}>{k.v}</span>
+            <span style={{ fontFamily: SoS.mono, fontSize: 28, fontWeight: 700,
+              color: SoS.ink, letterSpacing: -1 }}>{k.v}</span>
             <span style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
               color: k.tc || SoS.sage }}>{k.d}</span>
           </div>
@@ -10567,7 +10569,7 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
                 flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', width: '100%' }}>
                   <div style={{ width: '100%', height: `${(v/max) * 100}%`,
-                    background: i >= 9 ? SoS.orange : SoS.orangeSoft,
+                    background: i >= 9 ? SoS.accent : SoS.accent + '40',
                     borderRadius: '3px 3px 0 0' }}/>
                 </div>
                 <div style={{ fontFamily: SoS.sans, fontSize: 9, color: SoS.inkMuted }}>
@@ -10634,8 +10636,8 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
       </DSCard>
 
       <DSCard title="Effekt · UCLA-3" subtitle="Selv-rapporteret ensomhed">
-        <div style={{ fontFamily: SoS.font, fontSize: 30, fontWeight: 500,
-          color: SoS.ink, letterSpacing: -0.5 }}>
+        <div style={{ fontFamily: SoS.mono, fontSize: 30, fontWeight: 700,
+          color: SoS.ink, letterSpacing: -1 }}>
           −3.3 <span style={{ fontSize: 14, color: SoS.inkSoft }}>point gnsn.</span>
         </div>
         <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft, marginTop: 4 }}>
@@ -10655,9 +10657,10 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
             <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted }}>Efter 3 mdr</div>
           </div>
         </div>
-        <div style={{ marginTop: 14, padding: 10, background: SoS.sageSoft,
-          borderRadius: 8, fontFamily: SoS.sans, fontSize: 11,
-          color: '#4A6B56', lineHeight: 1.5 }}>
+        <div style={{ marginTop: 14, padding: 10, background: SoS.green + '10',
+          borderRadius: 0, borderLeft: `2px solid ${SoS.green}`,
+          fontFamily: SoS.sans, fontSize: 11,
+          color: SoS.green, lineHeight: 1.5 }}>
           87% af menneskerne rapporterer mindre ensomhed efter 3 måneder.
         </div>
       </DSCard>
@@ -10670,8 +10673,8 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
           <tr style={{ borderBottom: `1px solid ${SoS.line}` }}>
             {['Tidspunkt', 'Brobygger', 'Menneske', 'Type', 'Status', 'Varighed'].map(h => (
               <th key={h} style={{ textAlign: 'left', padding: '8px 4px',
-                fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
-                color: SoS.inkSoft, letterSpacing: 0.8,
+                fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                color: SoS.inkMuted, letterSpacing: 0.8,
                 textTransform: 'uppercase' }}>{h}</th>
             ))}
           </tr>
@@ -10748,7 +10751,8 @@ const DesktopBrobyggere = () => {
       {/* Toolbar */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 180, display: 'flex', alignItems: 'center',
-          gap: 8, background: SoS.cream, borderRadius: 8, padding: '8px 14px' }}>
+          gap: 8, background: SoS.surfaceAlt, borderRadius: 0, padding: '8px 14px',
+          border: `1px solid ${SoS.line}` }}>
           <Icon name="search" size={14} color={SoS.inkMuted}/>
           <input placeholder={`Søg i ${SoS_BROBYGGERE.length} brobygger...`}
             value={search} onChange={e => setSearch(e.target.value)}
@@ -10762,10 +10766,10 @@ const DesktopBrobyggere = () => {
         <div style={{ display: 'flex', gap: 6 }}>
           {FILTERS.map(f => (
             <button key={f.id} onClick={() => setFilter(f.id)} style={{
-              padding: '8px 14px', borderRadius: 8, cursor: 'pointer',
-              background: filter === f.id ? SoS.ink : '#fff',
+              padding: '7px 12px', borderRadius: SoS.r.sm, cursor: 'pointer',
+              background: filter === f.id ? SoS.ink : SoS.surface,
               color: filter === f.id ? '#fff' : SoS.ink,
-              border: filter === f.id ? 'none' : `1px solid ${SoS.line}`,
+              border: `1px solid ${filter === f.id ? SoS.ink : SoS.line}`,
               fontFamily: SoS.sans, fontSize: 12, fontWeight: 600 }}>{f.label}</button>
           ))}
         </div>
@@ -10777,8 +10781,8 @@ const DesktopBrobyggere = () => {
           <tr style={{ borderBottom: `1px solid ${SoS.line}` }}>
             {['Navn', 'Status', 'Aktive', 'Denne uge', 'Sidst aktiv', 'Planlagt pause'].map(h => (
               <th key={h} style={{ textAlign: 'left', padding: '10px 8px',
-                fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
-                color: SoS.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase' }}>{h}</th>
+                fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase' }}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -10795,7 +10799,7 @@ const DesktopBrobyggere = () => {
               <tr key={b.id}
                 onClick={() => setSelectedBb(b)}
                 style={{ borderBottom: `1px solid ${SoS.lineSoft}`, cursor: 'pointer' }}
-                onMouseEnter={e => e.currentTarget.style.background = SoS.cream}
+                onMouseEnter={e => e.currentTarget.style.background = SoS.surfaceAlt}
                 onMouseLeave={e => e.currentTarget.style.background = ''}
               >
                 <td style={{ padding: '12px 8px' }}>
@@ -10847,8 +10851,8 @@ const DesktopBrobyggere = () => {
         alignItems: 'flex-end', justifyContent: 'center' }}
         onClick={e => { if (e.target === e.currentTarget) setSelectedBb(null); }}>
         <div style={{ width: '100%', maxWidth: 520, maxHeight: 700,
-          overflowY: 'auto', background: SoS.cream,
-          borderRadius: '20px 20px 0 0' }}>
+          overflowY: 'auto', background: SoS.paper,
+          borderRadius: 0 }}>
           <BrobyggerProfilePanel brobygger={selectedBb} onClose={() => setSelectedBb(null)}/>
         </div>
       </div>
@@ -10886,7 +10890,7 @@ const DesktopBrobygninger = () => {
         {Object.values(SoS_TYPER).map(t => (
           <DSCard key={t.id} style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 18, background: t.soft,
+              <div style={{ width: 32, height: 32, borderRadius: 0, background: t.soft,
                 display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name={t.icon} size={18} color={t.color}/>
               </div>
@@ -10917,10 +10921,10 @@ const DesktopBrobygninger = () => {
           const sel = typeFilter === f;
           return (
             <button key={f} onClick={() => setTypeFilter(f)} style={{
-              padding: '4px 12px', borderRadius: 999,
-              background: sel ? (t ? t.color : SoS.ink) : '#fff',
+              padding: '5px 10px', borderRadius: SoS.r.sm,
+              background: sel ? (t ? t.color : SoS.ink) : SoS.surface,
               color: sel ? '#fff' : SoS.inkSoft,
-              border: `1.5px solid ${sel ? (t ? t.color : SoS.ink) : SoS.lineSoft}`,
+              border: `1px solid ${sel ? (t ? t.color : SoS.ink) : SoS.line}`,
               fontFamily: SoS.sans, fontSize: 12, fontWeight: sel ? 700 : 400, cursor: 'pointer',
             }}>{f === 'alle' ? 'Alle' : t.short}</button>
           );
@@ -10932,10 +10936,10 @@ const DesktopBrobygninger = () => {
           const sel = statusFilter === s;
           return (
             <button key={s} onClick={() => setStatusFilter(s)} style={{
-              padding: '4px 12px', borderRadius: 999,
-              background: sel ? (STATUS_COLOR[s] || SoS.ink) : '#fff',
+              padding: '5px 10px', borderRadius: SoS.r.sm,
+              background: sel ? (STATUS_COLOR[s] || SoS.ink) : SoS.surface,
               color: sel ? '#fff' : SoS.inkSoft,
-              border: `1.5px solid ${sel ? (STATUS_COLOR[s] || SoS.ink) : SoS.lineSoft}`,
+              border: `1px solid ${sel ? (STATUS_COLOR[s] || SoS.ink) : SoS.line}`,
               fontFamily: SoS.sans, fontSize: 12, fontWeight: sel ? 700 : 400, cursor: 'pointer',
             }}>{s === 'alle' ? 'Alle' : STATUS_LABEL[s]}</button>
           );
@@ -10946,11 +10950,11 @@ const DesktopBrobygninger = () => {
       <DSCard style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: SoS.creamDeep, borderBottom: `2px solid ${SoS.line}` }}>
+            <tr style={{ background: SoS.surface, borderBottom: `1px solid ${SoS.line}` }}>
               {['Dato', 'Menneske', 'Brobygger', 'Aktivitet', 'Sted', 'Status'].map(h => (
                 <th key={h} style={{ padding: '10px 14px', textAlign: 'left',
-                  fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                  color: SoS.inkMuted, letterSpacing: 0.6, textTransform: 'uppercase' }}>{h}</th>
+                  fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                  color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -10970,7 +10974,7 @@ const DesktopBrobygninger = () => {
               return (
                 <tr key={a.id} style={{
                   borderBottom: `1px solid ${SoS.lineSoft}`,
-                  background: i % 2 === 0 ? '#fff' : SoS.cream + '60',
+                  background: 'transparent',
                 }}>
                   <td style={{ padding: '11px 14px', fontFamily: SoS.sans, fontSize: 12,
                     color: SoS.inkSoft, whiteSpace: 'nowrap' }}>
@@ -11014,9 +11018,9 @@ const DesktopBrobygninger = () => {
             })}
           </tbody>
         </table>
-        <div style={{ padding: '10px 14px', background: SoS.creamDeep,
-          fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft,
-          borderTop: `1px solid ${SoS.lineSoft}` }}>
+        <div style={{ padding: '10px 14px', background: SoS.surface,
+          fontFamily: SoS.mono, fontSize: 9.5, color: SoS.inkMuted,
+          borderTop: `1px solid ${SoS.line}` }}>
           Viser {filtered.length} af {appts.length} aftaler
         </div>
       </DSCard>
@@ -11054,7 +11058,7 @@ const DesktopMennesker = () => {
   );
   if (selected) return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 300, overflowY: 'auto',
-      background: SoS.cream, padding: 24 }}>
+      background: SoS.paper, padding: 24 }}>
       <MenneskeDetailPanel menneske={selected} onClose={() => setSelected(null)}/>
     </div>
   );
@@ -11064,8 +11068,8 @@ const DesktopMennesker = () => {
       {/* Toolbar */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8,
-          background: '#fff', borderRadius: 999, padding: '9px 16px',
-          border: `1px solid ${SoS.lineSoft}` }}>
+          background: SoS.surfaceAlt, borderRadius: 0, padding: '9px 16px',
+          border: `1px solid ${SoS.line}` }}>
           <Icon name="search" size={16} color={SoS.inkMuted}/>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Søg på navn…"
@@ -11073,8 +11077,8 @@ const DesktopMennesker = () => {
               fontFamily: SoS.sans, fontSize: 14, color: SoS.ink }}/>
         </div>
         <button onClick={() => setShowIntake(true)} style={{
-          padding: '9px 18px', background: SoS.orange, color: '#fff',
-          border: 'none', borderRadius: 999, fontFamily: SoS.sans,
+          padding: '9px 18px', background: SoS.ink, color: '#fff',
+          border: 'none', borderRadius: SoS.r.sm, fontFamily: SoS.sans,
           fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
         }}>+ Opret menneske</button>
       </div>
@@ -11086,10 +11090,10 @@ const DesktopMennesker = () => {
           const sel = typeFilter === f;
           return (
             <button key={f} onClick={() => setTypeFilter(f)} style={{
-              padding: '5px 14px', borderRadius: 999,
-              background: sel ? (t ? t.color : SoS.ink) : '#fff',
+              padding: '5px 12px', borderRadius: SoS.r.sm,
+              background: sel ? (t ? t.color : SoS.ink) : SoS.surface,
               color: sel ? '#fff' : SoS.inkSoft,
-              border: `1.5px solid ${sel ? (t ? t.color : SoS.ink) : SoS.lineSoft}`,
+              border: `1px solid ${sel ? (t ? t.color : SoS.ink) : SoS.line}`,
               fontFamily: SoS.sans, fontSize: 12, fontWeight: sel ? 700 : 400,
               cursor: 'pointer',
             }}>{f === 'alle' ? 'Alle typer' : t.label}</button>
@@ -11101,10 +11105,10 @@ const DesktopMennesker = () => {
           const fc = STATUS_FARVER[s] || {};
           return (
             <button key={s} onClick={() => setStatusFilter(s)} style={{
-              padding: '5px 14px', borderRadius: 999,
-              background: sel ? (fc.color || SoS.ink) : '#fff',
+              padding: '5px 12px', borderRadius: SoS.r.sm,
+              background: sel ? (fc.color || SoS.ink) : SoS.surface,
               color: sel ? '#fff' : SoS.inkSoft,
-              border: `1.5px solid ${sel ? (fc.color || SoS.ink) : SoS.lineSoft}`,
+              border: `1px solid ${sel ? (fc.color || SoS.ink) : SoS.line}`,
               fontFamily: SoS.sans, fontSize: 12, fontWeight: sel ? 700 : 400,
               cursor: 'pointer',
             }}>{s === 'alle' ? 'Alle statusser' : s.charAt(0).toUpperCase() + s.slice(1)}</button>
@@ -11116,11 +11120,11 @@ const DesktopMennesker = () => {
       <DSCard style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: SoS.creamDeep, borderBottom: `2px solid ${SoS.line}` }}>
+            <tr style={{ background: SoS.surface, borderBottom: `1px solid ${SoS.line}` }}>
               {['Menneske', 'Type', 'Status', 'Indsatsniveau', 'Kontakter', 'Registreret'].map(h => (
                 <th key={h} style={{ padding: '10px 14px', textAlign: 'left',
-                  fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                  color: SoS.inkMuted, letterSpacing: 0.6, textTransform: 'uppercase' }}>{h}</th>
+                  fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                  color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -11141,10 +11145,10 @@ const DesktopMennesker = () => {
                 <tr key={m.id}
                   onClick={() => setSelected(m)}
                   style={{ borderBottom: `1px solid ${SoS.lineSoft}`,
-                    cursor: 'pointer', background: i % 2 === 0 ? '#fff' : SoS.cream + '60',
+                    cursor: 'pointer', background: 'transparent',
                     transition: 'background 0.1s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = SoS.creamDeep}
-                  onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : SoS.cream + '60'}
+                  onMouseEnter={e => e.currentTarget.style.background = SoS.surfaceAlt}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   <td style={{ padding: '12px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -11188,9 +11192,9 @@ const DesktopMennesker = () => {
             })}
           </tbody>
         </table>
-        <div style={{ padding: '10px 14px', background: SoS.creamDeep,
-          fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft,
-          borderTop: `1px solid ${SoS.lineSoft}` }}>
+        <div style={{ padding: '10px 14px', background: SoS.surface,
+          fontFamily: SoS.mono, fontSize: 9.5, color: SoS.inkMuted,
+          borderTop: `1px solid ${SoS.line}` }}>
           Viser {filtered.length} af {alle.length} mennesker
         </div>
       </DSCard>
@@ -11209,28 +11213,28 @@ const DesktopSROI = () => {
   return (
     <>
       <DSCard style={{ marginBottom: 14,
-        background: `linear-gradient(135deg, ${SoS.orangeDeep}, ${SoS.orange})`,
-        color: '#fff', border: 'none' }}>
-        <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
-          opacity: 0.85, letterSpacing: 1.2, textTransform: 'uppercase' }}>
+        background: SoS.ink,
+        color: '#fff', border: 'none', borderRadius: 0 }}>
+        <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+          opacity: 0.7, letterSpacing: 1, textTransform: 'uppercase' }}>
           Effekt & dokumentation · Jan–apr 2026
         </div>
         <div style={{ display: 'flex', gap: 40, marginTop: 10 }}>
           <div>
             <div style={{ fontSize: 10, opacity: 0.85 }}>Samlet værdi</div>
-            <div style={{ fontFamily: SoS.font, fontSize: 40, fontWeight: 500, letterSpacing: -1 }}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 40, fontWeight: 700, letterSpacing: -1 }}>
               {(sroi / 1_000_000).toFixed(1).replace('.', ',')} mio. kr
             </div>
           </div>
           <div>
             <div style={{ fontSize: 10, opacity: 0.85 }}>Investering</div>
-            <div style={{ fontFamily: SoS.font, fontSize: 40, fontWeight: 500, letterSpacing: -1 }}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 40, fontWeight: 700, letterSpacing: -1 }}>
               {(investment / 1_000_000).toFixed(1).replace('.', ',')} mio. kr
             </div>
           </div>
           <div>
             <div style={{ fontSize: 10, opacity: 0.85 }}>Ratio</div>
-            <div style={{ fontFamily: SoS.font, fontSize: 40, fontWeight: 500, letterSpacing: -1 }}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 40, fontWeight: 700, letterSpacing: -1 }}>
               1 : {(sroi / investment).toFixed(2)}
             </div>
           </div>
@@ -11392,8 +11396,8 @@ const DesktopKalender = () => {
   const listeGroups = days.filter(d => getAppts(fmt(d)).length > 0);
 
   const B = (extra) => Object.assign({
-    padding: '6px 12px', borderRadius: 999,
-    border: '1px solid ' + SoS.line,
+    padding: '6px 12px', borderRadius: SoS.r.sm,
+    border: `1px solid ${SoS.line}`,
     fontFamily: SoS.sans, fontSize: 12, fontWeight: 500, cursor: 'pointer',
     background: 'transparent', color: SoS.inkSoft,
   }, extra || {});
@@ -11404,14 +11408,14 @@ const DesktopKalender = () => {
     const ok = a.status === 'confirmed';
     return (
       <div key={a.id} onClick={() => setSelectedAppt(a)} style={{
-        background: '#fff', borderRadius: 10, marginBottom: 8,
-        border: '1px solid ' + SoS.lineSoft, padding: '12px 14px',
+        background: SoS.surface, borderRadius: 0, marginBottom: 8,
+        border: `1px solid ${SoS.line}`, padding: '12px 14px',
         borderLeft: '4px solid ' + (ok ? SoS.sage : SoS.sun),
         display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 12, alignItems: 'center',
         cursor: 'pointer',
       }}>
         <div style={{ textAlign: 'center', minWidth: 38 }}>
-          <div style={{ fontFamily: SoS.sans, fontSize: 15, fontWeight: 700, color: SoS.ink }}>{a.start}</div>
+          <div style={{ fontFamily: SoS.mono, fontSize: 14, fontWeight: 700, color: SoS.ink }}>{a.start}</div>
           <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted }}>{a.end}</div>
         </div>
         <div>
@@ -11424,9 +11428,9 @@ const DesktopKalender = () => {
         {bb && (
           <div style={{ textAlign: 'center' }}>
             <div style={{
-              width: 30, height: 30, borderRadius: 15, background: bb.bg,
+              width: 28, height: 28, borderRadius: 0, background: bb.bg,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 3px', fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: '#fff',
+              margin: '0 auto 3px', fontFamily: SoS.mono, fontSize: 10, fontWeight: 700, color: '#fff',
             }}>{bb.avatar}</div>
             <div style={{ fontFamily: SoS.sans, fontSize: 9, color: SoS.inkMuted }}>{bb.name.split(' ')[0]}</div>
           </div>
@@ -11441,23 +11445,24 @@ const DesktopKalender = () => {
     <>
       {/* Nav + view toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14,
-        background: '#fff', borderRadius: 12, padding: '12px 16px',
-        border: '1px solid ' + SoS.lineSoft }}>
+        background: SoS.surface, borderRadius: 0, padding: '12px 16px',
+        border: `1px solid ${SoS.line}` }}>
         <button style={B()} onClick={() => setWeekOffset(n => n - 1)}>&#8592;</button>
         <div style={{ flex: 1, textAlign: 'center', fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>
           {weekLabel}
         </div>
-        <button style={B(weekOffset === 0 ? { background: SoS.orange, color: '#fff', borderColor: SoS.orange } : {})}
+        <button style={B(weekOffset === 0 ? { background: SoS.ink, color: '#fff', borderColor: SoS.ink } : {})}
           onClick={() => setWeekOffset(0)}>I dag</button>
         <button style={B()} onClick={() => setWeekOffset(n => n + 1)}>&#8594;</button>
-        <div style={{ display: 'flex', background: SoS.creamDeep, borderRadius: 8, padding: 3, gap: 2 }}>
+        <div style={{ display: 'flex', background: SoS.surfaceAlt, borderRadius: 0, padding: 3, gap: 2,
+          border: `1px solid ${SoS.line}` }}>
           {['uge', 'dag', 'liste'].map(k => (
             <button key={k} onClick={() => setView(k)} style={{
-              padding: '5px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+              padding: '5px 10px', borderRadius: 0, border: 'none', cursor: 'pointer',
               fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
-              background: view === k ? '#fff' : 'transparent',
+              background: view === k ? SoS.surface : 'transparent',
               color: view === k ? SoS.ink : SoS.inkMuted,
-              boxShadow: view === k ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              boxShadow: 'none', borderBottom: `2px solid ${view === k ? SoS.accent : 'transparent'}`,
             }}>{k.charAt(0).toUpperCase() + k.slice(1)}</button>
           ))}
         </div>
@@ -11470,11 +11475,11 @@ const DesktopKalender = () => {
           { l: 'Bekræftede',  v: nOK,              c: SoS.sage },
           { l: 'Afventer',          v: nPend,             c: SoS.sun  },
         ].map((s, i) => (
-          <div key={i} style={{ background: '#fff', borderRadius: 10,
-            border: '1px solid ' + SoS.lineSoft, padding: '12px 14px' }}>
-            <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
+          <div key={i} style={{ background: SoS.surface, borderRadius: 0,
+            border: `1px solid ${SoS.line}`, padding: '12px 14px' }}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
               color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4 }}>{s.l}</div>
-            <div style={{ fontFamily: SoS.font, fontSize: 28, fontWeight: 500, color: s.c }}>{s.v}</div>
+            <div style={{ fontFamily: SoS.mono, fontSize: 28, fontWeight: 700, color: s.c }}>{s.v}</div>
           </div>
         ))}
       </div>
@@ -11492,8 +11497,8 @@ const DesktopKalender = () => {
 
       {/* UGE VIEW */}
       {view === 'uge' && (
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid ' + SoS.lineSoft, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', borderBottom: '1px solid ' + SoS.lineSoft }}>
+        <div style={{ background: SoS.surface, borderRadius: 0, border: `1px solid ${SoS.line}`, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', borderBottom: `1px solid ${SoS.line}` }}>
             {days.map((day, i) => {
               const ds = fmt(day);
               const isT = ds === TODAY;
@@ -11502,18 +11507,18 @@ const DesktopKalender = () => {
                 <button key={i} onClick={() => { setSelectedDay(ds); setView('dag'); }} style={{
                   padding: '10px 8px', textAlign: 'center', border: 'none', cursor: 'pointer', width: '100%',
                   borderRight: i < 6 ? '1px solid ' + SoS.lineSoft : 'none',
-                  background: isT ? SoS.orange + '18' : 'transparent',
+                  background: isT ? SoS.accent + '10' : 'transparent',
                 }}>
                   <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
                     color: SoS.inkMuted, letterSpacing: 0.6, textTransform: 'uppercase' }}>{DNAMES[i]}</div>
                   <div style={{ width: 28, height: 28, borderRadius: 14,
-                    background: isT ? SoS.orange : 'transparent', color: isT ? '#fff' : SoS.ink,
+                    background: isT ? SoS.accent : 'transparent', color: isT ? '#fff' : SoS.ink,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     margin: '4px auto 2px', fontFamily: SoS.sans, fontSize: 14, fontWeight: 600 }}>
                     {day.getDate()}
                   </div>
                   {cnt > 0 && (
-                    <div style={{ fontFamily: SoS.sans, fontSize: 9, color: isT ? SoS.orange : SoS.inkMuted }}>
+                    <div style={{ fontFamily: SoS.mono, fontSize: 9, color: isT ? SoS.accent : SoS.inkMuted }}>
                       {cnt} afd.
                     </div>
                   )}
@@ -11531,7 +11536,7 @@ const DesktopKalender = () => {
               return (
                 <div key={i} style={{ padding: '8px 6px', minHeight: 120,
                   borderRight: i < 6 ? '1px solid ' + SoS.lineSoft : 'none',
-                  background: isT ? SoS.orange + '06' : 'transparent' }}>
+                  background: isT ? SoS.accent + '06' : 'transparent' }}>
                   {all.length === 0 && (
                     <div style={{ textAlign: 'center', paddingTop: 20,
                       fontFamily: SoS.sans, fontSize: 12, color: SoS.lineSoft }}>&#8212;</div>
@@ -11541,9 +11546,9 @@ const DesktopKalender = () => {
                     const bb = SoS_BROBYGGERE.find(b => b.id === a.brobyggerId);
                     const ok = a.status === 'confirmed';
                     return (
-                      <div key={a.id} onClick={() => setSelectedAppt(a)} style={{ background: ok ? SoS.sageSoft : SoS.sun + '33',
-                        borderLeft: '3px solid ' + (ok ? SoS.sage : SoS.sun),
-                        borderRadius: '0 6px 6px 0', padding: '5px 7px', marginBottom: 4,
+                      <div key={a.id} onClick={() => setSelectedAppt(a)} style={{ background: ok ? SoS.green + '10' : SoS.amber + '18',
+                        borderLeft: '3px solid ' + (ok ? SoS.green : SoS.amber),
+                        borderRadius: 0, padding: '5px 7px', marginBottom: 4,
                         cursor: 'pointer' }}>
                         <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700, color: SoS.inkSoft }}>{a.start}</div>
                         <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600, color: SoS.ink, lineHeight: 1.2 }}>
@@ -11552,7 +11557,7 @@ const DesktopKalender = () => {
                         <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkSoft, lineHeight: 1.2 }}>{a.activity}</div>
                         {bb && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
-                            <div style={{ width: 14, height: 14, borderRadius: 7, background: bb.bg,
+                            <div style={{ width: 14, height: 14, borderRadius: 0, background: bb.bg,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontFamily: SoS.sans, fontSize: 7, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
                               {bb.avatar[0]}
@@ -11566,8 +11571,8 @@ const DesktopKalender = () => {
                   {more > 0 && (
                     <button onClick={() => { setSelectedDay(ds); setView('dag'); }}
                       style={{ width: '100%', padding: '5px 4px', borderRadius: 6, border: 'none',
-                        background: SoS.orange + '18', cursor: 'pointer',
-                        fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.orangeDeep }}>
+                        background: SoS.accent + '10', cursor: 'pointer',
+                        fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.accent }}>
                       +{more} mere &#8594;
                     </button>
                   )}
@@ -11581,8 +11586,8 @@ const DesktopKalender = () => {
       {/* DAG VIEW */}
       {view === 'dag' && (
         <div>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 14, background: '#fff',
-            borderRadius: 12, padding: 8, border: '1px solid ' + SoS.lineSoft, overflowX: 'auto' }}>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 14, background: SoS.surface,
+            borderRadius: 0, padding: 8, border: `1px solid ${SoS.line}`, overflowX: 'auto' }}>
             {days.map((d, i) => {
               const ds  = fmt(d);
               const sel = ds === selDs;
@@ -11590,8 +11595,9 @@ const DesktopKalender = () => {
               const isT = ds === TODAY;
               return (
                 <button key={i} onClick={() => setSelectedDay(ds)} style={{
-                  flex: '0 0 auto', padding: '8px 14px', borderRadius: 8, border: 'none',
-                  background: sel ? SoS.orange : 'transparent', cursor: 'pointer', textAlign: 'center',
+                  flex: '0 0 auto', padding: '8px 14px', borderRadius: 0, border: 'none',
+                  borderBottom: `2px solid ${sel ? SoS.accent : 'transparent'}`,
+                  background: 'transparent', cursor: 'pointer', textAlign: 'center',
                 }}>
                   <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
                     color: sel ? '#fff' : SoS.inkMuted }}>{DNAMES[i]}</div>
@@ -11599,7 +11605,7 @@ const DesktopKalender = () => {
                     color: sel ? '#fff' : (isT ? SoS.orange : SoS.ink) }}>{d.getDate()}</div>
                   {cnt > 0 && (
                     <div style={{ fontFamily: SoS.sans, fontSize: 10, marginTop: 2,
-                      color: sel ? 'rgba(255,255,255,0.75)' : SoS.inkMuted }}>{cnt} afd.</div>
+                      color: SoS.inkMuted }}>{cnt} afd.</div>
                   )}
                 </button>
               );
@@ -11627,8 +11633,9 @@ const DesktopKalender = () => {
                 return (
                   <div key={ds} style={{ marginBottom: 18 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                      <div style={{ width: 38, height: 38, borderRadius: 19, flexShrink: 0,
-                        background: isT ? SoS.orange : SoS.creamDeep,
+                      <div style={{ width: 38, height: 38, borderRadius: 0, flexShrink: 0,
+                        background: isT ? SoS.accent : SoS.surfaceAlt,
+                        border: `1px solid ${SoS.line}`,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ fontFamily: SoS.sans, fontSize: 8, fontWeight: 700,
                           color: isT ? 'rgba(255,255,255,0.8)' : SoS.inkMuted,
@@ -11668,15 +11675,17 @@ const DesktopRapport = () => {
   return (
   <>
     {/* Fane-vælger */}
-    <div style={{ display: 'flex', gap: 4, marginBottom: 16,
-      background: SoS.creamDeep, borderRadius: 10, padding: 4 }}>
+    <div style={{ display: 'flex', gap: 0, marginBottom: 16,
+      background: SoS.surface, borderRadius: 0, padding: 0,
+      borderBottom: `1px solid ${SoS.line}` }}>
       {RAP_TABS.map(t => {
         const sel = rapTab === t.id;
         return (
           <button key={t.id} onClick={() => setRapTab(t.id)} style={{
-            flex: 1, padding: '8px 0', borderRadius: 8, border: 'none',
-            background: sel ? '#fff' : 'transparent',
-            boxShadow: sel ? SoS.shadow.sm : 'none',
+            flex: 1, padding: '8px 0', borderRadius: 0, border: 'none',
+            background: 'transparent',
+            borderBottom: `2px solid ${sel ? SoS.accent : 'transparent'}`,
+            boxShadow: 'none',
             fontFamily: SoS.sans, fontSize: 13, fontWeight: sel ? 700 : 400,
             color: sel ? SoS.ink : SoS.inkSoft, cursor: 'pointer',
             transition: 'all 0.15s',
@@ -11719,13 +11728,13 @@ const DesktopRapport = () => {
           <button key={i}
             onClick={() => x.l === 'SROI komplet' ? setShowExport(true) : handleDownload(x.l)}
             style={{
-              padding: 16, background: downloading === x.l ? SoS.sageSoft : SoS.cream,
-              borderRadius: 10, border: `1px solid ${SoS.lineSoft}`,
+              padding: 16, background: downloading === x.l ? SoS.green + '10' : SoS.surface,
+              borderRadius: 0, border: `1px solid ${SoS.line}`,
               cursor: 'pointer', textAlign: 'left', fontFamily: SoS.sans,
               transition: 'background 0.2s',
             }}>
             <Icon name={downloading === x.l ? 'check' : x.i} size={22}
-              color={downloading === x.l ? SoS.sage : SoS.orange}/>
+              color={downloading === x.l ? SoS.green : SoS.accent}/>
             <div style={{ fontSize: 13, fontWeight: 600, color: SoS.ink, marginTop: 10 }}>{x.l}</div>
             <div style={{ fontSize: 11, color: SoS.inkSoft, marginTop: 2 }}>
               {downloading === x.l ? 'Hentes...' : x.d}
@@ -11753,8 +11762,8 @@ const DesktopRapport = () => {
               <tr style={{ borderBottom: `2px solid ${SoS.line}` }}>
                 {['Niveau', 'Betingelse', 'SROI-relevans'].map(h => (
                   <th key={h} style={{ padding: '6px 10px', textAlign: 'left',
-                    fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                    color: SoS.inkMuted, letterSpacing: 0.6, textTransform: 'uppercase' }}>{h}</th>
+                    fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                    color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -11791,10 +11800,10 @@ const DesktopRapport = () => {
                   sroi: 'Højeste SROI-værdi — bruges til intensitet 2–3 / 4+',
                 },
               ].map((r, i) => (
-                <tr key={i} style={{ borderBottom: `1px solid ${SoS.lineSoft}` }}>
+                <tr key={i} style={{ borderBottom: `1px solid ${SoS.line}` }}>
                   <td style={{ padding: '10px 10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: 5,
+                      <div style={{ width: 8, height: 8, borderRadius: 0,
                         background: r.color, flexShrink: 0 }}/>
                       <span style={{ fontFamily: SoS.sans, fontSize: 13,
                         fontWeight: 600, color: r.color }}>{r.niveau}</span>
@@ -11822,8 +11831,8 @@ const DesktopRapport = () => {
               <tr style={{ borderBottom: `2px solid ${SoS.line}` }}>
                 {['Type', 'Beskrivelse', 'Tæller som', 'Sektor'].map(h => (
                   <th key={h} style={{ padding: '6px 10px', textAlign: 'left',
-                    fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                    color: SoS.inkMuted, letterSpacing: 0.6, textTransform: 'uppercase' }}>{h}</th>
+                    fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                    color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -11865,10 +11874,10 @@ const DesktopRapport = () => {
                   sektor: '—',
                 },
               ].map((r, i) => (
-                <tr key={i} style={{ borderBottom: `1px solid ${SoS.lineSoft}` }}>
+                <tr key={i} style={{ borderBottom: `1px solid ${SoS.line}` }}>
                   <td style={{ padding: '10px 10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: 5,
+                      <div style={{ width: 8, height: 8, borderRadius: 0,
                         background: r.color, flexShrink: 0 }}/>
                       <span style={{ fontFamily: SoS.sans, fontSize: 13,
                         fontWeight: 600, color: r.color }}>{r.type}</span>
@@ -11906,12 +11915,12 @@ const DesktopRapport = () => {
               { label: '2–3 følgeskaber', sublabel: 'Fler-aftaleforløb', desc: 'Vedvarende kontakt. Primær SROI-population for intensitetsanalyse.', color: '#D64545' },
               { label: '4+ følgeskaber', sublabel: 'Intensivt forløb', desc: 'Højintensivt forløb. Rapporteres separat som højeste SROI-kategori.', color: '#9B2335' },
             ].map((k, i) => (
-              <div key={i} style={{ padding: 14, borderRadius: SoS.r.md,
-                border: `2px solid ${k.color}22`, background: k.color + '08' }}>
+              <div key={i} style={{ padding: 14, borderRadius: 0,
+                border: `1px solid ${k.color}33`, background: k.color + '06' }}>
                 <div style={{ fontFamily: SoS.sans, fontSize: 9, fontWeight: 700,
                   color: k.color, letterSpacing: 0.8, textTransform: 'uppercase',
                   marginBottom: 4 }}>{k.sublabel}</div>
-                <div style={{ fontFamily: SoS.font, fontSize: 20, fontWeight: 500,
+                <div style={{ fontFamily: SoS.mono, fontSize: 18, fontWeight: 700,
                   color: k.color, marginBottom: 6 }}>{k.label}</div>
                 <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft,
                   lineHeight: 1.5 }}>{k.desc}</div>
@@ -11929,8 +11938,9 @@ const DesktopRapport = () => {
               { status: 'Udeblev', color: '#D64545', def: 'Mennesket mødte ikke op uden afbud. Registreres separat, da det kan indikere behov for ekstra opfølgning.' },
             ].map((s, i) => (
               <div key={i} style={{ display: 'flex', gap: 14, padding: 12,
-                background: s.color + '08', borderRadius: SoS.r.md,
-                border: `1px solid ${s.color}33` }}>
+                background: 'transparent',
+                borderLeft: `2px solid ${s.color}`,
+                border: `1px solid ${SoS.line}` }}>
                 <Pill bg={s.color + '22'} color={s.color} style={{ flexShrink: 0, alignSelf: 'flex-start' }}>
                   {s.status}
                 </Pill>
@@ -11940,8 +11950,9 @@ const DesktopRapport = () => {
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 14, padding: 12, background: SoS.creamDeep,
-            borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 12,
+          <div style={{ marginTop: 14, padding: 12, background: SoS.surfaceAlt,
+            borderRadius: 0, borderLeft: `2px solid ${SoS.line}`,
+            fontFamily: SoS.sans, fontSize: 12,
             color: SoS.inkSoft, lineHeight: 1.6 }}>
             <strong style={{ color: SoS.ink }}>Datagrundlag:</strong> Al klassificering sker automatisk
             ud fra registrerede hændelser. Ingen tælle-felter gemmes direkte på borgeren — data
