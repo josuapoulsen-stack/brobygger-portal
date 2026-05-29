@@ -9254,6 +9254,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
           <AdminMobileBeskeder isAdmin={isAdmin} viewingHq={viewingHq}/>
         )}
 
+      </div>
       <AdminMobileTabBar active={tab} onChange={setTab} isAdmin={isAdmin}/>
       {selectedBb && (
         <div style={{ position: "absolute", inset: 0, overflowY: "auto", zIndex: 100, background: SoS.cream }}>
