@@ -9,16 +9,17 @@
   <meta name="apple-mobile-web-app-title" content="Brobygger"/>
   <link rel="manifest" href="manifest.json"/>
   <link rel="apple-touch-icon" href="icon-192.svg"/>
-  <meta name="theme-color" content="#E87A3E"/>
+  <meta name="theme-color" content="#D8581C"/>
   <title>Brobygger portal — SoS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100%; background: #F3EADC; }
+    html, body { margin: 0; padding: 0; height: 100%; background: #FAF8F4; }
     #root { height: 100%; }
     input, button, textarea, select { font-family: inherit; }
+    button:active { transform: scale(0.99); }
   </style>
 </head>
 <body>
@@ -43,57 +44,71 @@ window.onerror = function(msg, src, line, col, err) {
 // Warm, human, rounded — rooted in the orange logo
 
 const SoS_TOKENS = {
-  // Primary palette — derived from logo #E17A3E
-  orange:      '#E87A3E',
-  orangeSoft:  '#F4A470',
-  orangeDeep:  '#B8501E',
-  cream:       '#FBF5EE',
-  creamDeep:   '#F3EADC',
-  sand:        '#EFE3D1',
+  // ── v2: skandinavisk funktionel ──────────────────────────────────────────
+  // Flader
+  paper:      '#FAF8F4',
+  surface:    '#FFFFFF',
+  surfaceAlt: '#F4F1EB',
 
-  // Semantic neutrals
-  ink:         '#2A1F17',     // primary text
-  inkSoft:     '#6B5B4D',     // secondary
-  inkMuted:    '#9B8A7A',     // tertiary
-  line:        'rgba(42, 31, 23, 0.08)',
-  lineSoft:    'rgba(42, 31, 23, 0.05)',
+  // Tekst
+  ink:        '#1A1613',
+  inkSoft:    '#6B6258',
+  inkMuted:   '#9A8F81',
 
-  // Accents (used sparingly)
-  sage:        '#7FA089',     // availability green
-  sageSoft:    '#D9E4DA',
-  rose:        '#C46A6A',     // cancellation / urgent
-  roseSoft:    '#F0D5D5',
-  sky:         '#6B8CAE',     // info
-  skySoft:     '#D6E2EC',
-  sun:         '#E8B84B',     // notifications
+  // Linjer (bærer al struktur — ingen skygger)
+  line:       '#E4DDD1',
+  lineStrong: '#D6CCBC',
+  lineSoft:   '#EDE7DC',
 
-  // Hovedsæder — each gets a distinct warm hue
+  // Accent (dybere orange — bruges sparsomt)
+  accent:     '#D8581C',
+  accentWash: '#FBEDE2',
+
+  // Status
+  green: '#3F7A5F', greenWash: '#E6EFEA',
+  amber: '#A8741A', amberWash: '#F6ECD8',
+  red:   '#B0493A', redWash:   '#F4E2DD',
+
+  // Brobygningstyper
+  sundhed:  '#2E6E9E',
+  forening: '#2C8A5E',
+  social:   '#C04F6E',
+
+  // Hovedsæder
   hq: {
-    'Sjælland':    '#C46A6A',
-    'Hovedstaden': '#E87A3E',
-    'Fyn':         '#E8B84B',
-    'Nord':        '#6B8CAE',
-    'Midt':        '#7FA089',
-    'Kronjylland': '#8C6BAE',
-    'Aarhus':      '#B8501E',
-    'Syd':         '#4A8B7F',
-    'Sydvest':     '#D98B5F',
+    'Sjælland':    '#B0493A',
+    'Hovedstaden': '#D8581C',
+    'Fyn':         '#A8741A',
+    'Nord':        '#2E6E9E',
+    'Midt':        '#3F7A5F',
+    'Kronjylland': '#6A5A8C',
+    'Aarhus':      '#B8430F',
+    'Syd':         '#2C8A5E',
+    'Sydvest':     '#C2773F',
   },
 
-  // Radii — rounded, soft
-  r: { xs: 8, sm: 12, md: 16, lg: 20, xl: 28, pill: 999 },
+  // Radier — næsten firkantede. Paneler: 0. Knapper/ikoner: 8–14.
+  r: { xs: 6, sm: 8, md: 10, lg: 14, xl: 16, pill: 999 },
 
-  // Shadows — warm, soft
-  shadow: {
-    sm:  '0 1px 2px rgba(42,31,23,0.04), 0 2px 8px rgba(42,31,23,0.04)',
-    md:  '0 4px 12px rgba(42,31,23,0.06), 0 12px 32px rgba(42,31,23,0.06)',
-    lg:  '0 8px 24px rgba(42,31,23,0.08), 0 24px 64px rgba(42,31,23,0.08)',
-    glow: '0 8px 32px rgba(232,122,62,0.22)',
-  },
+  // Skygger — SLÅET FRA. Kanter bærer struktur.
+  shadow: { sm: 'none', md: 'none', lg: 'none', glow: 'none' },
 
-  // Typography
-  font: "'Fraunces', ui-serif, Georgia, serif",
-  sans: "'Inter', -apple-system, system-ui, sans-serif",
+  // Typografi
+  font: "'Schibsted Grotesk', system-ui, sans-serif",
+  sans: "'Schibsted Grotesk', system-ui, sans-serif",
+  mono: "'JetBrains Mono', ui-monospace, SFMono-Regular, monospace",
+
+  // ── Backward-compatible aliasser (v1-navne → v2-værdier) ─────────────────
+  orange:     '#D8581C',
+  orangeSoft: '#E07A45',
+  orangeDeep: '#B8430F',
+  cream:      '#FAF8F4',
+  creamDeep:  '#F3EFE7',
+  sand:       '#EFE9DE',
+  sage:       '#3F7A5F', sageSoft: '#E6EFEA',
+  rose:       '#B0493A', roseSoft: '#F4E2DD',
+  sky:        '#2E6E9E', skySoft:  '#E2ECF3',
+  sun:        '#A8741A',
 };
 
 window.SoS = SoS_TOKENS;
@@ -3260,8 +3275,8 @@ const ProfileScreen = ({ user, onSwitchRole }) => {
       <>
         <BackHeader title="Personlige oplysninger"/>
         <div style={{ padding: '16px 20px 20px' }}>
-          <div style={{ background: '#fff', borderRadius: SoS.r.lg,
-            border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ background: SoS.surface, borderRadius: 0,
+            border: `1px solid ${SoS.line}`, overflow: 'hidden', marginBottom: 16 }}>
             {[{ label: 'Rolle', value: 'Brobygger' }, { label: 'Hovedsæde', value: user.hoofdsaede || 'Aarhus' }, { label: 'Startdato', value: 'Oktober 2024' }].map((row, i, arr) => (
               <div key={i} style={{ padding: '13px 16px',
                 borderBottom: i < arr.length-1 ? `1px solid ${SoS.lineSoft}` : 'none',
@@ -6163,32 +6178,57 @@ window.ExportReport = ExportReport;
 <script type="text/babel">
 // Admin screens — mobile data-rich dashboard for ansatte
 
-const AdminTopBar = ({ title, subtitle, hovedsaede, onSwitchHq, isAdmin = false }) => (
-  <div style={{
-    position: 'sticky', top: 0, background: SoS.ink, zIndex: 20,
-    padding: '54px 20px 18px', color: '#fff',
-    borderBottomLeftRadius: 20, borderBottomRightRadius: 20,
-  }}>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <div>
-        {subtitle && <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
-          letterSpacing: 1, textTransform: 'uppercase', opacity: 0.6, marginBottom: 4 }}>{subtitle}</div>}
-        <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 500, letterSpacing: -0.2 }}>{title}</div>
+const AdminTopBar = ({ title, subtitle, hovedsaede, onSwitchHq, isAdmin = false }) => {
+  const now = new Date('2026-05-29');
+  const weekNum = (() => {
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  })();
+  const dayStr = now.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'short' });
+  return (
+    <div style={{
+      position: 'sticky', top: 0, background: SoS.paper, zIndex: 20,
+      padding: '56px 22px 14px',
+      borderBottom: `1px solid ${SoS.line}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+            color: SoS.accent, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+            {isAdmin ? 'ADMIN — SOCIAL SUNDHED' : `RAADGIVER — ${(hoofdsaede || '').toUpperCase()}`}
+          </div>
+          <div style={{ fontFamily: SoS.sans, fontSize: 28, fontWeight: 700,
+            color: SoS.ink, letterSpacing: -1, lineHeight: 1 }}>
+            {title}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <div style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600,
+            color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            UGE {weekNum}
+          </div>
+          <div style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.inkMuted }}>
+            {dayStr.toUpperCase()}
+          </div>
+          <button onClick={onSwitchHq} style={{
+            marginTop: 4, padding: '5px 10px',
+            background: SoS.surface, border: `1px solid ${SoS.line}`,
+            borderRadius: SoS.r.sm, color: SoS.ink,
+            fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+            textTransform: 'uppercase', letterSpacing: 0.5,
+          }}>
+            {isAdmin
+              ? <><Icon name="sparkle" size={10} color={SoS.accent} weight={2}/> Admin</>
+              : <><div style={{ width: 6, height: 6, background: SoS.hq[hoofdsaede] || SoS.accent }} />{hoofdsaede}</>}
+          </button>
+        </div>
       </div>
-      <button onClick={onSwitchHq} style={{
-        padding: '8px 14px', borderRadius: 999,
-        background: isAdmin ? SoS.orange : 'rgba(255,255,255,0.12)',
-        border: isAdmin ? 'none' : '1px solid rgba(255,255,255,0.2)', color: '#fff',
-        fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-        display: 'flex', alignItems: 'center', gap: 6,
-      }}>
-        {isAdmin
-          ? <><Icon name="sparkle" size={12} color="#fff" weight={2.2}/> Admin</>
-          : <><div style={{ width: 8, height: 8, borderRadius: 4, background: SoS.hq[hovedsaede] || SoS.orange }} />{hovedsaede}<Icon name="chevronD" size={14} color="#fff" /></>}
-      </button>
     </div>
-  </div>
-);
+  );
+};
 
 const AdminTabBar = ({ active, onChange }) => {
   const tabs = [
@@ -6201,11 +6241,9 @@ const AdminTabBar = ({ active, onChange }) => {
   return (
     <div style={{
       position: 'absolute', bottom: 0, left: 0, right: 0,
-      background: 'rgba(255,255,255,0.95)',
-      backdropFilter: 'blur(20px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      background: SoS.paper,
       borderTop: `1px solid ${SoS.line}`,
-      paddingBottom: 28, paddingTop: 10,
+      paddingBottom: 26, paddingTop: 0,
       display: 'flex', justifyContent: 'space-around', zIndex: 50,
     }}>
       {tabs.map(t => {
@@ -6213,11 +6251,15 @@ const AdminTabBar = ({ active, onChange }) => {
         return (
           <button key={t.id} onClick={() => onChange(t.id)} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-            padding: '4px 6px', color: on ? SoS.orange : SoS.inkMuted,
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            paddingTop: 10, position: 'relative', minWidth: 48,
           }}>
-            <Icon name={t.icon} size={22} color={on ? SoS.orange : SoS.inkMuted} weight={on ? 2.1 : 1.7} />
-            <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 600 }}>{t.label}</div>
+            {on && <div style={{ position: 'absolute', top: 0, width: 26, height: 2, background: SoS.accent }} />}
+            <Icon name={t.icon} size={21} color={on ? SoS.accent : SoS.inkMuted} weight={on ? 2 : 1.7} />
+            <div style={{ fontFamily: SoS.mono, fontSize: 8.5, fontWeight: 600,
+              color: on ? SoS.ink : SoS.inkMuted, letterSpacing: 0.3, marginTop: 4 }}>
+              {t.label.toUpperCase()}
+            </div>
           </button>
         );
       })}
@@ -6258,250 +6300,340 @@ const RingTaskCard = ({ task: t, onDone }) => {
   );
 };
 
-// Overview — the data analyst's dashboard
+// Overview — v2 "skandinavisk funktionel"
 const AdminOverview = ({ hovedsaede }) => {
-  const weeklyMatches = [
-    { l: 'M', v: 8 }, { l: 'T', v: 12 }, { l: 'O', v: 9 }, { l: 'T', v: 15 },
-    { l: 'F', v: 14 }, { l: 'L', v: 6 }, { l: 'S', v: 3 },
-  ];
-  const monthlyTrend = [34, 38, 42, 47, 51, 55, 62, 68, 71, 78, 85, 94];
+  const [selDay, setSelDay] = React.useState(2);
+  const weekDays = ['MAN','TIR','ONS','TOR','FRE','LØR','SØN'];
+  const weekDates = [21,22,23,24,25,26,27];
+  const byDay = Array.from({length: 7}, () => []);
+  SoS_APPOINTMENTS_BUSY.forEach(a => {
+    const d = new Date(a.date);
+    const dow = (d.getDay() + 6) % 7;
+    if (dow < 7) byDay[dow].push(a);
+  });
+  const dayAppts = byDay[selDay] || [];
+  const apptCounts = byDay.map(arr => arr.length);
+  const pendingCount = SoS_BROBYGGERE.filter(b => b.pending > 0).length;
+  const activeBb = SoS_BROBYGGERE.filter(b => b.status === 'aktiv').length;
+  const TYPE_C = { sundhed: SoS.sundhed, forening: SoS.forening, social: SoS.social };
+  const TYPE_L = { sundhed: 'SUNDHED', forening: 'FORENING', social: 'SOCIAL' };
+  const ST_C = { confirmed: SoS.green, afventer: SoS.amber, bekræftet: SoS.green };
+  const ST_L = { confirmed: 'BEKRÆFTET', afventer: 'AFVENTER', bekræftet: 'BEKRÆFTET' };
+  const todayApptCount = byDay[2].length;
 
   return (
     <>
-      {/* Period selector */}
-      <div style={{ padding: '16px 20px 12px', display: 'flex', gap: 6,
-        overflowX: 'auto' }}>
-        {['I dag', 'Uge', 'Måned', 'Kvartal', 'År', 'Alt'].map((p, i) => (
-          <button key={p} style={{
-            padding: '8px 14px', borderRadius: 999, flexShrink: 0,
-            background: i === 2 ? SoS.ink : '#fff',
-            color: i === 2 ? '#fff' : SoS.ink,
-            border: i === 2 ? 'none' : `1px solid ${SoS.line}`,
-            fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}>{p}</button>
+      {/* ── Stat-stribe ── */}
+      <div style={{ margin: '16px 22px 0', border: `1px solid ${SoS.line}`,
+        background: SoS.surface, display: 'flex' }}>
+        {[
+          { dot: SoS.sage,   label: 'BROBYGGERE', value: activeBb,       sub: 'aktive'  },
+          { dot: SoS.amber,  label: 'MATCH',      value: pendingCount,   sub: 'mangler' },
+          { dot: SoS.accent, label: 'AFTALER',    value: todayApptCount, sub: 'i dag'   },
+        ].map((cell, i) => (
+          <div key={i} style={{
+            flex: 1, borderLeft: i > 0 ? `1px solid ${SoS.line}` : 'none',
+            padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 4
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 6, height: 6, background: cell.dot, flexShrink: 0 }}/>
+              <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+                color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase' }}>
+                {cell.label}
+              </span>
+            </div>
+            <div style={{ fontFamily: SoS.mono, fontSize: 28, fontWeight: 700,
+              color: SoS.ink, letterSpacing: -1, lineHeight: 1 }}>
+              {cell.value}
+            </div>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9, color: SoS.inkMuted,
+              textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              {cell.sub}
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Ring og bekraft — ventende opgaver */}
+      {/* ── Uge-stribe ── */}
+      <div style={{ margin: '22px 22px 0', display: 'flex', gap: 6 }}>
+        {weekDays.map((d, i) => {
+          const isToday = i === 2;
+          const cnt = apptCounts[i] || 0;
+          return (
+            <button key={i} onClick={() => setSelDay(i)} style={{
+              flex: 1, padding: '8px 0',
+              border: `1px solid ${isToday ? SoS.accent : (selDay === i ? SoS.lineStrong : SoS.line)}`,
+              borderRadius: SoS.r.sm,
+              background: isToday ? SoS.accent : selDay === i ? SoS.surfaceAlt : SoS.surface,
+              cursor: 'pointer', display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 2
+            }}>
+              <span style={{ fontFamily: SoS.mono, fontSize: 8, fontWeight: 600,
+                color: isToday ? '#fff' : SoS.inkMuted, letterSpacing: 0.5 }}>{d}</span>
+              <span style={{ fontFamily: SoS.mono, fontSize: 13, fontWeight: 700,
+                color: isToday ? '#fff' : SoS.ink }}>{weekDates[i]}</span>
+              {cnt > 0 && (
+                <div style={{ width: 4, height: 4,
+                  background: isToday ? 'rgba(255,255,255,0.7)' : SoS.accent }}/>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Ring og bekraft ── */}
       {(() => {
         const tasks = (window.PENDING_RING_TASKS || []).filter(t => !t.done);
         if (tasks.length === 0) return null;
         return (
-          <div style={{ margin: '0 20px 16px', padding: 16,
-            background: SoS.orange + '10', borderRadius: SoS.r.lg,
-            border: `1.5px solid ${SoS.orange}33` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Icon name='phone' size={16} color={SoS.orange}/>
-              <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700,
-                color: SoS.orange, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+          <div style={{ margin: '22px 22px 0', border: `1px solid ${SoS.line}`,
+            background: SoS.surface }}>
+            <div style={{ padding: '10px 14px', borderBottom: `1px solid ${SoS.line}`,
+              display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Icon name='phone' size={14} color={SoS.accent}/>
+              <span style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600,
+                color: SoS.accent, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 Ring og bekraft — {tasks.length} ventende
-              </div>
+              </span>
             </div>
             {tasks.map(t => (
-              <RingTaskCard key={t.id} task={t}
-                onDone={() => { t.done = true; }}/>
+              <RingTaskCard key={t.id} task={t} onDone={() => { t.done = true; }}/>
             ))}
           </div>
         );
       })()}
 
-
-      {/* Headline KPIs */}
-      <div style={{ padding: '0 20px 12px', display: 'grid',
-        gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <KPI label="Aktive mennesker" value="94" delta="+12%" color={SoS.orange}
-          sparkData={monthlyTrend} />
-        <KPI label="Aktive brobyggere" value="47" delta="+4" color={SoS.sage}
-          sparkData={[31,33,35,34,38,40,42,43,44,46,45,47]} />
-        <KPI label="Gennemf. aftaler" value="186" delta="+23%" color={SoS.sky}
-          subtitle="Denne måned" />
-        <KPI label="Timer doneret" value="412" delta="+18%" color={SoS.orangeDeep}
-          subtitle="Siden 1. april" />
-      </div>
-
-      {/* Fordeling på typer */}
-      <div style={{ margin: '12px 20px 16px', padding: 18, background: '#fff',
-        borderRadius: SoS.r.lg, border: `1px solid ${SoS.lineSoft}` }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-          marginBottom: 14 }}>
-          <div style={{ fontFamily: SoS.font, fontSize: 17, fontWeight: 500, color: SoS.ink }}>
-            Fordeling på typer
+      {/* ── Aftaler den valgte dag ── */}
+      <div style={{ margin: '22px 22px 0', border: `1px solid ${SoS.line}`,
+        background: SoS.surface }}>
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${SoS.line}`,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600,
+            color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            {weekDays[selDay]} {weekDates[selDay]}. MAJ
+          </span>
+          <span style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.inkMuted }}>
+            {dayAppts.length} AFTALER
+          </span>
+        </div>
+        {dayAppts.length === 0 ? (
+          <div style={{ padding: '24px 14px', textAlign: 'center',
+            fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
+            Ingen aftaler denne dag
           </div>
-          <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>Aktive forløb</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <TypeDonut sundhed={22} forening={31} social={41} size={130} />
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              { key: 'sundhed', v: 22, pct: 24 },
-              { key: 'forening', v: 31, pct: 33 },
-              { key: 'social', v: 41, pct: 43 },
-            ].map(item => {
-              const t = SoS_TYPER[item.key];
-              return (
-                <div key={item.key}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: 5, background: t.color }} />
-                    <span style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink, flex: 1 }}>
-                      {t.short}
-                    </span>
-                    <span style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{item.v}</span>
-                  </div>
-                  <div style={{ height: 4, background: SoS.lineSoft, borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{ width: `${item.pct}%`, height: '100%', background: t.color }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Ugens matches */}
-      <div style={{ margin: '0 20px 16px', padding: 18, background: '#fff',
-        borderRadius: SoS.r.lg, border: `1px solid ${SoS.lineSoft}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{ fontFamily: SoS.font, fontSize: 17, fontWeight: 500 }}>Aftaler pr. dag</div>
-          <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>Uge 17</span>
-        </div>
-        <MiniBars data={weeklyMatches} color={SoS.orange} height={90}/>
-      </div>
-
-      {/* Kvalitet & status */}
-      <div style={{ padding: '0 20px', marginBottom: 12 }}>
-        <SectionHead title="Kvalitet" />
-      </div>
-      <div style={{ padding: '0 20px 16px', display: 'grid',
-        gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <KPI label="Gennemført-rate" value="91%" delta="+2%" subtitle="Bookede aftaler" color={SoS.sage}/>
-        <KPI label="Aflysnings-rate" value="9%" delta="−2%" subtitle="Menneske + brobygger" color={SoS.rose}/>
-        <KPI label="Ventetid til match" value="5.2d" delta="−1.1d" subtitle="Medianen" color={SoS.sky}/>
-        <KPI label="Varighed af forløb" value="18u" subtitle="Median aktiv" color={SoS.orangeDeep}/>
-      </div>
-
-      {/* Status fordeling */}
-      <div style={{ margin: '0 20px 16px', padding: 18, background: '#fff',
-        borderRadius: SoS.r.lg, border: `1px solid ${SoS.lineSoft}` }}>
-        <div style={{ fontFamily: SoS.font, fontSize: 17, fontWeight: 500, marginBottom: 12 }}>
-          Status på forløb
-        </div>
-        <StackedBar height={14} segments={[
-          { v: 68, color: SoS.sage },
-          { v: 12, color: SoS.sun },
-          { v: 28, color: SoS.inkMuted },
-        ]} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14, gap: 8 }}>
-          {[
-            { color: SoS.sage, label: 'Aktiv', v: 68 },
-            { color: SoS.sun, label: 'Pause', v: 12 },
-            { color: SoS.inkMuted, label: 'Afsluttet i år', v: 28 },
-          ].map((s, i) => (
-            <div key={i} style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 4, background: s.color }}/>
-                <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>{s.label}</span>
+        ) : dayAppts.map((a, i) => {
+          const typeColor = TYPE_C[a.type] || SoS.inkMuted;
+          const stColor   = ST_C[a.status] || SoS.amber;
+          const stLabel   = ST_L[a.status] || (a.status ? a.status.toUpperCase() : 'AFVENTER');
+          const tStr = a.date
+            ? new Date(a.date).toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' })
+            : (a.time || '—');
+          return (
+            <div key={a.id || i} style={{
+              borderTop: i > 0 ? `1px solid ${SoS.line}` : 'none',
+              display: 'flex', alignItems: 'stretch', minHeight: 62
+            }}>
+              <div style={{ width: 52, flexShrink: 0, display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                borderRight: `1px solid ${SoS.line}` }}>
+                <span style={{ fontFamily: SoS.mono, fontSize: 12, fontWeight: 600,
+                  color: SoS.ink }}>{tStr}</span>
               </div>
-              <div style={{ fontFamily: SoS.font, fontSize: 20, fontWeight: 500, color: SoS.ink }}>{s.v}</div>
+              <div style={{ width: 3, flexShrink: 0, background: typeColor }}/>
+              <div style={{ flex: 1, padding: '10px 12px', display: 'flex',
+                flexDirection: 'column', gap: 3 }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+                  color: SoS.ink }}>
+                  {a.mensekeName || a.meneskeName || 'Ukendt menneske'}
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>
+                  {a.activity || 'Brobygning'} · {a.brobyggerName || 'N/A'}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                  <div style={{ width: 5, height: 5, background: stColor, flexShrink: 0 }}/>
+                  <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+                    color: stColor, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    {stLabel}
+                  </span>
+                  <span style={{ fontFamily: SoS.mono, fontSize: 9, color: typeColor,
+                    textTransform: 'uppercase', letterSpacing: 0.8, marginLeft: 4 }}>
+                    {TYPE_L[a.type] || a.type}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Match mangler CTA ── */}
+      {pendingCount > 0 && (
+        <button style={{ margin: '16px 22px 0', width: 'calc(100% - 44px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 16px', background: SoS.ink, border: 'none',
+          borderRadius: SoS.r.sm, cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 6, height: 6, background: SoS.accent, flexShrink: 0 }}/>
+            <span style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: '#fff' }}>
+              {pendingCount} mennesker mangler match
+            </span>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke={SoS.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+      )}
+
+      {/* ── Statistik ── */}
+      <div style={{ margin: '28px 22px 0' }}>
+        <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+          color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 1,
+          paddingBottom: 10, borderBottom: `1px solid ${SoS.line}` }}>
+          STATISTIK
+        </div>
+      </div>
+
+      <div style={{ margin: '0 22px', display: 'grid', gridTemplateColumns: '1fr 1fr',
+        borderLeft: `1px solid ${SoS.line}`, borderTop: `1px solid ${SoS.line}` }}>
+        {[
+          { label: 'AKTIVE MENNESKER',  value: '94',   delta: '+12%',  color: SoS.accent   },
+          { label: 'GENNEMF. AFTALER',  value: '186',  delta: '+23%',  color: SoS.sundhed  },
+          { label: 'GENNEMF.-RATE',     value: '91%',  delta: '+2%',   color: SoS.green    },
+          { label: 'VENTETID TIL MATCH',value: '5.2d', delta: '−1.1d', color: SoS.forening },
+        ].map((k, i) => (
+          <div key={i} style={{
+            padding: '14px', borderRight: `1px solid ${SoS.line}`,
+            borderBottom: `1px solid ${SoS.line}`, background: SoS.surface
+          }}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9, color: SoS.inkMuted,
+              textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>
+              {k.label}
+            </div>
+            <div style={{ fontFamily: SoS.mono, fontSize: 24, fontWeight: 700,
+              color: SoS.ink, letterSpacing: -0.5, lineHeight: 1 }}>
+              {k.value}
+            </div>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, color: k.color,
+              marginTop: 4, fontWeight: 600 }}>{k.delta}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ margin: '22px 22px 0', border: `1px solid ${SoS.line}`,
+        background: SoS.surface }}>
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${SoS.line}`,
+          display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600,
+            color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            AFTALER PR. DAG
+          </span>
+          <span style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.inkMuted }}>UGE 22</span>
+        </div>
+        <div style={{ padding: '14px' }}>
+          <MiniBars data={[
+            { l: 'M', v: 8 }, { l: 'T', v: 12 }, { l: 'O', v: 9 }, { l: 'T', v: 15 },
+            { l: 'F', v: 14 }, { l: 'L', v: 6 }, { l: 'S', v: 3 },
+          ]} color={SoS.accent} height={80}/>
+        </div>
+      </div>
+
+      <div style={{ margin: '22px 22px 0', border: `1px solid ${SoS.line}`,
+        background: SoS.surface }}>
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${SoS.line}` }}>
+          <span style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600,
+            color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            FORDELING PÅ TYPER
+          </span>
+        </div>
+        <div style={{ padding: '14px', display: 'flex', alignItems: 'center', gap: 20 }}>
+          <TypeDonut sundhed={22} forening={31} social={41} size={110} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { key: 'SUNDHED',  v: 22, pct: 24, color: SoS.sundhed  },
+              { key: 'FORENING', v: 31, pct: 33, color: SoS.forening },
+              { key: 'SOCIAL',   v: 41, pct: 43, color: SoS.social   },
+            ].map(item => (
+              <div key={item.key}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <div style={{ width: 6, height: 6, background: item.color }}/>
+                  <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+                    color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.7, flex: 1 }}>
+                    {item.key}
+                  </span>
+                  <span style={{ fontFamily: SoS.mono, fontSize: 11, fontWeight: 700,
+                    color: SoS.ink }}>{item.v}</span>
+                </div>
+                <div style={{ height: 3, background: SoS.lineSoft }}>
+                  <div style={{ width: `${item.pct}%`, height: '100%', background: item.color }}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ margin: '22px 22px 0', border: `1px solid ${SoS.line}`,
+        background: SoS.surface }}>
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${SoS.line}` }}>
+          <span style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600,
+            color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            FORLØB PR. HOVEDSÆDE
+          </span>
+        </div>
+        <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[
+            { hq: 'Hovedstaden', v: 142, pct: 100 },
+            { hq: 'Aarhus',      v: 94,  pct: 66  },
+            { hq: 'Fyn',         v: 71,  pct: 50  },
+            { hq: 'Sjælland',    v: 58,  pct: 41  },
+            { hq: 'Midt',        v: 44,  pct: 31  },
+            { hq: 'Nord',        v: 38,  pct: 27  },
+            { hq: 'Syd',         v: 32,  pct: 23  },
+            { hq: 'Kronjylland', v: 21,  pct: 15  },
+            { hq: 'Sydvest',     v: 18,  pct: 13  },
+          ].map((h, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 88, fontFamily: SoS.sans, fontSize: 12,
+                fontWeight: h.hq === hovedsaede ? 700 : 400,
+                color: h.hq === hovedsaede ? SoS.accent : SoS.ink }}>{h.hq}</div>
+              <div style={{ flex: 1, height: 4, background: SoS.lineSoft }}>
+                <div style={{ width: `${h.pct}%`, height: '100%',
+                  background: SoS.hq[h.hq] || SoS.accent }}/>
+              </div>
+              <div style={{ width: 28, textAlign: 'right', fontFamily: SoS.mono,
+                fontSize: 11, fontWeight: 600, color: SoS.ink }}>{h.v}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Årsager til afslutning */}
-      <div style={{ margin: '0 20px 16px', padding: 18, background: '#fff',
-        borderRadius: SoS.r.lg, border: `1px solid ${SoS.lineSoft}` }}>
-        <div style={{ fontFamily: SoS.font, fontSize: 17, fontWeight: 500, marginBottom: 14 }}>
-          Årsag til afslutning
+      <div style={{ margin: '22px 22px 22px', border: `1px solid ${SoS.line}`,
+        background: SoS.surface }}>
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${SoS.line}`,
+          display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 6, height: 6, background: SoS.green }}/>
+          <span style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600,
+            color: SoS.green, textTransform: 'uppercase', letterSpacing: 0.8 }}>EFFEKT</span>
         </div>
-        {[
-          { label: 'Behov dækket', v: 42, color: SoS.sage },
-          { label: 'Flyttet', v: 18, color: SoS.sky },
-          { label: 'Menneske valgt fra', v: 12, color: SoS.sun },
-          { label: 'Ingen kontakt', v: 8, color: SoS.rose },
-          { label: 'Andet', v: 5, color: SoS.inkMuted },
-        ].map((r, i) => (
-          <div key={i} style={{ marginBottom: i < 4 ? 12 : 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between',
-              fontFamily: SoS.sans, fontSize: 13, marginBottom: 4 }}>
-              <span style={{ color: SoS.ink, fontWeight: 500 }}>{r.label}</span>
-              <span style={{ color: SoS.inkSoft }}>{r.v}</span>
-            </div>
-            <div style={{ height: 6, background: SoS.lineSoft, borderRadius: 3 }}>
-              <div style={{ width: `${(r.v/42)*100}%`, height: '100%',
-                background: r.color, borderRadius: 3 }} />
-            </div>
+        <div style={{ padding: '16px 14px' }}>
+          <div style={{ fontFamily: SoS.mono, fontSize: 26, fontWeight: 700,
+            color: SoS.ink, letterSpacing: -1, lineHeight: 1, marginBottom: 6 }}>
+            87%
           </div>
-        ))}
-      </div>
-
-      {/* Demografi */}
-      <div style={{ margin: '0 20px 16px', padding: 18, background: '#fff',
-        borderRadius: SoS.r.lg, border: `1px solid ${SoS.lineSoft}` }}>
-        <div style={{ fontFamily: SoS.font, fontSize: 17, fontWeight: 500, marginBottom: 14 }}>
-          Aldersfordeling · mennesker
-        </div>
-        <MiniBars data={[
-          { l: '18-29', v: 14 }, { l: '30-44', v: 18 }, { l: '45-59', v: 12 },
-          { l: '60-74', v: 24 }, { l: '75-89', v: 21 }, { l: '90+', v: 5 },
-        ]} color={SoS.orange} height={100}/>
-      </div>
-
-      {/* Hoveds-heatmap */}
-      <div style={{ margin: '0 20px 16px', padding: 18, background: '#fff',
-        borderRadius: SoS.r.lg, border: `1px solid ${SoS.lineSoft}` }}>
-        <div style={{ fontFamily: SoS.font, fontSize: 17, fontWeight: 500, marginBottom: 4 }}>
-          På tværs af landet
-        </div>
-        <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, marginBottom: 14 }}>
-          Aktive forløb pr. hovedsæde
-        </div>
-        {[
-          { hq: 'Hovedstaden', v: 142, pct: 100 },
-          { hq: 'Aarhus', v: 94, pct: 66 },
-          { hq: 'Fyn', v: 71, pct: 50 },
-          { hq: 'Sjælland', v: 58, pct: 41 },
-          { hq: 'Midt', v: 44, pct: 31 },
-          { hq: 'Nord', v: 38, pct: 27 },
-          { hq: 'Syd', v: 32, pct: 23 },
-          { hq: 'Kronjylland', v: 21, pct: 15 },
-          { hq: 'Sydvest', v: 18, pct: 13 },
-        ].map((h, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10,
-            marginBottom: i < 8 ? 8 : 0 }}>
-            <div style={{ width: 90, fontFamily: SoS.sans, fontSize: 12,
-              fontWeight: h.hq === hovedsaede ? 700 : 500,
-              color: h.hq === hovedsaede ? SoS.orange : SoS.ink }}>{h.hq}</div>
-            <div style={{ flex: 1, height: 8, background: SoS.lineSoft,
-              borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ width: `${h.pct}%`, height: '100%',
-                background: SoS.hq[h.hq] || SoS.orange, borderRadius: 4 }}/>
-            </div>
-            <div style={{ width: 32, textAlign: 'right', fontFamily: SoS.sans,
-              fontSize: 12, fontWeight: 600, color: SoS.ink }}>{h.v}</div>
+          <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+            color: SoS.ink, marginBottom: 8 }}>
+            føler sig mindre ensomme efter 3 måneder
           </div>
-        ))}
-      </div>
-
-      {/* Effekt */}
-      <div style={{ margin: '0 20px 16px', padding: 18,
-        background: `linear-gradient(135deg, ${SoS.sageSoft}88 0%, ${SoS.creamDeep} 100%)`,
-        borderRadius: SoS.r.lg, border: `1px solid ${SoS.sage}33` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <Icon name="sparkle" size={18} color={SoS.sage} />
-          <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700,
-            letterSpacing: 0.8, textTransform: 'uppercase', color: SoS.sage }}>Effekt</div>
-        </div>
-        <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500,
-          color: SoS.ink, lineHeight: 1.2, marginBottom: 10 }}>
-          87% af menneskerne føler sig mindre ensomme efter 3 måneder
-        </div>
-        <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, lineHeight: 1.5 }}>
-          Baseret på 62 besvarelser af selvrapporteret velvære (UCLA-3).
-          Gennemsnit før: 6.4 · efter: 3.1.
+          <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, lineHeight: 1.5 }}>
+            Baseret på 62 besvarelser (UCLA-3). Snit før: 6.4 · efter: 3.1.
+          </div>
         </div>
       </div>
     </>
   );
+}
 };
 
 window.AdminOverview = AdminOverview;
@@ -8091,21 +8223,21 @@ const TelefonSoegWidget = ({ onOpenMenneske }) => {
       {/* Søgekort */}
       {open && (
         <div style={{
-          position: 'fixed', bottom: 152, right: 18, width: 290,
-          background: '#fff', borderRadius: 16,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.15)', overflow: 'hidden',
-          border: `1px solid ${SoS.lineSoft}`,
+          position: 'fixed', bottom: 168, right: 18, width: 290,
+          background: SoS.surface, borderRadius: 0,
+          boxShadow: 'none', overflow: 'hidden',
+          border: `1px solid ${SoS.line}`,
           zIndex: 60,
         }}>
           {/* Header */}
-          <div style={{ padding: '11px 14px 9px', borderBottom: `1px solid ${SoS.lineSoft}`, background: SoS.creamDeep }}>
-            <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-              Opslag på telefonnummer
-            </div>
+          <div style={{ padding: '10px 14px', borderBottom: `1px solid ${SoS.line}`, background: SoS.surfaceAlt }}>
+            <span style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600, color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              TELEFON
+            </span>
           </div>
           {/* Input */}
           <div style={{ padding: '12px 14px 10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: SoS.cream, borderRadius: 999, padding: '9px 14px', border: `1.5px solid ${SoS.line}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: SoS.surfaceAlt, borderRadius: 0, padding: '9px 14px', border: `1px solid ${SoS.line}` }}>
               <Icon name="phone" size={15} color={SoS.inkMuted} />
               <input
                 ref={inputRef}
@@ -8130,11 +8262,11 @@ const TelefonSoegWidget = ({ onOpenMenneske }) => {
             const t = SoS_T[match.type] || SoS_T['social'] || { label: match.type, color: SoS.orange, soft: SoS.creamDeep, icon: 'heart' };
             return (
               <div style={{ padding: '0 14px 14px' }}>
-                <div style={{ borderRadius: 12, border: `1.5px solid ${SoS.line}`, overflow: 'hidden' }}>
+                <div style={{ borderRadius: 0, border: `1px solid ${SoS.line}`, overflow: 'hidden' }}>
                   <div style={{ height: 3, background: t.color }} />
                   <div style={{ padding: '12px 14px 10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 18, background: t.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 0, background: t.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Icon name={t.icon} size={18} color={t.color} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -8144,14 +8276,14 @@ const TelefonSoegWidget = ({ onOpenMenneske }) => {
                         <div style={{ fontFamily: SoS.sans, fontSize: 12, color: t.color, fontWeight: 600 }}>{t.label}</div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-                      {match.status && <span style={{ background: SoS.creamDeep, color: SoS.inkSoft, borderRadius: 999, padding: '3px 10px', fontFamily: SoS.sans, fontSize: 11, fontWeight: 700 }}>{match.status}</span>}
-                      {match.age    && <span style={{ background: SoS.creamDeep, color: SoS.inkSoft, borderRadius: 999, padding: '3px 10px', fontFamily: SoS.sans, fontSize: 11 }}>{match.age} år</span>}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10, alignItems: 'center' }}>
+                      {match.status && <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600, color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>{match.status}</span>}
+                      {match.age    && <span style={{ fontFamily: SoS.mono, fontSize: 9, color: SoS.inkMuted }}>{match.age} ÅR</span>}
                     </div>
                     <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted, marginBottom: 10 }}>📞 {match.mobil}</div>
                     <button
                       onClick={() => { setOpen(false); onOpenMenneske?.(match.id); }}
-                      style={{ width: '100%', padding: '10px 0', background: SoS.orange, color: '#fff', border: 'none', borderRadius: 10, fontFamily: SoS.sans, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                      style={{ width: '100%', padding: '10px 0', background: SoS.ink, color: '#fff', border: 'none', borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     >
                       Åbn profil →
                     </button>
@@ -8173,7 +8305,10 @@ const TelefonSoegWidget = ({ onOpenMenneske }) => {
       <button
         onClick={() => setOpen(v => !v)}
         aria-label="Søg på telefonnummer"
-        style={{ width: 48, height: 48, borderRadius: 24, background: open ? SoS.ink : SoS.orange, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.18)', transition: 'background 0.15s' }}
+        style={{ width: 54, height: 54, borderRadius: SoS.r.lg, background: open ? SoS.ink : SoS.accent,
+          border: `1px solid ${open ? SoS.ink : SoS.accent}`, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: SoS.shadow.md, transition: 'background 0.15s' }}
       >
         <Icon name={open ? 'x' : 'phone'} size={22} color="#fff" />
       </button>
@@ -8192,13 +8327,13 @@ const AdminHome = ({ hovedsaede, tab, setTab, onSwitchRole, isAdmin = false, onO
   }[tab];
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: SoS.cream, overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', inset: 0, background: SoS.paper, overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', paddingBottom: 90 }}>
         <AdminTopBar title={titles.t} subtitle={titles.s} hovedsaede={hovedsaede} onSwitchHq={()=>{}} isAdmin={isAdmin}/>
         {tab === 'overview' && onOpenDesktop && (
           <div style={{ margin: '0 20px 14px', padding: 14,
-            background: '#fff', borderRadius: SoS.r.lg,
-            border: `1px solid ${SoS.lineSoft}`,
+            background: SoS.surface, borderRadius: 0,
+            border: `1px solid ${SoS.line}`,
             display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 38, height: 38, borderRadius: 10,
               background: SoS.skySoft, display: 'flex',
@@ -8212,7 +8347,7 @@ const AdminHome = ({ hovedsaede, tab, setTab, onSwitchRole, isAdmin = false, onO
                 color: SoS.inkSoft, marginTop: 1 }}>SROI, eksport, tabeller — bedst på computer</div>
             </div>
             <button onClick={onOpenDesktop} style={{
-              padding: '8px 12px', borderRadius: 999, background: SoS.ink, color: '#fff',
+              padding: '8px 12px', borderRadius: SoS.r.sm, background: SoS.ink, color: '#fff',
               border: 'none', fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
               cursor: 'pointer', whiteSpace: 'nowrap' }}>
               Åbn portal
@@ -8223,9 +8358,9 @@ const AdminHome = ({ hovedsaede, tab, setTab, onSwitchRole, isAdmin = false, onO
           <div style={{ padding: '0 20px 14px' }}>
             <button onClick={() => setKontaktLog(true)} style={{
               width: '100%', padding: '14px 0',
-              background: SoS.orange, color: '#fff', border: 'none',
-              borderRadius: SoS.r.md, fontFamily: SoS.sans,
-              fontSize: 15, fontWeight: 600, cursor: 'pointer',
+              background: SoS.ink, color: '#fff', border: 'none',
+              borderRadius: SoS.r.sm, fontFamily: SoS.sans,
+              fontSize: 13, fontWeight: 600, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <Icon name="heart" size={18} color="#fff" weight={2}/>
               Registrer kontakt
@@ -8665,7 +8800,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
   const isTemporary = viewingHq !== ownHq;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: SoS.cream, overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', inset: 0, background: SoS.paper, overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', paddingBottom: 90 }}>
         {/* Header */}
         <div style={{ background: '#fff', padding: '54px 20px 16px' }}>
