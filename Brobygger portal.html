@@ -8992,17 +8992,43 @@ const AdminMobileKalender = ({ viewingHq }) => {
 };
 
 const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIntake, onOpenMatching, onOpenMessages, onOpenDesktop }) => {
-  const [tab, setTab] = React.useState('arbejde');
+  const [tab, setTab] = React.useState('oversigt');
   const [selectedBb, setSelectedBb] = React.useState(null);
   const [selectedAppt, setSelectedAppt] = React.useState(null);
-
- 
-  const [typeFilter, setTypeFilter] = React.useState('alle'); // Filter brobyggere "as if" they're at the current viewing hq
-  const brobyggere = SoS_BROBYGGERE;
-  const todayAppts = SoS_APPOINTMENTS_BUSY.slice(0, 3);
+  const [showProfil, setShowProfil] = React.useState(false);
+  const [typeFilter, setTypeFilter] = React.useState('alle');
   const pendingMatches = SoS_BROBYGGERE.filter(b => b.pending > 0).length;
-  const afventerCount = SoS_BROBYGGERE.filter(b => b.status === 'afventer').length;
   const isTemporary = viewingHq !== ownHq;
+
+  const byDay = Array.from({length: 7}, () => []);
+  SoS_APPOINTMENTS_BUSY.forEach(a => {
+    const d = new Date(a.date);
+    const dow = (d.getDay() + 6) % 7;
+    if (dow < 7) byDay[dow].push(a);
+  });
+  const todayAppts = byDay[2] || [];
+  const nesteAftale = todayAppts[0] || null;
+  const afventerCount = todayAppts.filter(
+    a => a.status !== 'confirmed' && a.status !== 'bekraeftet').length;
+  const TYPE_C = { sundhed: SoS.sundhed, forening: SoS.forening, social: SoS.social };
+
+  const now = new Date('2026-05-29');
+  const weekNum = (() => {
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const ys = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - ys) / 86400000) + 1) / 7);
+  })();
+  const dayStr = now.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+  const initials = ((user.avatar || '') || (user.firstName[0] + (user.lastName ? user.lastName[0] : ''))).toUpperCase().slice(0,2);
+  const TAB_TITLES = {
+    oversigt:   'God morgen, ' + user.firstName,
+    kalender:   'Kalender',
+    mennesker:  'Mennesker',
+    brobyggere: 'Brobyggere',
+    matching:   'Matching',
+  };
+  const title = TAB_TITLES[tab] || 'Oversigt';
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: SoS.paper, overflow: 'hidden' }}>
