@@ -662,6 +662,11 @@ const Icon = ({ name, size = 24, color = 'currentColor', weight = 1.8 }) => {
     search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></>,
     star: <><path d="M12 3l2.8 6 6.2.8-4.5 4.2 1.2 6.2L12 17l-5.7 3.2L7.5 14 3 9.8 9.2 9z"/></>,
     more: <><circle cx="5" cy="12" r="1.5" fill={color} stroke="none"/><circle cx="12" cy="12" r="1.5" fill={color} stroke="none"/><circle cx="19" cy="12" r="1.5" fill={color} stroke="none"/></>,
+    home: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></>,
+    calendar: <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+    play: <><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16 10 8"/></>,
+    help: <><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+    match: <><circle cx="7.5" cy="7.5" r="3"/><circle cx="16.5" cy="7.5" r="3"/><path d="M2.5 19c0-3.3 2.2-5.5 5-5.5s5 2.2 5 5.5"/><path d="M11.5 19c0-3.3 2.2-5.5 5-5.5s5 2.2 5 5.5"/></>,
   };
   return <svg {...p}>{paths[name]}</svg>;
 };
@@ -3277,7 +3282,7 @@ const ProfileScreen = ({ user, onSwitchRole }) => {
         <div style={{ padding: '16px 20px 20px' }}>
           <div style={{ background: SoS.surface, borderRadius: 0,
             border: `1px solid ${SoS.line}`, overflow: 'hidden', marginBottom: 16 }}>
-            {[{ label: 'Rolle', value: 'Brobygger' }, { label: 'Hovedsæde', value: user.hoofdsaede || 'Aarhus' }, { label: 'Startdato', value: 'Oktober 2024' }].map((row, i, arr) => (
+            {[{ label: 'Rolle', value: 'Brobygger' }, { label: 'Hovedsæde', value: user.hovedsaede || 'Aarhus' }, { label: 'Startdato', value: 'Oktober 2024' }].map((row, i, arr) => (
               <div key={i} style={{ padding: '13px 16px',
                 borderBottom: i < arr.length-1 ? `1px solid ${SoS.lineSoft}` : 'none',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -6178,7 +6183,7 @@ window.ExportReport = ExportReport;
 <script type="text/babel">
 // Admin screens — mobile data-rich dashboard for ansatte
 
-const AdminTopBar = ({ title, subtitle, hovedsaede, onSwitchHq, isAdmin = false }) => {
+const AdminTopBar = ({ title, subtitle, hovedsaede, onSwitchHq, isAdmin = false, initials = 'LS', onOpenProfil }) => {
   const now = new Date('2026-05-29');
   const weekNum = (() => {
     const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
@@ -6186,44 +6191,55 @@ const AdminTopBar = ({ title, subtitle, hovedsaede, onSwitchHq, isAdmin = false 
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   })();
-  const dayStr = now.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'short' });
+  const dayStr = now.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
   return (
     <div style={{
       position: 'sticky', top: 0, background: SoS.paper, zIndex: 20,
       padding: '56px 22px 14px',
       borderBottom: `1px solid ${SoS.line}`,
     }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
-            color: SoS.accent, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
-            {isAdmin ? 'ADMIN — SOCIAL SUNDHED' : `RAADGIVER — ${(hoofdsaede || '').toUpperCase()}`}
-          </div>
-          <div style={{ fontFamily: SoS.sans, fontSize: 28, fontWeight: 700,
-            color: SoS.ink, letterSpacing: -1, lineHeight: 1 }}>
-            {title}
-          </div>
+      {/* top row: eyebrow left, icons right */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+          color: SoS.accent, textTransform: 'uppercase', letterSpacing: 1 }}>
+          {isAdmin ? 'ADMIN — SOCIAL SUNDHED' : `RAADGIVER — ${(hovedsaede || '').toUpperCase()}`}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <div style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600,
-            color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            UGE {weekNum}
-          </div>
+        {/* notification bell + initials */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button style={{
+            width: 34, height: 34, borderRadius: SoS.r.sm,
+            background: SoS.surface, border: `1px solid ${SoS.line}`,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke={SoS.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              <circle cx="18" cy="6" r="3" fill={SoS.accent} stroke="none"/>
+            </svg>
+          </button>
+          <button onClick={onOpenProfil} style={{
+            width: 34, height: 34, borderRadius: SoS.r.sm,
+            background: SoS.ink, border: 'none',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 700,
+              color: '#fff', letterSpacing: 0.5 }}>{initials}</span>
+          </button>
+        </div>
+      </div>
+      {/* title row */}
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <div style={{ fontFamily: SoS.sans, fontSize: 28, fontWeight: 700,
+          color: SoS.ink, letterSpacing: -1, lineHeight: 1 }}>
+          {title}
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: SoS.mono, fontSize: 11, fontWeight: 700,
+            color: SoS.ink, letterSpacing: 0 }}>UGE {weekNum}</div>
           <div style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.inkMuted }}>
             {dayStr.toUpperCase()}
           </div>
-          <button onClick={onSwitchHq} style={{
-            marginTop: 4, padding: '5px 10px',
-            background: SoS.surface, border: `1px solid ${SoS.line}`,
-            borderRadius: SoS.r.sm, color: SoS.ink,
-            fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
-            textTransform: 'uppercase', letterSpacing: 0.5,
-          }}>
-            {isAdmin
-              ? <><Icon name="sparkle" size={10} color={SoS.accent} weight={2}/> Admin</>
-              : <><div style={{ width: 6, height: 6, background: SoS.hq[hoofdsaede] || SoS.accent }} />{hoofdsaede}</>}
-          </button>
         </div>
       </div>
     </div>
@@ -6232,11 +6248,11 @@ const AdminTopBar = ({ title, subtitle, hovedsaede, onSwitchHq, isAdmin = false 
 
 const AdminTabBar = ({ active, onChange }) => {
   const tabs = [
-    { id: 'overview', label: 'Oversigt', icon: 'chart' },
-    { id: 'brobyggere', label: 'Brobyggere', icon: 'users' },
-    { id: 'mennesker', label: 'Mennesker', icon: 'heart' },
-    { id: 'rapport', label: 'Rapport', icon: 'note' },
-    { id: 'profil', label: 'Mig', icon: 'user' },
+    { id: 'overview',    label: 'Oversigt',   icon: 'home'     },
+    { id: 'kalender',   label: 'Kalender',   icon: 'calendar'  },
+    { id: 'mennesker',  label: 'Mennesker',  icon: 'heart'     },
+    { id: 'brobyggere', label: 'Brobyggere', icon: 'users'     },
+    { id: 'matching',   label: 'Matching',   icon: 'match'     },
   ];
   return (
     <div style={{
@@ -6300,8 +6316,168 @@ const RingTaskCard = ({ task: t, onDone }) => {
   );
 };
 
-// Overview — v2 "skandinavisk funktionel"
-const AdminOverview = ({ hovedsaede }) => {
+// Ny let startside — Oversigt
+const AdminOversigt = ({ hovedsaede, onGoKalender, onGoMatching, onOpenMenneske }) => {
+  // I dag data
+  const byDay = Array.from({length: 7}, () => []);
+  SoS_APPOINTMENTS_BUSY.forEach(a => {
+    const d = new Date(a.date);
+    const dow = (d.getDay() + 6) % 7;
+    if (dow < 7) byDay[dow].push(a);
+  });
+  const todayAppts = byDay[2] || []; // onsdag = i dag (mock)
+  const nesteAftale = todayAppts[0] || null;
+  const afventerCount = todayAppts.filter(a => a.status !== 'confirmed' && a.status !== 'bekraeftet').length;
+  const pendingMatch = SoS_BROBYGGERE.filter(b => b.pending > 0).length;
+
+  const TYPE_C = { sundhed: SoS.sundhed, forening: SoS.forening, social: SoS.social };
+  const nesteTime = nesteAftale && nesteAftale.date
+    ? new Date(nesteAftale.date).toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' })
+    : (nesteAftale && nesteAftale.time) || null;
+
+  const ressourcer = [
+    { icon: 'note',    title: 'Guides',    sub: 'Kom godt i gang som rådgiver'      },
+    { icon: 'note',    title: 'Manualer',  sub: 'Retningslinjer & procedurer'        },
+    { icon: 'play',    title: 'Webinarer', sub: 'Optagelser & kommende'              },
+    { icon: 'help',    title: 'Support',   sub: 'FAQ og kontakt til koordinator'     },
+  ];
+
+  return (
+    <>
+      {/* ── I dag-kort ── */}
+      <button onClick={onGoKalender} style={{
+        margin: '16px 22px 0', width: 'calc(100% - 44px)',
+        border: `1px solid ${SoS.line}`, background: SoS.surface,
+        textAlign: 'left', cursor: 'pointer', padding: 0,
+      }}>
+        {/* header */}
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${SoS.line}`,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 6, height: 6, background: SoS.accent }}/>
+            <span style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 600,
+              color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>I DAG</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.ink, fontWeight: 700 }}>
+              {todayAppts.length} AFTALER
+            </span>
+            {afventerCount > 0 && (
+              <span style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.amber }}>
+                · {afventerCount} AFVENTER
+              </span>
+            )}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke={SoS.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </div>
+        </div>
+        {/* næste aftale */}
+        {nesteAftale ? (
+          <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 58 }}>
+            <div style={{ width: 52, flexShrink: 0, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              borderRight: `1px solid ${SoS.line}`, gap: 2 }}>
+              <span style={{ fontFamily: SoS.mono, fontSize: 11, fontWeight: 600,
+                color: SoS.ink }}>{nesteTime}</span>
+              <span style={{ fontFamily: SoS.mono, fontSize: 8, color: SoS.inkMuted,
+                textTransform: 'uppercase', letterSpacing: 0.5 }}>NÆSTE</span>
+            </div>
+            <div style={{ width: 3, background: TYPE_C[nesteAftale.type] || SoS.inkMuted }}/>
+            <div style={{ flex: 1, padding: '10px 12px' }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+                color: SoS.ink }}>
+                {nesteAftale.mensekeName || nesteAftale.meneskeName || 'Ukendt menneske'}
+                {nesteAftale.age ? <span style={{ fontWeight: 400, color: SoS.inkSoft }}> {nesteAftale.age}</span> : null}
+              </div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, marginTop: 2 }}>
+                {nesteAftale.activity || 'Brobygning'}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: '16px 14px', fontFamily: SoS.sans, fontSize: 13,
+            color: SoS.inkMuted, textAlign: 'center' }}>
+            Ingen aftaler i dag
+          </div>
+        )}
+      </button>
+
+      {/* ── Match-prompt ── */}
+      {pendingMatch > 0 && (
+        <button onClick={onGoMatching} style={{
+          margin: '12px 22px 0', width: 'calc(100% - 44px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '13px 16px', background: SoS.ink, border: 'none',
+          borderRadius: SoS.r.sm, cursor: 'pointer',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="7.5" cy="7.5" r="3"/>
+              <circle cx="16.5" cy="7.5" r="3"/>
+              <path d="M2.5 19c0-3.3 2.2-5.5 5-5.5s5 2.2 5 5.5"/>
+              <path d="M11.5 19c0-3.3 2.2-5.5 5-5.5s5 2.2 5 5.5"/>
+            </svg>
+            <span style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: '#fff' }}>
+              {pendingMatch} {pendingMatch === 1 ? 'menneske venter' : 'mennesker venter'} på match
+            </span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke={SoS.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+      )}
+
+      {/* ── Ressourcer ── */}
+      <div style={{ margin: '28px 22px 0' }}>
+        <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+          color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 1,
+          paddingBottom: 10, borderBottom: `1px solid ${SoS.line}` }}>
+          RESSOURCER
+        </div>
+      </div>
+      <div style={{ margin: '0 22px 28px', border: `1px solid ${SoS.line}`, background: SoS.surface }}>
+        {ressourcer.map((r, i) => (
+          <button key={r.title} style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+            padding: '13px 14px', background: 'none', border: 'none',
+            borderTop: i > 0 ? `1px solid ${SoS.line}` : 'none',
+            cursor: 'pointer', textAlign: 'left',
+          }}>
+            {/* icon square */}
+            <div style={{ width: 34, height: 34, flexShrink: 0,
+              background: SoS.surfaceAlt, border: `1px solid ${SoS.line}`,
+              borderRadius: SoS.r.sm,
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={r.icon} size={16} color={SoS.ink}/>
+            </div>
+            {/* text */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+                color: SoS.ink }}>{r.title}</div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft,
+                marginTop: 1 }}>{r.sub}</div>
+            </div>
+            {/* arrow */}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke={SoS.inkMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+};
+
+// Kalender — stats, uge og dagens aftaler
+const AdminKalender = ({ hovedsaede, onOpenMatching }) => {
   const [selDay, setSelDay] = React.useState(2);
   const weekDays = ['MAN','TIR','ONS','TOR','FRE','LØR','SØN'];
   const weekDates = [21,22,23,24,25,26,27];
@@ -6636,7 +6812,8 @@ const AdminOverview = ({ hovedsaede }) => {
 }
 };
 
-window.AdminOverview = AdminOverview;
+window.AdminOversigt = AdminOversigt;
+window.AdminKalender = AdminKalender;
 window.AdminTopBar = AdminTopBar;
 window.AdminTabBar = AdminTabBar;
 </script>
@@ -8318,82 +8495,111 @@ const TelefonSoegWidget = ({ onOpenMenneske }) => {
 
 const AdminHome = ({ hovedsaede, tab, setTab, onSwitchRole, isAdmin = false, onOpenDesktop, onOpenMatching, onOpenIntake }) => {
   const [kontaktLog, setKontaktLog] = React.useState(false);
-  const titles = {
-    overview: { t: 'Oversigt', s: isAdmin ? 'Alle hovedsæder' : 'Eget hovedsæde' },
-    brobyggere: { t: 'Brobyggere', s: `${SoS_BROBYGGERE.length}${isAdmin ? ' på tværs' : ' i ' + hovedsaede}` },
-    mennesker: { t: 'Mennesker', s: 'Aktive forløb' },
-    rapport: { t: 'Rapport', s: 'Eksport & fonde' },
-    profil: { t: 'Mig', s: isAdmin ? 'Admin · SoS' : 'Rådgiver' },
-  }[tab];
+  const [showProfil, setShowProfil] = React.useState(false);
+
+  const TITLES = {
+    overview:    'God morgen, Linda',
+    kalender:    'Kalender',
+    brobyggere:  'Brobyggere',
+    mennesker:   'Mennesker',
+    matching:    'Matching',
+  };
+  const title = TITLES[tab] || 'Oversigt';
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: SoS.paper, overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', paddingBottom: 90 }}>
-        <AdminTopBar title={titles.t} subtitle={titles.s} hovedsaede={hovedsaede} onSwitchHq={()=>{}} isAdmin={isAdmin}/>
-        {tab === 'overview' && onOpenDesktop && (
-          <div style={{ margin: '0 20px 14px', padding: 14,
-            background: SoS.surface, borderRadius: 0,
-            border: `1px solid ${SoS.line}`,
-            display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10,
-              background: SoS.skySoft, display: 'flex',
-              alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Icon name="chart" size={20} color={SoS.sky}/>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
-                color: SoS.ink }}>Detaljeret data og rapporter</div>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11,
-                color: SoS.inkSoft, marginTop: 1 }}>SROI, eksport, tabeller — bedst på computer</div>
-            </div>
-            <button onClick={onOpenDesktop} style={{
-              padding: '8px 12px', borderRadius: SoS.r.sm, background: SoS.ink, color: '#fff',
-              border: 'none', fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              Åbn portal
-            </button>
-          </div>
-        )}
+        <AdminTopBar
+          title={title}
+          hovedsaede={hovedsaede}
+          isAdmin={isAdmin}
+          initials="LS"
+          onOpenProfil={() => setShowProfil(true)}
+        />
+
         {tab === 'overview' && (
-          <div style={{ padding: '0 20px 14px' }}>
-            <button onClick={() => setKontaktLog(true)} style={{
-              width: '100%', padding: '14px 0',
-              background: SoS.ink, color: '#fff', border: 'none',
-              borderRadius: SoS.r.sm, fontFamily: SoS.sans,
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <Icon name="heart" size={18} color="#fff" weight={2}/>
-              Registrer kontakt
-            </button>
-          </div>
+          <AdminOversigt
+            hovedsaede={hovedsaede}
+            onGoKalender={() => setTab('kalender')}
+            onGoMatching={() => onOpenMatching ? onOpenMatching() : setTab('matching')}
+          />
         )}
-        {tab === 'overview' && <AdminOverview hovedsaede={hovedsaede} />}
+        {tab === 'kalender' && <AdminKalender hovedsaede={hovedsaede} onOpenMatching={onOpenMatching} />}
         {tab === 'brobyggere' && <AdminBrobyggereScreen hovedsaede={hovedsaede} onOpenMatching={onOpenMatching} />}
         {tab === 'mennesker' && <AdminMenneskerScreen />}
-        {tab === 'rapport' && <AdminRapportScreen />}
-        {tab === 'profil' && (
-          <div style={{ padding: 20 }}>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center',
-              padding: 20, background: '#fff', borderRadius: SoS.r.xl,
-              border: `1px solid ${SoS.lineSoft}`, marginBottom: 20 }}>
-              <Avatar initials="LT" bg={SoS.sky} size={64} />
-              <div>
-                <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500 }}>Linda Thomsen</div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft }}>
-                  Koordinator · {hovedsaede}
+        {tab === 'matching' && (
+          <div style={{ padding: '24px 22px' }}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.inkMuted,
+              textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 20 }}>
+              MATCHING — AFVENTER IMPLEMENTERING
+            </div>
+            {SoS_BROBYGGERE.filter(b => b.pending > 0).map((b, i) => (
+              <div key={b.id || i} style={{
+                border: `1px solid ${SoS.line}`, background: SoS.surface,
+                marginBottom: 8, padding: '12px 14px',
+                display: 'flex', alignItems: 'center', gap: 12
+              }}>
+                <Avatar initials={(b.firstName||'?')[0]+(b.lastName||'?')[0]} bg={SoS.sage} size={36}/>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>
+                    {b.firstName} {b.lastName}
+                  </div>
+                  <div style={{ fontFamily: SoS.mono, fontSize: 9, color: SoS.amber,
+                    textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>
+                    {b.pending} AFVENTER MATCH
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* Profil slide-up */}
+        {showProfil && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            zIndex: 200, display: 'flex', alignItems: 'flex-end' }}
+            onClick={() => setShowProfil(false)}>
+            <div style={{ width: '100%', background: SoS.paper,
+              borderTop: `1px solid ${SoS.line}`, padding: 22 }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+                <div style={{ width: 48, height: 48, background: SoS.ink,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontFamily: SoS.mono, fontSize: 14, fontWeight: 700, color: '#fff' }}>LS</span>
+                </div>
+                <div>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700, color: SoS.ink }}>
+                    Linda Sorensen
+                  </div>
+                  <div style={{ fontFamily: SoS.mono, fontSize: 9.5, color: SoS.inkMuted,
+                    textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>
+                    RAADGIVER · {(hovedsaede || '').toUpperCase()}
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => { setShowProfil(false); onSwitchRole?.(); }}
+                style={{ width: '100%', padding: '13px 0', background: SoS.surface,
+                  border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                  fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink,
+                  cursor: 'pointer', marginBottom: 8 }}>
+                Skift til brobygger-visning
+              </button>
+              {onOpenDesktop && (
+                <button onClick={() => { setShowProfil(false); onOpenDesktop(); }}
+                  style={{ width: '100%', padding: '13px 0', background: SoS.surface,
+                    border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                    fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink,
+                    cursor: 'pointer', marginBottom: 8 }}>
+                  Åbn fuld portal (kun computer)
+                </button>
+              )}
+              <button onClick={() => setShowProfil(false)}
+                style={{ width: '100%', padding: '13px 0', background: 'none',
+                  border: 'none', fontFamily: SoS.mono, fontSize: 10, color: SoS.inkMuted,
+                  textTransform: 'uppercase', letterSpacing: 0.8, cursor: 'pointer' }}>
+                LUK
+              </button>
             </div>
-            <Button full variant="secondary" onClick={onSwitchRole}>
-              Skift til brobygger-visning
-            </Button>
-            {onOpenDesktop && (
-              <Button full variant="secondary" onClick={onOpenDesktop}
-                style={{ marginTop: 10 }}
-                icon={<Icon name="chart" size={16} color={SoS.ink}/>}>
-                Åbn fuld portal (kun computer)
-              </Button>
-            )}
           </div>
         )}
       </div>
