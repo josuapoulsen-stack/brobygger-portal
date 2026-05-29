@@ -351,27 +351,35 @@ window.HELBREDS_KATEGORIER = [
 ];
 
 // Appointments — for the brobygger
-const SoS_APPOINTMENTS_BUSY = [
-  // Uge 17 (21–27. apr)
-  { id: 'a-1',  menneskeId: 'b-1', brobyggerId: 'bb-1', date: '2026-04-24', start: '10:00', end: '11:30', activity: 'Gåtur i Risskov',       location: 'Risskov strand',          status: 'confirmed' },
-  { id: 'a-2',  menneskeId: 'b-2', brobyggerId: 'bb-3', date: '2026-04-25', start: '14:00', end: '15:00', activity: 'Sprogøvelse',            location: 'Gellerup bibliotek',      status: 'confirmed' },
-  { id: 'a-3',  menneskeId: 'b-3', brobyggerId: 'bb-5', date: '2026-04-26', start: '11:00', end: '12:00', activity: 'Læsehøjt',               location: 'Plejehjemmet Solgården',  status: 'confirmed' },
-  { id: 'a-6',  menneskeId: 'b-2', brobyggerId: 'bb-5', date: '2026-04-27', start: '09:30', end: '10:30', activity: 'Morgenwalk',             location: 'Brabrand Sø',             status: 'confirmed' },
-  { id: 'a-7',  menneskeId: 'b-4', brobyggerId: 'bb-7', date: '2026-04-27', start: '13:00', end: '14:00', activity: 'Biblioteksbesøg',        location: 'Dokk1',                   status: 'confirmed' },
-  // Uge 18 (28. apr – 4. maj)
-  { id: 'a-4',  menneskeId: 'b-4', brobyggerId: 'bb-1', date: '2026-04-28', start: '15:30', end: '16:30', activity: 'Rolig gåtur',            location: 'Botanisk Have',           status: 'pending'   },
-  { id: 'a-8',  menneskeId: 'b-3', brobyggerId: 'bb-3', date: '2026-04-29', start: '11:00', end: '12:30', activity: 'Sprogcafé',              location: 'VokalFolk, Mejlgade',     status: 'confirmed' },
-  { id: 'a-9',  menneskeId: 'b-1', brobyggerId: 'bb-8', date: '2026-04-29', start: '15:00', end: '16:00', activity: 'Bankkontakt',            location: 'Sydbank, Søndergade',     status: 'confirmed' },
-  { id: 'a-5',  menneskeId: 'b-1', brobyggerId: 'bb-8', date: '2026-04-30', start: '10:00', end: '11:00', activity: 'Kaffe hjemme',           location: 'Skovvejen 14',            status: 'confirmed' },
-  { id: 'a-10', menneskeId: 'b-2', brobyggerId: 'bb-1', date: '2026-05-01', start: '10:30', end: '11:30', activity: 'Gåtur i Botanisk Have',  location: 'Botanisk Have',           status: 'pending'   },
-  { id: 'a-11', menneskeId: 'b-3', brobyggerId: 'bb-5', date: '2026-05-01', start: '14:00', end: '15:00', activity: 'Sangeftermiddag',        location: 'Musikhuset Aarhus',       status: 'confirmed' },
-  { id: 'a-12', menneskeId: 'b-4', brobyggerId: 'bb-7', date: '2026-05-02', start: '10:00', end: '11:00', activity: 'Læsehøjt',               location: 'Hjemme hos Hans',         status: 'confirmed' },
-  // Uge 19 (5–11. maj)
-  { id: 'a-13', menneskeId: 'b-1', brobyggerId: 'bb-3', date: '2026-05-04', start: '11:00', end: '12:00', activity: 'Gåtur ved åen',          location: 'Åboulevarden',            status: 'confirmed' },
-  { id: 'a-14', menneskeId: 'b-2', brobyggerId: 'bb-8', date: '2026-05-05', start: '09:00', end: '10:30', activity: 'Lægekontakt',            location: 'Klinik Trøjborg',         status: 'pending'   },
-  { id: 'a-15', menneskeId: 'b-3', brobyggerId: 'bb-1', date: '2026-05-06', start: '13:00', end: '14:00', activity: 'Kulturcafé',             location: 'Godsbanen',               status: 'confirmed' },
-  { id: 'a-16', menneskeId: 'b-4', brobyggerId: 'bb-5', date: '2026-05-07', start: '10:00', end: '11:30', activity: 'Gåtur Marselisborg',     location: 'Marselisborg Skov',       status: 'confirmed' },
-];
+const SoS_APPOINTMENTS_BUSY = (() => {
+  // Dynamisk: offset = dage fra i dag
+  const d = (offset) => {
+    const dt = new Date();
+    dt.setDate(dt.getDate() + offset);
+    return dt.toISOString().slice(0, 10);
+  };
+  return [
+    // Forrige uge
+    { id: 'a-1',  menneskeId: 'b-1', brobyggerId: 'bb-1', date: d(-11), start: '10:00', end: '11:30', activity: 'Gåtur i Risskov',      location: 'Risskov strand',          status: 'confirmed' },
+    { id: 'a-2',  menneskeId: 'b-2', brobyggerId: 'bb-3', date: d(-10), start: '14:00', end: '15:00', activity: 'Sprogøvelse',           location: 'Gellerup bibliotek',      status: 'confirmed' },
+    { id: 'a-3',  menneskeId: 'b-3', brobyggerId: 'bb-5', date: d(-9),  start: '11:00', end: '12:00', activity: 'Læsehøjt',              location: 'Plejehjemmet Solgården',  status: 'confirmed' },
+    { id: 'a-6',  menneskeId: 'b-2', brobyggerId: 'bb-5', date: d(-8),  start: '09:30', end: '10:30', activity: 'Morgenwalk',            location: 'Brabrand Sø',             status: 'confirmed' },
+    { id: 'a-7',  menneskeId: 'b-4', brobyggerId: 'bb-7', date: d(-7),  start: '13:00', end: '14:00', activity: 'Biblioteksbesøg',       location: 'Dokk1',                   status: 'confirmed' },
+    // Denne uge
+    { id: 'a-4',  menneskeId: 'b-4', brobyggerId: 'bb-1', date: d(-4),  start: '15:30', end: '16:30', activity: 'Rolig gåtur',           location: 'Botanisk Have',           status: 'confirmed' },
+    { id: 'a-8',  menneskeId: 'b-3', brobyggerId: 'bb-3', date: d(-3),  start: '11:00', end: '12:30', activity: 'Sprogcafé',             location: 'VokalFolk, Mejlgade',     status: 'confirmed' },
+    { id: 'a-9',  menneskeId: 'b-1', brobyggerId: 'bb-8', date: d(-2),  start: '15:00', end: '16:00', activity: 'Bankkontakt',           location: 'Sydbank, Søndergade',     status: 'confirmed' },
+    { id: 'a-5',  menneskeId: 'b-1', brobyggerId: 'bb-8', date: d(-1),  start: '10:00', end: '11:00', activity: 'Kaffe hjemme',          location: 'Skovvejen 14',            status: 'confirmed' },
+    { id: 'a-10', menneskeId: 'b-2', brobyggerId: 'bb-1', date: d(0),   start: '10:30', end: '11:30', activity: 'Gåtur i Botanisk Have', location: 'Botanisk Have',           status: 'pending'   },
+    { id: 'a-11', menneskeId: 'b-3', brobyggerId: 'bb-5', date: d(0),   start: '14:00', end: '15:00', activity: 'Sangeftermiddag',       location: 'Musikhuset Aarhus',       status: 'confirmed' },
+    // Næste uge
+    { id: 'a-12', menneskeId: 'b-4', brobyggerId: 'bb-7', date: d(4),   start: '10:00', end: '11:00', activity: 'Læsehøjt',              location: 'Hjemme hos Hans',         status: 'confirmed' },
+    { id: 'a-13', menneskeId: 'b-1', brobyggerId: 'bb-3', date: d(5),   start: '11:00', end: '12:00', activity: 'Gåtur ved åen',         location: 'Åboulevarden',            status: 'confirmed' },
+    { id: 'a-14', menneskeId: 'b-2', brobyggerId: 'bb-8', date: d(6),   start: '09:00', end: '10:30', activity: 'Lægekontakt',           location: 'Klinik Trøjborg',         status: 'pending'   },
+    { id: 'a-15', menneskeId: 'b-3', brobyggerId: 'bb-1', date: d(7),   start: '13:00', end: '14:00', activity: 'Kulturcafé',            location: 'Godsbanen',               status: 'confirmed' },
+    { id: 'a-16', menneskeId: 'b-4', brobyggerId: 'bb-5', date: d(8),   start: '10:00', end: '11:30', activity: 'Gåtur Marselisborg',    location: 'Marselisborg Skov',       status: 'confirmed' },
+  ];
+})()
 
 const SoS_APPOINTMENTS_EMPTY = [];
 
@@ -460,25 +468,36 @@ window.SoS_MENNESKER     = SoS_MENNESKER;
 // \u2500\u2500 Kontakt-hændelser (event log per menneske) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // type-enum: telefonisk | mode-brobygger | folge-primaer | folge-sekundaer | andet
 // status:    gennemfoert | aflyst | udeblev
-const SoS_KONTAKTER = [
-  // Karl Bredvig (b-1) — fler-aftaleforløb: 3 gennemførte følgeskaber
-  { id: 'k-1',  menneskeId: 'b-1', type: 'telefonisk',      dato: '2026-01-10', status: 'gennemfoert', note: 'Første kontakt oprettet, Karl er interesseret.' },
-  { id: 'k-2',  menneskeId: 'b-1', type: 'mode-brobygger',  dato: '2026-01-22', status: 'gennemfoert', note: 'Hjemsbesøg, afklaret behov og ønsker.' },
-  { id: 'k-3',  menneskeId: 'b-1', type: 'folge-primaer',   dato: '2026-02-07', status: 'gennemfoert', note: 'Ledsaget til praktiserende læge, Karl meget tilfreds.' },
-  { id: 'k-4',  menneskeId: 'b-1', type: 'telefonisk',      dato: '2026-02-20', status: 'udeblev',     note: '' },
-  { id: 'k-5',  menneskeId: 'b-1', type: 'folge-primaer',   dato: '2026-03-01', status: 'gennemfoert', note: 'Opfølgning hos praktiserende læge, blodtælling.' },
-  { id: 'k-6',  menneskeId: 'b-1', type: 'folge-sekundaer', dato: '2026-03-18', status: 'gennemfoert', note: 'Kardiologisk ambulatorium, AUH Medicinsk afdeling.' },
-  // Yaw Mensah (b-2) — personligt møde: 1 møde, 1 aflyst følgeskab
-  { id: 'k-7',  menneskeId: 'b-2', type: 'telefonisk',      dato: '2026-02-14', status: 'gennemfoert', note: 'Afklaret behov, aftalt møde.' },
-  { id: 'k-8',  menneskeId: 'b-2', type: 'mode-brobygger',  dato: '2026-02-26', status: 'gennemfoert', note: 'Godt første møde, aftalte følgeskab til læge.' },
-  { id: 'k-9',  menneskeId: 'b-2', type: 'folge-primaer',   dato: '2026-03-12', status: 'aflyst',      note: 'Yaw syg, aftalt ny tid.' },
-  // Fatima Zahra (b-3) — følgeskab: 1 følgeskab gennemført
-  { id: 'k-10', menneskeId: 'b-3', type: 'telefonisk',      dato: '2026-03-03', status: 'gennemfoert', note: '' },
-  { id: 'k-11', menneskeId: 'b-3', type: 'mode-brobygger',  dato: '2026-03-14', status: 'gennemfoert', note: 'Møde på Folkebiblioteket.' },
-  { id: 'k-12', menneskeId: 'b-3', type: 'folge-sekundaer', dato: '2026-04-03', status: 'gennemfoert', note: 'Følgeskab til AUH, Medicinsk afdeling.' },
-  // Birger Nørgaard (b-4) — kontakt etableret: kun telefonisk
-  { id: 'k-13', menneskeId: 'b-4', type: 'telefonisk',      dato: '2026-04-21', status: 'gennemfoert', note: 'Henvist via Røde Kors, god samtale.' },
-];
+const SoS_KONTAKTER = (() => {
+  const d = (offset) => {
+    const dt = new Date();
+    dt.setDate(dt.getDate() + offset);
+    return dt.toISOString().slice(0, 10);
+  };
+  return [
+    // Karl Bredvig (b-1)
+    { id: 'k-1',  menneskeId: 'b-1', type: 'telefonisk',      dato: d(-112), status: 'gennemfoert', note: 'Første kontakt oprettet, Karl er interesseret.' },
+    { id: 'k-2',  menneskeId: 'b-1', type: 'mode-brobygger',  dato: d(-98),  status: 'gennemfoert', note: 'Hjembesøg, afklaret behov og ønsker.' },
+    { id: 'k-3',  menneskeId: 'b-1', type: 'folge-primaer',   dato: d(-84),  status: 'gennemfoert', note: 'Gåtur ved Risskov strand — god kemi med BB.' },
+    { id: 'k-4',  menneskeId: 'b-1', type: 'folge-primaer',   dato: d(-63),  status: 'gennemfoert', note: 'Besøg på biblioteket, lånte lydbøger.' },
+    { id: 'k-5',  menneskeId: 'b-1', type: 'notat',           dato: d(-42),  status: 'gennemfoert', note: 'Karl nævnte at han savner kontakt til familie i Jylland.' },
+    { id: 'k-6',  menneskeId: 'b-1', type: 'folge-primaer',   dato: d(-14),  status: 'gennemfoert', note: 'Kaffe hjemme, meget åben snak om ensomhed.' },
+    // Amira Hassan (b-2)
+    { id: 'k-7',  menneskeId: 'b-2', type: 'telefonisk',      dato: d(-90),  status: 'gennemfoert', note: 'Henvisning fra socialrådgiver. Aftalt møde.' },
+    { id: 'k-8',  menneskeId: 'b-2', type: 'mode-brobygger',  dato: d(-75),  status: 'gennemfoert', note: 'Intake-møde gennemført. Ønsker sproglig støtte.' },
+    { id: 'k-9',  menneskeId: 'b-2', type: 'folge-primaer',   dato: d(-55),  status: 'gennemfoert', note: 'Sprogcafé på biblioteket — Amira trivedes godt.' },
+    { id: 'k-10', menneskeId: 'b-2', type: 'folge-sekundaer', dato: d(-30),  status: 'gennemfoert', note: 'Ekstra besøg pga. sygdom i familien.' },
+    { id: 'k-11', menneskeId: 'b-2', type: 'notat',           dato: d(-7),   status: 'gennemfoert', note: 'Amira spørger om mulighed for lægefølge næste uge.' },
+    // Poul Svendsen (b-3)
+    { id: 'k-12', menneskeId: 'b-3', type: 'telefonisk',      dato: d(-60),  status: 'gennemfoert', note: 'Selvhenvendelse via hjemmeside.' },
+    { id: 'k-13', menneskeId: 'b-3', type: 'mode-brobygger',  dato: d(-45),  status: 'gennemfoert', note: 'Intake gennemført. Ønsker kulturelle aktiviteter.' },
+    { id: 'k-14', menneskeId: 'b-3', type: 'folge-primaer',   dato: d(-21),  status: 'gennemfoert', note: 'Læsehøjt på plejehjemmet — Poul var begejstret.' },
+    // Hans Mikkelsen (b-4)
+    { id: 'k-15', menneskeId: 'b-4', type: 'telefonisk',      dato: d(-35),  status: 'gennemfoert', note: 'Henvist fra hjemmepleje.' },
+    { id: 'k-16', menneskeId: 'b-4', type: 'mode-brobygger',  dato: d(-21),  status: 'gennemfoert', note: 'Første møde. Hans er stille men positiv.' },
+    { id: 'k-17', menneskeId: 'b-4', type: 'notat',           dato: d(-3),   status: 'gennemfoert', note: 'Hans glæder sig til næste aftale i Botanisk Have.' },
+  ];
+})()
 window.SoS_KONTAKTER = SoS_KONTAKTER;
 
 // ── Stedregister ──────────────────────────────────────────────────────────
@@ -2177,7 +2196,7 @@ const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift }) => {
   const [month, setMonth] = React.useState(new Date('2026-04-24'));
   const prevMonth = () => setMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
   const nextMonth = () => setMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
-  const [selected, setSelected] = React.useState('2026-04-27');
+  const [selected, setSelected] = React.useState(new Date().toISOString().slice(0,10));
   const [addShiftSheet, setAddShiftSheet] = React.useState(false);
   const [addShiftDone, setAddShiftDone] = React.useState(false);
   const [moreShift, setMoreShift] = React.useState(null);
@@ -2628,7 +2647,7 @@ const AppointmentDetailScreen = ({ appt, onBack, onComplete }) => {
             {menneske.health && (() => {
               // Check if appointment is within the data-access window (default ±7 days)
               const apptDate = new Date(appt.date);
-              const today = new Date('2026-04-25');
+              const today = new Date();
               const diffDays = (apptDate - today) / (1000 * 60 * 60 * 24);
               const hasAccess = diffDays >= -7 && diffDays <= 7;
               return hasAccess ? (
@@ -4148,7 +4167,7 @@ const MatchingFlow = ({ onClose }) => {
   const [brobyggerId, setBrobyggerId] = React.useState(null);
 
   // Step 1 state
-  const [aftaleDato, setAftaleDato] = React.useState('2026-05-05');
+  const [aftaleDato, setAftaleDato] = React.useState(new Date().toISOString().slice(0,10));
   const [aftaleStart, setAftaleStart] = React.useState(null);
   const [aftaleDuration, setAftaleDuration] = React.useState(null);
   const [aftaleType, setAftaleType] = React.useState(null);
@@ -5006,6 +5025,14 @@ const ComposeMessage = ({ role, ownHq, onClose }) => {
   const [scope, setScope] = React.useState('aktive');
   const [pickingBb, setPickingBb] = React.useState(false);
   const [selectedBb, setSelectedBb] = React.useState(null);
+
+  React.useEffect(() => {
+    if (initialTarget && initialTarget.type === 'brobygger') {
+      const bb = SoS_BROBYGGERE.find(b => b.id === initialTarget.id);
+      if (bb) setSelectedBb(bb);
+      if (onTargetConsumed) onTargetConsumed();
+    }
+  }, [initialTarget]);
   const [bbSearch, setBbSearch] = React.useState('');
   const [templateId, setTemplateId] = React.useState(null);
   const [body, setBody] = React.useState('');
@@ -7382,7 +7409,7 @@ window.calcSROISnapshot = () => {
 // AddKontaktFlow — tilføj kontakt/aftale til et menneske
 const AddKontaktFlow = ({ menneskeId, onClose, onSaved }) => {
   const [type,   setType]   = React.useState(null);
-  const [dato,   setDato]   = React.useState('2026-04-27');
+  const [dato,   setDato]   = React.useState(new Date().toISOString().slice(0,10));
   const [status, setStatus] = React.useState(null);
   const [note,   setNote]   = React.useState('');
   const [done,   setDone]   = React.useState(false);
@@ -8132,7 +8159,7 @@ const KontaktLogFlow = ({ onClose, onSave }) => {
   const [step,      setStep]      = React.useState(0);
   const [type,      setType]      = React.useState(null);
   const [menId,     setMenId]     = React.useState(null);
-  const [dato,      setDato]      = React.useState('2026-04-26');
+  const [dato,      setDato]      = React.useState(new Date().toISOString().slice(0, 10));
   const [varighed,  setVarighed]  = React.useState('30');
   const [note,      setNote]      = React.useState('');
   const [done,      setDone]      = React.useState(false);
@@ -10615,10 +10642,173 @@ window.STIGE_TRIN = STIGE_TRIN;
 // Desktop view — where all the data lives
 // Shown as a full browser window; mobile can't reach these screens.
 
+const DesktopGlobalSearch = ({ onClose, onNavigate }) => {
+  const [q, setQ] = React.useState('');
+  const inputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    inputRef.current?.focus();
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const results = React.useMemo(() => {
+    if (!q || q.length < 2) return [];
+    const lower = q.toLowerCase();
+    const out = [];
+
+    // Mennesker
+    Object.values(SoS_MENNESKER).forEach(m => {
+      const name = (m.firstName + ' ' + m.lastName).toLowerCase();
+      if (name.includes(lower)) {
+        const t = SoS_TYPER[m.type] || {};
+        out.push({ type: 'menneske', id: m.id, title: m.firstName + ' ' + m.lastName,
+          sub: t.label + ' · ' + m.age + ' år', color: t.color, icon: 'heart',
+          section: 'mennesker', meta: m });
+      }
+    });
+
+    // Brobyggere
+    SoS_BROBYGGERE.forEach(b => {
+      if (b.name.toLowerCase().includes(lower)) {
+        out.push({ type: 'brobygger', id: b.id, title: b.name,
+          sub: 'Brobygger · ' + (b.active || 0) + ' aktive', color: SoS.sage, icon: 'users',
+          section: 'brobyggere', meta: b });
+      }
+    });
+
+    // Aftaler
+    (SoS_APPOINTMENTS_BUSY || []).forEach(a => {
+      if (a.activity.toLowerCase().includes(lower) || a.location.toLowerCase().includes(lower)) {
+        const m = SoS_MENNESKER[a.menneskeId];
+        out.push({ type: 'aftale', id: a.id, title: a.activity,
+          sub: a.date + ' · ' + (m ? m.firstName + ' ' + m.lastName : '') + ' · ' + a.location,
+          color: SoS.accent, icon: 'calendar', section: 'kalender', meta: a });
+      }
+    });
+
+    return out.slice(0, 8);
+  }, [q]);
+
+  const ICONS = { menneske: 'heart', brobygger: 'users', aftale: 'calendar' };
+  const TYPE_LABELS = { menneske: 'Menneske', brobygger: 'Brobygger', aftale: 'Aftale' };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-start',
+      justifyContent: 'center', paddingTop: 80 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ width: 560, background: SoS.surface,
+        border: `1px solid ${SoS.line}`, boxShadow: '0 16px 48px rgba(0,0,0,0.18)' }}>
+        {/* Input */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12,
+          padding: '14px 16px', borderBottom: `1px solid ${SoS.line}` }}>
+          <Icon name="search" size={18} color={SoS.inkMuted}/>
+          <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)}
+            placeholder="Søg på navn, sted, aktivitet…"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent',
+              fontFamily: SoS.sans, fontSize: 16, color: SoS.ink }}/>
+          {q && (
+            <button onClick={() => setQ('')} style={{ background: 'none', border: 'none',
+              cursor: 'pointer', color: SoS.inkMuted, fontSize: 18, padding: 0 }}>×</button>
+          )}
+          <kbd style={{ padding: '2px 7px', background: SoS.surfaceAlt,
+            border: `1px solid ${SoS.line}`, fontFamily: SoS.mono, fontSize: 11,
+            color: SoS.inkMuted }}>ESC</kbd>
+        </div>
+
+        {/* Results */}
+        {results.length === 0 && q.length >= 2 && (
+          <div style={{ padding: '24px 16px', textAlign: 'center',
+            fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
+            Ingen resultater for "{q}"
+          </div>
+        )}
+        {results.length === 0 && q.length < 2 && (
+          <div style={{ padding: '20px 16px' }}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+              color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+              Søg i
+            </div>
+            {[
+              { icon: 'heart',    label: 'Mennesker',  count: Object.keys(SoS_MENNESKER).length },
+              { icon: 'users',    label: 'Brobyggere', count: SoS_BROBYGGERE.length },
+              { icon: 'calendar', label: 'Aftaler',    count: (SoS_APPOINTMENTS_BUSY||[]).length },
+            ].map(({ icon, label, count }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 0', borderBottom: `1px solid ${SoS.lineSoft}` }}>
+                <Icon name={icon} size={14} color={SoS.inkMuted}/>
+                <span style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, flex: 1 }}>{label}</span>
+                <span style={{ fontFamily: SoS.mono, fontSize: 11, color: SoS.inkMuted }}>{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {results.map((r, i) => (
+          <button key={r.id} onClick={() => { onNavigate(r.section, r); onClose(); }}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+              padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer',
+              borderBottom: `1px solid ${SoS.lineSoft}`, textAlign: 'left' }}
+            onMouseEnter={e => e.currentTarget.style.background = SoS.surfaceAlt}
+            onMouseLeave={e => e.currentTarget.style.background = ''}>
+            <div style={{ width: 32, height: 32, borderRadius: 0,
+              background: (r.color || SoS.accent) + '18', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={r.icon} size={15} color={r.color || SoS.accent}/>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+                color: SoS.ink, marginBottom: 1 }}>{r.title}</div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.sub}</div>
+            </div>
+            <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+              color: r.color || SoS.accent, textTransform: 'uppercase',
+              letterSpacing: 0.5 }}>{TYPE_LABELS[r.type]}</span>
+          </button>
+        ))}
+
+        {/* Footer */}
+        <div style={{ padding: '8px 16px', borderTop: `1px solid ${SoS.lineSoft}`,
+          display: 'flex', gap: 16, alignItems: 'center' }}>
+          <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
+            <kbd style={{ padding: '1px 5px', background: SoS.surfaceAlt,
+              border: `1px solid ${SoS.line}`, fontFamily: SoS.mono, fontSize: 10 }}>↵</kbd>
+            {' '}åbn  ·
+            <kbd style={{ padding: '1px 5px', background: SoS.surfaceAlt,
+              border: `1px solid ${SoS.line}`, fontFamily: SoS.mono, fontSize: 10 }}>⌘K</kbd>
+            {' '}søg
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
   const [section, setSection] = React.useState('kalender');
   const [viewingHq, setViewingHq] = React.useState(isAdmin ? 'Alle hovedsæder' : ownHq);
   const [deskExported, setDeskExported] = React.useState(false);
+  const [showSearch, setShowSearch] = React.useState(false);
+  const [searchTarget, setSearchTarget] = React.useState(null);
+
+  React.useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSearch(v => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const handleSearchNav = (sec, result) => {
+    setSection(sec);
+    setSearchTarget(result);
+  };
   const handleDeskExport = () => { setDeskExported(true); setTimeout(() => setDeskExported(false), 2500); };
 
   return (
@@ -10633,10 +10823,12 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
         <div style={{ width: 12, height: 12, borderRadius: 6, background: '#28C840' }}/>
         <div style={{ flex: 1, maxWidth: 480, margin: '0 auto',
           background: 'rgba(255,255,255,0.10)', borderRadius: SoS.r.sm,
-          padding: '5px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Icon name="lock" size={12} color="rgba(255,255,255,0.6)"/>
+          padding: '5px 14px', display: 'flex', alignItems: 'center', gap: 8,
+          cursor: 'text' }} onClick={() => setShowSearch(true)}>
+          <Icon name="search" size={12} color="rgba(255,255,255,0.5)"/>
           <span style={{ fontFamily: SoS.sans, fontSize: 12,
-            color: 'rgba(255,255,255,0.85)' }}>brobygger.socialsundhed.org / admin</span>
+            color: 'rgba(255,255,255,0.45)' }}>Søg… (⌘K)</span>
+          <Icon name="lock" size={12} color="rgba(255,255,255,0.35)" style={{ marginLeft: 'auto' }}/>
         </div>
         <div style={{ fontFamily: SoS.sans, fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
           Kun computer · Krypteret
@@ -10740,10 +10932,16 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
 
           {section === 'dashboard' && <DesktopDashboard viewingHq={viewingHq} isAdmin={isAdmin}/>}
           {section === 'brobygninger' && <DesktopBrobygninger/>}
-          {section === 'brobyggere' && <DesktopBrobyggere/>}
-          {section === 'mennesker' && <DesktopMennesker/>}
+          {section === 'brobyggere' && <DesktopBrobyggere initialTarget={searchTarget} onTargetConsumed={() => setSearchTarget(null)}/>}
+          {section === 'mennesker' && <DesktopMennesker initialTarget={searchTarget} onTargetConsumed={() => setSearchTarget(null)}/>}
           {section === 'kalender' && <DesktopKalender/>}
           {section === 'rapport' && <DesktopRapport/>}
+          {showSearch && (
+            <DesktopGlobalSearch
+              onClose={() => setShowSearch(false)}
+              onNavigate={handleSearchNav}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -10774,19 +10972,25 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
     {/* KPI row */}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
       gap: 10, marginBottom: 14 }}>
-      {[
-        { l: 'Aktive brobygninger', v: '94', d: '+12', c: SoS.orange },
-        { l: 'Brobyggere', v: '412', d: '+23', c: SoS.sage },
-        { l: 'Gennemf. aftaler · mdr', v: '1.2k', d: '+18%', c: SoS.sky },
-        { l: 'Timer doneret · år', v: '4,312', d: '+24%', c: SoS.orangeDeep },
-        { l: 'Ventetid til match', v: '5.2d', d: '−1.1d', c: SoS.roseSoft, tc: SoS.rose },
-      ].map((k, i) => (
+      {(() => {
+        const aktive = SoS_BROBYGGERE ? SoS_BROBYGGERE.filter(b => b.status === 'aktiv').length : 0;
+        const afventer = Object.values(SoS_MENNESKER || {}).filter(m => m.status === 'afventer' || m.status === 'venter').length;
+        const konfirmerede = (SoS_APPOINTMENTS_BUSY || []).filter(a => a.status === 'confirmed').length;
+        const pendende = (SoS_APPOINTMENTS_BUSY || []).filter(a => a.status === 'pending').length;
+        return [
+          { l: 'Aktive brobyggere', v: String(aktive), d: aktive > 0 ? 'aktive' : '—', c: SoS.accent },
+          { l: 'Afventer match', v: String(afventer), d: afventer > 0 ? 'ikke matchet' : 'alle matchet', c: SoS.amber },
+          { l: 'Bekræftede aftaler', v: String(konfirmerede), d: 'registrerede', c: SoS.green },
+          { l: 'Afventer bekræftelse', v: String(pendende), d: 'pending', c: SoS.inkMuted },
+          { l: 'Registrerede mennesker', v: String(Object.keys(SoS_MENNESKER || {}).length), d: 'i alt', c: SoS.sky },
+        ];
+      })().map((k, i) => (
         <DSCard key={i}>
           <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
             color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase' }}>{k.l}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
             <span style={{ fontFamily: SoS.mono, fontSize: 28, fontWeight: 700,
-              color: SoS.ink, letterSpacing: -1 }}>{k.v}</span>
+              color: k.c || SoS.ink, letterSpacing: -1 }}>{k.v}</span>
             <span style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
               color: k.tc || SoS.sage }}>{k.d}</span>
           </div>
@@ -10949,12 +11153,12 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
   </>
 );
 
-const DesktopBrobyggere = () => {
+const DesktopBrobyggere = ({ initialTarget, onTargetConsumed }) => {
   const [filter, setFilter] = React.useState('alle');
   const [search,  setSearch]  = React.useState('');
   const [selectedBb, setSelectedBb] = React.useState(null);
 
-  const TODAY = '2026-04-26';
+  const TODAY = new Date().toISOString().slice(0, 10);
   const fmtLast = (d) => {
     if (!d) return '—';
     const days = Math.round((new Date(TODAY) - new Date(d)) / (1000 * 60 * 60 * 24));
@@ -11088,11 +11292,24 @@ const DesktopBrobyggere = () => {
     {selectedBb && (
       <div style={{ position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.35)', display: 'flex',
-        alignItems: 'flex-end', justifyContent: 'center' }}
+        alignItems: 'stretch', justifyContent: 'flex-end' }}
         onClick={e => { if (e.target === e.currentTarget) setSelectedBb(null); }}>
-        <div style={{ width: '100%', maxWidth: 520, maxHeight: 700,
-          overflowY: 'auto', background: SoS.paper,
-          borderRadius: 0 }}>
+        <div style={{ width: 420, overflowY: 'auto', background: SoS.paper,
+          borderLeft: `1px solid ${SoS.line}`, boxShadow: '-8px 0 32px rgba(0,0,0,0.15)' }}>
+          {/* Desktop panel header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 16px', borderBottom: `1px solid ${SoS.line}`,
+            background: SoS.surface, position: 'sticky', top: 0, zIndex: 10 }}>
+            <span style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 700, color: SoS.ink }}>
+              {selectedBb.name}
+            </span>
+            <button onClick={() => setSelectedBb(null)} style={{
+              width: 28, height: 28, borderRadius: 0, background: SoS.surfaceAlt,
+              border: `1px solid ${SoS.line}`, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="x" size={14} color={SoS.inkMuted}/>
+            </button>
+          </div>
           <BrobyggerProfilePanel brobygger={selectedBb} onClose={() => setSelectedBb(null)}/>
         </div>
       </div>
@@ -11139,7 +11356,7 @@ const DesktopBrobygninger = () => {
             </div>
             <div style={{ fontFamily: SoS.font, fontSize: 36, fontWeight: 500,
               color: t.color, letterSpacing: -1, lineHeight: 1 }}>
-              {t.id === 'sundhed' ? 213 : t.id === 'forening' ? 284 : 350}
+              {Object.values(SoS_MENNESKER || {}).filter(m => m.type === t.id).length}
             </div>
             <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft, marginTop: 6 }}>
               {t.id === 'sundhed' ? '521' : t.id === 'forening' ? '702' : '911'} gennemførte aftaler
@@ -11268,12 +11485,123 @@ const DesktopBrobygninger = () => {
   );
 };
 
-const DesktopMennesker = () => {
-  const [search,   setSearch]   = React.useState('');
-  const [typeFilter, setTypeFilter] = React.useState('alle');
+const DesktopMenneskeStatus = ({ menneske: m, onStatusChange }) => {
+  const [open, setOpen] = React.useState(false);
+  const [note, setNote] = React.useState('');
+  const [pendingStatus, setPendingStatus] = React.useState(null);
+
+  const STATUSES = [
+    { id: 'afventer', label: 'Afventer',  color: SoS.amber, desc: 'Venter på match med brobygger' },
+    { id: 'aktiv',    label: 'Aktiv',     color: SoS.green, desc: 'Aktivt forløb i gang' },
+    { id: 'pause',    label: 'Pause',     color: SoS.inkMuted, desc: 'Midlertidigt på pause' },
+    { id: 'venter',   label: 'Venter',    color: SoS.amber, desc: 'Afventer næste aftale' },
+    { id: 'afsluttet', label: 'Afsluttet', color: SoS.red,  desc: 'Forløbet er afsluttet' },
+  ];
+
+  const current = STATUSES.find(s => s.id === m.status) || STATUSES[0];
+
+  const confirm = () => {
+    if (!pendingStatus) return;
+    // Log the status change to kontaktlog
+    const entry = {
+      id: 'k-' + Date.now(),
+      menneskeId: m.id,
+      type: 'notat',
+      dato: new Date().toISOString().slice(0, 10),
+      status: 'gennemfoert',
+      note: `Status ændret til "${STATUSES.find(s=>s.id===pendingStatus)?.label}" ${note ? '— ' + note : ''}`.trim(),
+    };
+    if (window.SoS_KONTAKTER) window.SoS_KONTAKTER.push(entry);
+    if (window.SoS_STORE) window.SoS_STORE.save('kontakter', window.SoS_KONTAKTER);
+    onStatusChange(pendingStatus);
+    setPendingStatus(null);
+    setNote('');
+    setOpen(false);
+  };
+
+  return (
+    <div style={{ padding: '10px 16px', borderBottom: `1px solid ${SoS.line}`,
+      background: SoS.surfaceAlt }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+          color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase' }}>STATUS</span>
+        <button onClick={() => setOpen(v => !v)} style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '4px 10px', borderRadius: SoS.r.sm, cursor: 'pointer',
+          background: current.color + '18', border: `1px solid ${current.color}44`,
+          fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: current.color }}>
+          {current.label}
+          <Icon name="chevronD" size={10} color={current.color}/>
+        </button>
+      </div>
+
+      {open && (
+        <div style={{ marginTop: 10, background: SoS.surface,
+          border: `1px solid ${SoS.line}`, padding: 14 }}>
+          <div style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+            color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+            Skift status
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {STATUSES.filter(s => s.id !== m.status).map(s => (
+              <button key={s.id} onClick={() => setPendingStatus(s.id)} style={{
+                padding: '5px 12px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                background: pendingStatus === s.id ? s.color : SoS.surfaceAlt,
+                color: pendingStatus === s.id ? '#fff' : SoS.ink,
+                border: `1px solid ${pendingStatus === s.id ? s.color : SoS.line}`,
+                fontFamily: SoS.sans, fontSize: 12, fontWeight: 500 }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+          {pendingStatus && (
+            <>
+              <textarea
+                placeholder="Tilføj note (valgfrit)…"
+                value={note} onChange={e => setNote(e.target.value)}
+                style={{ width: '100%', minHeight: 60, padding: '8px 10px',
+                  border: `1px solid ${SoS.line}`, background: SoS.surface,
+                  fontFamily: SoS.sans, fontSize: 13, color: SoS.ink,
+                  resize: 'vertical', outline: 'none', boxSizing: 'border-box',
+                  marginBottom: 10 }}/>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={confirm} style={{
+                  padding: '7px 16px', background: SoS.ink, color: '#fff',
+                  border: 'none', borderRadius: SoS.r.sm,
+                  fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  Bekræft ændring
+                </button>
+                <button onClick={() => { setPendingStatus(null); setOpen(false); }} style={{
+                  padding: '7px 16px', background: SoS.surfaceAlt, color: SoS.ink,
+                  border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                  fontFamily: SoS.sans, fontSize: 12, cursor: 'pointer' }}>
+                  Annuller
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
+  const [search,       setSearch]       = React.useState('');
+  const [typeFilter,   setTypeFilter]   = React.useState('alle');
   const [statusFilter, setStatusFilter] = React.useState('alle');
-  const [selected, setSelected] = React.useState(null);
-  const [showIntake, setShowIntake] = React.useState(false);
+  const [selected,     setSelected]     = React.useState(null);
+  const [showIntake,   setShowIntake]   = React.useState(false);
+  const [refreshKey,   setRefreshKey]   = React.useState(0);
+
+  // Consume initialTarget from global search
+  React.useEffect(() => {
+    if (initialTarget && initialTarget.type === 'menneske') {
+      setSelected(SoS_MENNESKER[initialTarget.id] || null);
+      if (onTargetConsumed) onTargetConsumed();
+    }
+  }, [initialTarget]);
 
   const alle = Object.values(SoS_MENNESKER);
   const filtered = alle.filter(m => {
@@ -11289,6 +11617,7 @@ const DesktopMennesker = () => {
     venter: { bg: '#FFF3E0', color: '#E87A3E' },
     pause:  { bg: '#F5F5F5', color: '#9E9E9E' },
     afsluttet: { bg: '#FCE4EC', color: '#C62828' },
+    afventer: { bg: '#FFF3E0', color: '#E87A3E' },
   };
 
   if (showIntake) return (
@@ -11296,15 +11625,9 @@ const DesktopMennesker = () => {
       <IntakeFlow onClose={() => setShowIntake(false)} onDone={() => setShowIntake(false)}/>
     </div>
   );
-  if (selected) return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 300, overflowY: 'auto',
-      background: SoS.paper, padding: 24 }}>
-      <MenneskeDetailPanel menneske={selected} onClose={() => setSelected(null)}/>
-    </div>
-  );
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+  const tablePanel = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0, flex: 1 }}>
       {/* Toolbar */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8,
@@ -11315,6 +11638,10 @@ const DesktopMennesker = () => {
             placeholder="Søg på navn…"
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent',
               fontFamily: SoS.sans, fontSize: 14, color: SoS.ink }}/>
+          {search && (
+            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none',
+              cursor: 'pointer', color: SoS.inkMuted, fontSize: 18, padding: 0 }}>×</button>
+          )}
         </div>
         <button onClick={() => setShowIntake(true)} style={{
           padding: '9px 18px', background: SoS.ink, color: '#fff',
@@ -11339,8 +11666,8 @@ const DesktopMennesker = () => {
             }}>{f === 'alle' ? 'Alle typer' : t.label}</button>
           );
         })}
-        <div style={{ width: 1, background: SoS.lineSoft, margin: '0 4px' }}/>
-        {['alle', 'aktiv', 'venter', 'pause'].map(s => {
+        <div style={{ width: 1, background: SoS.line, margin: '0 4px' }}/>
+        {['alle', 'aktiv', 'venter', 'afventer', 'pause'].map(s => {
           const sel = statusFilter === s;
           const fc = STATUS_FARVER[s] || {};
           return (
@@ -11370,10 +11697,27 @@ const DesktopMennesker = () => {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center',
-                fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
-                Ingen mennesker matcher søgningen
-              </td></tr>
+              <tr>
+                <td colSpan={6}>
+                  <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600,
+                      color: SoS.ink, marginBottom: 6 }}>
+                      {search ? `Ingen resultater for "${search}"` : 'Ingen mennesker matcher filteret'}
+                    </div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted, marginBottom: 16 }}>
+                      {search ? 'Prøv et andet søgeord' : 'Juster filtrene eller opret et nyt menneske'}
+                    </div>
+                    {!search && (
+                      <button onClick={() => { setTypeFilter('alle'); setStatusFilter('alle'); }}
+                        style={{ padding: '7px 16px', background: SoS.surfaceAlt,
+                          border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                          fontFamily: SoS.sans, fontSize: 12, cursor: 'pointer', color: SoS.ink }}>
+                        Nulstil filtre
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
             )}
             {filtered.map((m, i) => {
               const t = SoS_TYPER[m.type];
@@ -11381,66 +11725,118 @@ const DesktopMennesker = () => {
               const nMeta = INDSATS_META[stats.indsatsniveau];
               const sf = STATUS_FARVER[m.status] || {};
               const dato = m.startedAt || m.registeredAt || '';
+              const isSelected = selected && selected.id === m.id;
               return (
                 <tr key={m.id}
-                  onClick={() => setSelected(m)}
-                  style={{ borderBottom: `1px solid ${SoS.lineSoft}`,
-                    cursor: 'pointer', background: 'transparent',
+                  onClick={() => setSelected(isSelected ? null : m)}
+                  style={{ borderBottom: `1px solid ${SoS.line}`,
+                    cursor: 'pointer',
+                    background: isSelected ? SoS.accent + '0D' : 'transparent',
+                    borderLeft: isSelected ? `3px solid ${SoS.accent}` : '3px solid transparent',
                     transition: 'background 0.1s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = SoS.surfaceAlt}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = SoS.surfaceAlt; }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                 >
                   <td style={{ padding: '12px 14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Avatar initials={m.initials} bg={t.color} size={34}/>
-                      <div>
-                        <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
-                          color: SoS.ink }}>{m.firstName} {m.lastName}</div>
-                        <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>
-                          {m.age} år · {(m.language || 'Dansk').split(',')[0]}
-                        </div>
-                      </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Avatar initials={m.initials} bg={t ? t.soft : SoS.surfaceAlt} size={28}/>
+                      <span style={{ fontFamily: SoS.sans, fontSize: 13,
+                        fontWeight: 600, color: SoS.ink }}>{m.firstName} {m.lastName}</span>
                     </div>
                   </td>
                   <td style={{ padding: '12px 14px' }}>
-                    <Pill bg={t.soft} color={t.color}>{t.short}</Pill>
+                    {t && <Pill bg={t.soft} color={t.color}>{t.short || t.label}</Pill>}
                   </td>
                   <td style={{ padding: '12px 14px' }}>
-                    <Pill bg={sf.bg || SoS.creamDeep} color={sf.color || SoS.inkSoft}>
-                      {m.status}
+                    <Pill bg={sf.bg || SoS.surfaceAlt} color={sf.color || SoS.inkMuted}>
+                      {m.status ? m.status.charAt(0).toUpperCase() + m.status.slice(1) : '—'}
                     </Pill>
                   </td>
                   <td style={{ padding: '12px 14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: 4,
-                        background: nMeta.color, flexShrink: 0 }}/>
-                      <span style={{ fontFamily: SoS.sans, fontSize: 12, color: nMeta.color,
-                        fontWeight: 600 }}>{nMeta.label}</span>
-                    </div>
+                    {nMeta && <Pill bg={nMeta.color + '22'} color={nMeta.color}>{nMeta.label}</Pill>}
                   </td>
-                  <td style={{ padding: '12px 14px', fontFamily: SoS.sans, fontSize: 13,
-                    color: SoS.ink, textAlign: 'center' }}>
-                    {stats.antalKontakter}
-                  </td>
-                  <td style={{ padding: '12px 14px', fontFamily: SoS.sans, fontSize: 12,
-                    color: SoS.inkSoft }}>
-                    {dato ? new Date(dato).toLocaleDateString('da-DK',
-                      { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                  <td style={{ padding: '12px 14px', fontFamily: SoS.sans,
+                    fontSize: 13, color: SoS.ink }}>{stats.antalKontakter}</td>
+                  <td style={{ padding: '12px 14px', fontFamily: SoS.sans,
+                    fontSize: 12, color: SoS.inkMuted }}>
+                    {dato ? new Date(dato).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <div style={{ padding: '10px 14px', background: SoS.surface,
-          fontFamily: SoS.mono, fontSize: 9.5, color: SoS.inkMuted,
-          borderTop: `1px solid ${SoS.line}` }}>
-          Viser {filtered.length} af {alle.length} mennesker
+        <div style={{ padding: '8px 14px', borderTop: `1px solid ${SoS.lineSoft}`,
+          fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, textAlign: 'right' }}>
+          {filtered.length} af {alle.length} mennesker
         </div>
       </DSCard>
     </div>
   );
+
+  if (!selected) return tablePanel;
+
+  // Split-pane layout
+  return (
+    <div style={{ display: 'flex', gap: 16, height: '100%', minHeight: 0, alignItems: 'flex-start' }}>
+      {/* Left: table (compressed) */}
+      <div style={{ flex: '0 0 52%', minWidth: 0, overflowY: 'auto',
+        maxHeight: 'calc(100vh - 140px)' }}>
+        {tablePanel}
+      </div>
+
+      {/* Right: detail panel */}
+      <div style={{ flex: '0 0 46%', minWidth: 0, overflowY: 'auto',
+        maxHeight: 'calc(100vh - 140px)',
+        border: `1px solid ${SoS.line}`, background: SoS.surface }}>
+        {/* Desktop detail header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px', borderBottom: `1px solid ${SoS.line}`,
+          background: SoS.surface, position: 'sticky', top: 0, zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Avatar initials={selected.initials}
+              bg={(SoS_TYPER[selected.type] || {}).soft || SoS.surfaceAlt} size={32}/>
+            <div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 700,
+                color: SoS.ink }}>{selected.firstName} {selected.lastName}</div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
+                {(SoS_TYPER[selected.type] || {}).label} · {selected.age} år
+              </div>
+            </div>
+          </div>
+          <button onClick={() => setSelected(null)} style={{
+            width: 28, height: 28, borderRadius: 0,
+            background: SoS.surfaceAlt, border: `1px solid ${SoS.line}`,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="x" size={14} color={SoS.inkMuted}/>
+          </button>
+        </div>
+
+        {/* Desktop status bar */}
+        <DesktopMenneskeStatus
+          menneske={selected}
+          onStatusChange={(newStatus) => {
+            if (window.SoS_MENNESKER && window.SoS_MENNESKER[selected.id]) {
+              window.SoS_MENNESKER[selected.id].status = newStatus;
+              if (window.SoS_STORE) window.SoS_STORE.save('mennesker', window.SoS_MENNESKER);
+            }
+            setSelected({ ...selected, status: newStatus });
+            setRefreshKey(k => k + 1);
+          }}
+        />
+
+        {/* The mobile-style panel (reused as-is) */}
+        <div style={{ fontSize: '0.9em' }}>
+          <MenneskeDetailPanel
+            menneske={selected}
+            onClose={() => setSelected(null)}
+          />
+        </div>
+      </div>
+    </div>
+  );
 };
+
 
 const DesktopSROI = () => {
   const rates = window.SROI_SETTINGS || { sundhed: 1840, forening: 1420, social: 1260, investment: 8400000 };
@@ -13016,7 +13412,7 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
   const phoneOk = phoneDigits.length === 8;
   const canNext1 = form.firstName.trim().length > 0 && form.age.trim().length > 0 && phoneOk;
   const canNext2 = !!type && selectedBehov.length > 0;
-  const [brobygDato, setBrobygDato] = React.useState('2026-05-06');
+  const [brobygDato, setBrobygDato] = React.useState(new Date().toISOString().slice(0,10));
   const [brobygStart, setBrobygStart] = React.useState(null);
   const [brobygDuration, setBrobygDuration] = React.useState(null);
   const [brobygFrekvens, setBrobygFrekvens] = React.useState(null);

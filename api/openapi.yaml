@@ -1,0 +1,2845 @@
+openapi: "3.1.0"
+
+info:
+  title: SoS Brobygger Portal API
+  version: "1.0.0"
+  description: |
+    Komplet REST API til SoS Brobygger Portal.
+
+    Forbinder frivillige brobyggere med mennesker i behov for social kontakt og netværk.
+
+    ### Autentifikation
+    Alle beskyttede endpoints kræver `Authorization: Bearer <token>`.
+    Token udstedes af Microsoft Entra ID via MSAL.js i frontenden.
+    JWT-claims bruges til rolle-mapping: `Brobygger` | `Raadgiver` | `Admin`.
+
+    ### Roller og adgang
+    - **Brobygger**: Kan se og opdatere egne aftaler, kontaktlog, profil og beskeder.
+    - **Raadgiver**: Kan se og administrere alle mennesker og brobyggere inden for eget HQ.
+    - **Admin**: Fuld adgang til alle ressourcer på tværs af HQ.
+
+    ### GDPR
+    Helbredsdata (Art. 9) krypteres i databasen og returneres aldrig i listevisninger.
+    Alle skrivninger til følsomme tabeller auditeres automatisk.
+
+  contact:
+    name: SoS Teknisk Team
+    email: admin@sosbrobygger.dk
+  license:
+    name: Privat — alle rettigheder forbeholdt SoS
+
+servers:
+  - url: http://localhost:8000
+    description: Lokal udvikling
+  - url: https://brobygger-api-dev.azurewebsites.net
+    description: Azure Dev
+  - url: https://brobygger-api.azurewebsites.net
+    description: Azure Produktion
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Auth
+    description: Token-validering og brugerprofil via Entra ID
+  - name: Brobyggere
+    description: Frivillige brobyggere — CRUD, status, pause-planlægning, statistik
+  - name: Mennesker
+    description: Borgere/klienter — CRUD, statusovergange, intake
+  - name: Aftaler
+    description: Møder og aktiviteter — CRUD, ugeoversigt
+  - name: Kontaktlog
+    description: Løbende kontaktregistrering per menneske
+  - name: Matching
+    description: Forslag til og bekræftelse af brobygger↔menneske-match
+  - name: Notifikationer
+    description: In-app notifikationer og Web Push
+  - name: Beskeder
+    description: Interne beskedtråde mellem brobyggere og rådgivere
+  - name: Rapporter
+    description: Ugeoversigt, aktivitetsrapport og CSV-eksport
+  - name: Brugere
+    description: Brugeradministration — liste, inviter, rollestyring
+  - name: Meta
+    description: Health-check og versionsinformation
+
+# =============================================================================
+# COMPONENTS
+# =============================================================================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Azure Entra ID access token (MSAL.js — audience = API App Registration)
+
+  parameters:
+    PathId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID på ressourcen
+
+    QueryStatus:
+      name: status
+      in: query
+      required: false
+      schema:
+        type: string
+
+    QueryHQ:
+      name: hq
+      in: query
+      required: false
+      schema:
+        type: string
+        example: "København N"
+      description: Filtrer på koordinatorkontor
+
+    QueryPage:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    QueryPageSize:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+  schemas:
+    # ── Generelle hjælpeskemaer ──────────────────────────────────────────────
+
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          example: true
+
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          example: "Ressourcen blev ikke fundet"
+        code:
+          type: string
+          example: "not_found"
+
+    PaginatedMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 42
+        page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 50
+        pages:
+          type: integer
+          example: 1
+
+    # ── ENUM-typer ───────────────────────────────────────────────────────────
+
+    BrobyggerStatus:
+      type: string
+      enum: [ny, aktiv, pause, inaktiv]
+      description: |
+        - `ny`: Nyregistreret — ikke aktivt matchet endnu
+        - `aktiv`: Aktiv og kan modtage nye matches
+        - `pause`: Midlertidigt ikke tilgængelig
+        - `inaktiv`: Ikke længere frivillig
+
+    MenneskStatus:
+      type: string
+      enum: [ny, matched, aktiv, afsluttet, venteliste]
+      description: |
+        - `ny`: Ny henvendelse — endnu ikke behandlet
+        - `matched`: Tildelt brobygger — forløb ikke startet
+        - `aktiv`: Aktivt forløb i gang
+        - `afsluttet`: Forløbet er afsluttet
+        - `venteliste`: Venter på egnet brobygger
+
+    AftaleStatus:
+      type: string
+      enum: [planlagt, gennemfoert, aflyst, udsat]
+
+    AftaleType:
+      type: string
+      enum: [moede, aktivitet, telefonopkald, online]
+
+    KontaktType:
+      type: string
+      enum: [telefonisk, moede_brobygger, foelge_primaer, foelge_sekundaer, notat, andet]
+      description: |
+        - `telefonisk`: Telefonisk kontakt
+        - `moede_brobygger`: Møde med brobygger
+        - `foelge_primaer`: Følge til primær aktivitet
+        - `foelge_sekundaer`: Følge til sekundær aktivitet
+        - `notat`: Administrativt notat
+        - `andet`: Anden kontaktform
+
+    BrugerRolle:
+      type: string
+      enum: [Brobygger, Raadgiver, Admin]
+
+    NotifType:
+      type: string
+      enum: [ny_aftale, aftale_godkendt, aftale_aflyst, ny_besked, match_forslag, paamindelse, system]
+
+    KonType:
+      type: string
+      enum: [mand, kvinde, ikke-binaer, oensker-ikke]
+
+    # ── Auth ─────────────────────────────────────────────────────────────────
+
+    TokenClaims:
+      type: object
+      required: [oid, name, email, roles]
+      properties:
+        oid:
+          type: string
+          description: Azure Entra ID Object ID
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        name:
+          type: string
+          example: "Linda Sørensen"
+        email:
+          type: string
+          format: email
+          example: "linda@sos.dk"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrugerRolle"
+          example: ["Raadgiver"]
+        hq:
+          type: string
+          example: "København N"
+        bruger_id:
+          type: string
+          format: uuid
+          description: Intern bruger-UUID (fra brugere-tabellen)
+
+    # ── Brobygger ────────────────────────────────────────────────────────────
+
+    BrobyggerCreate:
+      type: object
+      required: [navn]
+      properties:
+        navn:
+          type: string
+          example: "Maja Lindberg"
+        email:
+          type: string
+          format: email
+          example: "maja@example.com"
+        telefon:
+          type: string
+          example: "+45 28 11 22 33"
+        typer:
+          type: array
+          items:
+            type: string
+          example: ["en-til-en", "cafe-gruppe"]
+          description: Brobygningstyper (en-til-en, gruppe, cafe-gruppe, netvaerk)
+        sprog:
+          type: array
+          items:
+            type: string
+          example: ["dansk", "engelsk"]
+        hq:
+          type: string
+          example: "København N"
+        kon:
+          $ref: "#/components/schemas/KonType"
+        bio:
+          type: string
+          example: "Pensioneret sygeplejerske med erfaring i socialt arbejde."
+        max_active:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 3
+        startdato:
+          type: string
+          format: date
+          example: "2024-09-01"
+        naeste_tid:
+          type: string
+          example: "Tirsdag kl. 14-16"
+        noter:
+          type: string
+
+    BrobyggerUpdate:
+      type: object
+      properties:
+        navn:
+          type: string
+        email:
+          type: string
+          format: email
+        telefon:
+          type: string
+        typer:
+          type: array
+          items:
+            type: string
+        sprog:
+          type: array
+          items:
+            type: string
+        hq:
+          type: string
+        kon:
+          $ref: "#/components/schemas/KonType"
+        bio:
+          type: string
+        status:
+          $ref: "#/components/schemas/BrobyggerStatus"
+        max_active:
+          type: integer
+          minimum: 1
+        tilgaengelig_fra:
+          type: string
+          format: date
+          nullable: true
+          description: Dato hvorfra brobygger igen er tilgængelig (bruges ved pause)
+        naeste_tid:
+          type: string
+          nullable: true
+        noter:
+          type: string
+
+    Brobygger:
+      type: object
+      required: [id, navn, status, active, max_active, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_oid:
+          type: string
+          nullable: true
+        navn:
+          type: string
+          example: "Maja Lindberg"
+        email:
+          type: string
+          format: email
+          nullable: true
+        telefon:
+          type: string
+          nullable: true
+        typer:
+          type: array
+          items:
+            type: string
+          example: ["en-til-en", "cafe-gruppe"]
+        sprog:
+          type: array
+          items:
+            type: string
+          example: ["dansk", "engelsk"]
+        hq:
+          type: string
+          nullable: true
+        kon:
+          $ref: "#/components/schemas/KonType"
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/BrobyggerStatus"
+        active:
+          type: integer
+          description: Antal aktive mennesker i forløb
+          example: 2
+        max_active:
+          type: integer
+          example: 3
+        har_kapacitet:
+          type: boolean
+          description: active < max_active AND status = aktiv
+          example: true
+        tilgaengelig_fra:
+          type: string
+          format: date
+          nullable: true
+        naeste_tid:
+          type: string
+          nullable: true
+        startdato:
+          type: string
+          format: date
+          nullable: true
+        seneste_moede:
+          type: string
+          format: date
+          nullable: true
+        noter:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    BrobyggerStatistik:
+      type: object
+      properties:
+        brobygger_id:
+          type: string
+          format: uuid
+        total_mennesker:
+          type: integer
+          description: Alle mennesker nogensinde tilknyttet
+        aktive_mennesker:
+          type: integer
+        afsluttede_forloeb:
+          type: integer
+        total_aftaler:
+          type: integer
+        gennemfoerte_aftaler:
+          type: integer
+        aflyste_aftaler:
+          type: integer
+        total_timer:
+          type: number
+          description: Samlede timer i gennemførte aftaler
+        seneste_aktivitet:
+          type: string
+          format: date
+          nullable: true
+        kontaktlog_entries:
+          type: integer
+
+    PauseRequest:
+      type: object
+      required: [pause_fra, pause_til]
+      properties:
+        pause_fra:
+          type: string
+          format: date
+          example: "2026-06-01"
+        pause_til:
+          type: string
+          format: date
+          example: "2026-08-31"
+        aarsag:
+          type: string
+          example: "Sommerferie"
+
+    # ── Menneske ─────────────────────────────────────────────────────────────
+
+    MenneskCreate:
+      type: object
+      required: [navn]
+      properties:
+        navn:
+          type: string
+          example: "Ahmad K."
+        alder:
+          type: integer
+          minimum: 0
+          maximum: 120
+          example: 38
+        kon:
+          $ref: "#/components/schemas/KonType"
+        email:
+          type: string
+          format: email
+          nullable: true
+        telefon:
+          type: string
+          example: "+45 12 34 56 78"
+        adresse:
+          type: string
+          nullable: true
+        typer:
+          type: array
+          items:
+            type: string
+          example: ["en-til-en"]
+        sprog:
+          type: array
+          items:
+            type: string
+          example: ["arabisk", "dansk"]
+        noter:
+          type: string
+          nullable: true
+        helbredsnoter:
+          type: string
+          nullable: true
+          description: >
+            GDPR Art. 9-data. Kræver aktivt samtykke (helbredsdata=true i samtykker).
+            Krypteres med pgp_sym_encrypt i databasen. Returneres ALDRIG i listevisninger.
+            Kun tilgængeligt via GET /v1/mennesker/{id}/helbredsnoter (kræver Admin/Raadgiver).
+        hq:
+          type: string
+          example: "København N"
+        raadgiver_id:
+          type: string
+          format: uuid
+          nullable: true
+
+    MenneskUpdate:
+      type: object
+      properties:
+        navn:
+          type: string
+        alder:
+          type: integer
+        kon:
+          $ref: "#/components/schemas/KonType"
+        email:
+          type: string
+          format: email
+        telefon:
+          type: string
+        adresse:
+          type: string
+        typer:
+          type: array
+          items:
+            type: string
+        sprog:
+          type: array
+          items:
+            type: string
+        noter:
+          type: string
+        hq:
+          type: string
+        raadgiver_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: "#/components/schemas/MenneskStatus"
+
+    MenneskStatusTransition:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/MenneskStatus"
+        note:
+          type: string
+          description: Obligatorisk ved afslutning (status=afsluttet)
+          example: "Forløbet afsluttet planmæssigt. Borgeren har fået et stabilt netværk."
+
+    Menneske:
+      type: object
+      required: [id, navn, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        navn:
+          type: string
+          example: "Ahmad K."
+        alder:
+          type: integer
+          nullable: true
+        kon:
+          $ref: "#/components/schemas/KonType"
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        telefon:
+          type: string
+          nullable: true
+        adresse:
+          type: string
+          nullable: true
+        typer:
+          type: array
+          items:
+            type: string
+        sprog:
+          type: array
+          items:
+            type: string
+        noter:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/MenneskStatus"
+        matched_with:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID på tilknyttet brobygger
+        brobygger_navn:
+          type: string
+          nullable: true
+          description: Denormaliseret navn på tilknyttet brobygger (for visning)
+        raadgiver_id:
+          type: string
+          format: uuid
+          nullable: true
+        raadgiver_navn:
+          type: string
+          nullable: true
+        hq:
+          type: string
+          nullable: true
+        har_samtykke_helbredsdata:
+          type: boolean
+          description: Om der foreligger aktivt Art. 9-samtykke
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MenneskIntakeRequest:
+      type: object
+      required: [navn, typer, sprog, samtykke_kontakt_data]
+      properties:
+        navn:
+          type: string
+          example: "Maria T."
+        alder:
+          type: integer
+          example: 31
+        kon:
+          $ref: "#/components/schemas/KonType"
+        telefon:
+          type: string
+          example: "+45 87 65 43 21"
+        typer:
+          type: array
+          items:
+            type: string
+          example: ["en-til-en"]
+        sprog:
+          type: array
+          items:
+            type: string
+          example: ["dansk", "polsk"]
+        noter:
+          type: string
+        hq:
+          type: string
+          example: "København S"
+        raadgiver_id:
+          type: string
+          format: uuid
+        samtykke_kontakt_data:
+          type: boolean
+          description: GDPR Art. 6 — skal være true for at oprette
+          example: true
+        samtykke_helbredsdata:
+          type: boolean
+          description: GDPR Art. 9 — kræves kun hvis helbredsnoter angives
+          default: false
+        helbredsnoter:
+          type: string
+          nullable: true
+        samtykke_givet_af:
+          type: string
+          description: Navn på rådgiver/koordinator der indhentede samtykket
+          example: "Linda Sørensen"
+        samtykke_version:
+          type: string
+          description: Version af samtykkeerklæringen
+          example: "2025-01-01"
+
+    # ── Aftale ───────────────────────────────────────────────────────────────
+
+    AftaleCreate:
+      type: object
+      required: [brobygger_id, menneske_id, dato]
+      properties:
+        brobygger_id:
+          type: string
+          format: uuid
+        menneske_id:
+          type: string
+          format: uuid
+        dato:
+          type: string
+          format: date-time
+          example: "2026-06-10T14:00:00+02:00"
+        varighed:
+          type: integer
+          default: 60
+          minimum: 15
+          description: Varighed i minutter
+        type:
+          $ref: "#/components/schemas/AftaleType"
+        sted:
+          type: string
+          nullable: true
+          example: "Cafe Nørreport"
+        beskrivelse:
+          type: string
+          nullable: true
+
+    AftaleUpdate:
+      type: object
+      properties:
+        dato:
+          type: string
+          format: date-time
+        varighed:
+          type: integer
+          minimum: 15
+        type:
+          $ref: "#/components/schemas/AftaleType"
+        sted:
+          type: string
+          nullable: true
+        beskrivelse:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/AftaleStatus"
+        notes:
+          type: string
+
+    Aftale:
+      type: object
+      required: [id, brobygger_id, menneske_id, dato, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        brobygger_id:
+          type: string
+          format: uuid
+        brobygger_navn:
+          type: string
+          example: "Maja Lindberg"
+        menneske_id:
+          type: string
+          format: uuid
+        menneske_navn:
+          type: string
+          example: "Ahmad K."
+        dato:
+          type: string
+          format: date-time
+        varighed:
+          type: integer
+          description: Minutter
+        type:
+          $ref: "#/components/schemas/AftaleType"
+        sted:
+          type: string
+          nullable: true
+        beskrivelse:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/AftaleStatus"
+        notes:
+          type: string
+          default: ""
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UgeOversigt:
+      type: object
+      description: Alle aftaler i en given kalenderuge
+      properties:
+        uge_nr:
+          type: integer
+          example: 24
+        aar:
+          type: integer
+          example: 2026
+        dato_fra:
+          type: string
+          format: date
+          example: "2026-06-08"
+        dato_til:
+          type: string
+          format: date
+          example: "2026-06-14"
+        aftaler:
+          type: array
+          items:
+            $ref: "#/components/schemas/Aftale"
+        total:
+          type: integer
+
+    # ── Kontaktlog ───────────────────────────────────────────────────────────
+
+    KontaktLogCreate:
+      type: object
+      required: [menneske_id, type, dato]
+      properties:
+        menneske_id:
+          type: string
+          format: uuid
+        brobygger_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Udfyldes automatisk for brobygger-rolle
+        type:
+          $ref: "#/components/schemas/KontaktType"
+        dato:
+          type: string
+          format: date
+          example: "2026-06-05"
+        varighed_minutter:
+          type: integer
+          minimum: 0
+          nullable: true
+          example: 45
+        notat:
+          type: string
+          nullable: true
+          example: "God samtale. Ahmad virker mere tryg og har talt med sin nabo."
+        naeste_skridt:
+          type: string
+          nullable: true
+          example: "Planlæg besøg i biblioteket næste uge"
+
+    KontaktLogEntry:
+      type: object
+      required: [id, menneske_id, type, dato, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        menneske_id:
+          type: string
+          format: uuid
+        brobygger_id:
+          type: string
+          format: uuid
+          nullable: true
+        brobygger_navn:
+          type: string
+          nullable: true
+        oprettet_af_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Bruger der oprettede posten (kan være rådgiver)
+        oprettet_af_navn:
+          type: string
+          nullable: true
+        type:
+          $ref: "#/components/schemas/KontaktType"
+        dato:
+          type: string
+          format: date
+        varighed_minutter:
+          type: integer
+          nullable: true
+        notat:
+          type: string
+          nullable: true
+        naeste_skridt:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    # ── Matching ─────────────────────────────────────────────────────────────
+
+    MatchKandidat:
+      type: object
+      properties:
+        brobygger:
+          $ref: "#/components/schemas/Brobygger"
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.87
+          description: Matchscore baseret på overlappende sprog, typer og kapacitet
+        begrundelse:
+          type: string
+          example: "Fælles sprog (arabisk, dansk) og type (en-til-en). Har kapacitet (1/3)."
+        faelles_sprog:
+          type: array
+          items:
+            type: string
+          example: ["arabisk", "dansk"]
+        faelles_typer:
+          type: array
+          items:
+            type: string
+          example: ["en-til-en"]
+
+    MatchAssign:
+      type: object
+      required: [brobygger_id]
+      properties:
+        brobygger_id:
+          type: string
+          format: uuid
+        note:
+          type: string
+          nullable: true
+          example: "Matchet pga. fælles sprog og geografisk nærhed"
+
+    MatchResultat:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        menneske:
+          $ref: "#/components/schemas/Menneske"
+        brobygger:
+          $ref: "#/components/schemas/Brobygger"
+        matchet_at:
+          type: string
+          format: date-time
+
+    # ── Notifikationer ───────────────────────────────────────────────────────
+
+    Notifikation:
+      type: object
+      required: [id, type, titel, tekst, unread, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/NotifType"
+        titel:
+          type: string
+          example: "Ny aftale oprettet"
+        tekst:
+          type: string
+          example: "Ahmad: Møde på Cafe Nørreport torsdag kl. 14"
+        link:
+          type: string
+          nullable: true
+          example: "/kalender"
+        unread:
+          type: boolean
+        push_sendt:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    NotifUnreadCount:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+          example: 3
+
+    # ── Beskeder ─────────────────────────────────────────────────────────────
+
+    BeskedTraad:
+      type: object
+      required: [id, titel, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        titel:
+          type: string
+          example: "Frivilligkursus 14. juni"
+        brobygger_id:
+          type: string
+          format: uuid
+          nullable: true
+        from_brobygger:
+          type: boolean
+        official:
+          type: boolean
+        ulaest_count:
+          type: integer
+          default: 0
+        sidste_besked:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    BeskedCreate:
+      type: object
+      required: [tekst]
+      properties:
+        tekst:
+          type: string
+          example: "Hej Linda, jeg er i tvivl om næste møde med Ahmad."
+        fra_rolle:
+          $ref: "#/components/schemas/BrugerRolle"
+
+    Besked:
+      type: object
+      required: [id, traad_id, from_rolle, tekst, sent_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        traad_id:
+          type: string
+          format: uuid
+        from_rolle:
+          $ref: "#/components/schemas/BrugerRolle"
+        fra_bruger_id:
+          type: string
+          format: uuid
+          nullable: true
+        fra_navn:
+          type: string
+          nullable: true
+        tekst:
+          type: string
+        sent_at:
+          type: string
+          format: date-time
+        tid:
+          type: string
+          example: "14:37"
+          description: Formateret tidspunkt til visning
+
+    # ── Rapporter ────────────────────────────────────────────────────────────
+
+    AktivitetsRapport:
+      type: object
+      properties:
+        periode_fra:
+          type: string
+          format: date
+        periode_til:
+          type: string
+          format: date
+        hq:
+          type: string
+          nullable: true
+        total_aftaler:
+          type: integer
+        gennemfoerte_aftaler:
+          type: integer
+        aflyste_aftaler:
+          type: integer
+        total_timer:
+          type: number
+          description: Sum af varighed i timer for gennemførte aftaler
+        aktive_brobyggere:
+          type: integer
+        aktive_mennesker:
+          type: integer
+        nye_mennesker:
+          type: integer
+        afsluttede_forloeb:
+          type: integer
+        kontaktlog_entries:
+          type: integer
+        gennemsnitlig_forloebslaengde_dage:
+          type: number
+          nullable: true
+
+    SROISnapshot:
+      type: object
+      properties:
+        total_forloeb:
+          type: integer
+        total_timer:
+          type: number
+        estimeret_vaerdi_dkk:
+          type: number
+          description: Estimeret samfundsværdi baseret på frivilligtimer * timesats
+        investering_dkk:
+          type: number
+        sroi_ratio:
+          type: number
+          example: 4.2
+          description: "Fx 4.2 = 4,2 kr samfundsværdi per investeret kr"
+
+    DashboardKPI:
+      type: object
+      properties:
+        aktive_brobyggere:
+          type: integer
+        ledige_brobyggere:
+          type: integer
+          description: Aktive brobyggere med kapacitet til flere mennesker
+        aktive_mennesker:
+          type: integer
+        ventende_mennesker:
+          type: integer
+          description: Menschen med status ny eller venteliste uden match
+        planlagte_aftaler_denne_uge:
+          type: integer
+        aftaler_i_dag:
+          type: integer
+        ubesvarede_beskeder:
+          type: integer
+        match_rate:
+          type: number
+          description: Pct. af alle mennesker der er matchede eller aktive
+          example: 78.5
+
+    # ── Brugere ──────────────────────────────────────────────────────────────
+
+    Bruger:
+      type: object
+      required: [id, azure_oid, display_name, rolle, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_oid:
+          type: string
+        display_name:
+          type: string
+          example: "Linda Sørensen"
+        email:
+          type: string
+          format: email
+          nullable: true
+        rolle:
+          $ref: "#/components/schemas/BrugerRolle"
+        hq:
+          type: string
+          nullable: true
+        aktiv:
+          type: boolean
+        sidst_login:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    BrugerInvitation:
+      type: object
+      required: [email, navn, rolle]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "ny-bruger@sos.dk"
+        navn:
+          type: string
+          example: "Hanne Vestergaard"
+        rolle:
+          $ref: "#/components/schemas/BrugerRolle"
+        hq:
+          type: string
+          nullable: true
+          example: "Aarhus C"
+
+    BrugerRolleUpdate:
+      type: object
+      required: [rolle]
+      properties:
+        rolle:
+          $ref: "#/components/schemas/BrugerRolle"
+        hq:
+          type: string
+          nullable: true
+
+  responses:
+    Unauthorized:
+      description: Manglende eller ugyldigt JWT-token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            detail: "Token mangler eller er udløbet"
+            code: "unauthorized"
+    Forbidden:
+      description: Utilstrækkelige rettigheder
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            detail: "Kun admins kan udføre denne handling"
+            code: "forbidden"
+    NotFound:
+      description: Ressourcen blev ikke fundet
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            detail: "Ressourcen blev ikke fundet"
+            code: "not_found"
+    UnprocessableEntity:
+      description: Valideringsfejl i request-body
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+# =============================================================================
+# PATHS
+# =============================================================================
+
+paths:
+
+  # ── Auth ────────────────────────────────────────────────────────────────────
+
+  /v1/auth/login:
+    post:
+      summary: Valider Entra ID-token og synkronisér bruger
+      description: |
+        Modtager et MSAL-token fra frontenden, validerer det mod Entra ID,
+        og opretter eller opdaterer brugeren i databasen.
+        Returnerer intern bruger-profil inkl. roller.
+      operationId: authLogin
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [access_token]
+              properties:
+                access_token:
+                  type: string
+                  description: MSAL access_token fra frontenden
+            example:
+              access_token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9..."
+      responses:
+        "200":
+          description: Token valideret — bruger oprettet eller opdateret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenClaims"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/refresh:
+    post:
+      summary: Forny session (tjek token er stadig gyldigt)
+      description: |
+        Frontenden sender det nuværende token; API bekræfter gyldighed
+        og returnerer opdaterede claims (roller kan have ændret sig).
+      operationId: authRefresh
+      tags: [Auth]
+      responses:
+        "200":
+          description: Token stadig gyldigt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenClaims"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/me:
+    get:
+      summary: Hent egne token-claims og brugerprofil
+      operationId: getMe
+      tags: [Auth]
+      responses:
+        "200":
+          description: Aktuelle token-claims
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenClaims"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Brobyggere ───────────────────────────────────────────────────────────────
+
+  /v1/brobyggere:
+    get:
+      summary: Liste alle brobyggere
+      description: Returnerer alle brobyggere. Brobygger-rolle ser kun sig selv.
+      operationId: listBrobyggere
+      tags: [Brobyggere]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/BrobyggerStatus"
+        - $ref: "#/components/parameters/QueryHQ"
+        - name: har_kapacitet
+          in: query
+          schema:
+            type: boolean
+          description: Filtrer på aktive brobyggere med ledig kapacitet
+        - name: sprog
+          in: query
+          schema:
+            type: string
+          description: Kommasepareret liste af sprog (AND-filter)
+          example: "arabisk,dansk"
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Brobygningstype (en-til-en, gruppe, cafe-gruppe, netvaerk)
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPageSize"
+      responses:
+        "200":
+          description: Liste af brobyggere
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Brobygger"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      summary: Opret ny brobygger
+      description: Kun Raadgiver og Admin.
+      operationId: createBrobygger
+      tags: [Brobyggere]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrobyggerCreate"
+            example:
+              navn: "Maja Lindberg"
+              email: "maja@example.com"
+              telefon: "+45 28 11 22 33"
+              typer: ["en-til-en", "cafe-gruppe"]
+              sprog: ["dansk", "engelsk"]
+              hq: "København N"
+              max_active: 3
+              startdato: "2024-09-01"
+      responses:
+        "201":
+          description: Brobygger oprettet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brobygger"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/brobyggere/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      summary: Hent én brobygger
+      operationId: getBrobygger
+      tags: [Brobyggere]
+      responses:
+        "200":
+          description: Brobygger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brobygger"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Opdatér brobygger
+      operationId: updateBrobygger
+      tags: [Brobyggere]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrobyggerUpdate"
+      responses:
+        "200":
+          description: Opdateret brobygger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brobygger"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Slet brobygger (soft delete — sætter status=inaktiv)
+      description: Kun Admin. Brobygger anonymiseres ikke — sæt status=inaktiv i stedet for sletning.
+      operationId: deleteBrobygger
+      tags: [Brobyggere]
+      responses:
+        "200":
+          description: Brobygger sat til inaktiv
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/brobyggere/{id}/status:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    patch:
+      summary: Skift brobygger-status
+      operationId: updateBrobyggerStatus
+      tags: [Brobyggere]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: "#/components/schemas/BrobyggerStatus"
+                note:
+                  type: string
+            example:
+              status: "pause"
+              note: "Sommerferie"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brobygger"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/brobyggere/{id}/pause:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    post:
+      summary: Planlæg pause med start- og slutdato
+      description: |
+        Sætter status=pause og gemmer tilgaengelig_fra = pause_til + 1 dag.
+        Bruges til at planlægge en fremtidig pause (fx sommerferie).
+      operationId: schedulePause
+      tags: [Brobyggere]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PauseRequest"
+            example:
+              pause_fra: "2026-07-01"
+              pause_til: "2026-07-31"
+              aarsag: "Sommerferie"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brobygger"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/brobyggere/{id}/statistik:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      summary: Hent statistik for én brobygger
+      operationId: getBrobyggerStatistik
+      tags: [Brobyggere]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrobyggerStatistik"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Mennesker ────────────────────────────────────────────────────────────────
+
+  /v1/mennesker:
+    get:
+      summary: Liste alle mennesker
+      description: |
+        Brobygger-rolle ser kun det menneske der er matchet med dem selv.
+        Raadgiver og Admin ser alle inden for HQ.
+      operationId: listMennesker
+      tags: [Mennesker]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/MenneskStatus"
+        - $ref: "#/components/parameters/QueryHQ"
+        - name: brobygger_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer på tilknyttet brobygger
+        - name: raadgiver_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sprog
+          in: query
+          schema:
+            type: string
+          description: Kommasepareret liste (OR-filter)
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPageSize"
+      responses:
+        "200":
+          description: Liste af mennesker (helbredsdata ALDRIG inkluderet)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Menneske"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      summary: Opret menneske (direkte — uden intake-flow)
+      description: Kun Raadgiver og Admin.
+      operationId: createMeneske
+      tags: [Mennesker]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MenneskCreate"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Menneske"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/mennesker/intake:
+    post:
+      summary: Opret menneske via intake-flow (inkl. samtykke)
+      description: |
+        Kombineret oprettelse af menneske + samtykkeregistrering.
+        Kræver `samtykke_kontakt_data = true`.
+        Returnerer 422 hvis helbredsnoter angives uden `samtykke_helbredsdata = true`.
+      operationId: intakeMeneske
+      tags: [Mennesker]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MenneskIntakeRequest"
+      responses:
+        "201":
+          description: Menneske oprettet med samtykke registreret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Menneske"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/mennesker/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      summary: Hent ét menneske
+      operationId: getMeneske
+      tags: [Mennesker]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Menneske"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Opdatér menneske
+      operationId: updateMeneske
+      tags: [Mennesker]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MenneskUpdate"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Menneske"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Slet menneske (soft delete — sætter deleted_at)
+      description: |
+        Sætter `deleted_at = NOW()`. Anonymiseres automatisk efter 30 dage
+        via baggrundsjob (GDPR-krav).
+        Kræver Raadgiver eller Admin.
+      operationId: deleteMeneske
+      tags: [Mennesker]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/mennesker/{id}/status:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    patch:
+      summary: Statusovergang for menneske
+      description: |
+        Gyldige overgange:
+        - ny → matched (sker ved matching), ny → venteliste
+        - matched → aktiv (brobygger bekræfter opstart), matched → ny (annullér match)
+        - aktiv → afsluttet (kræver note), aktiv → pause (midlertidigt)
+        - venteliste → ny, venteliste → afsluttet
+      operationId: updateMenneskStatus
+      tags: [Mennesker]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MenneskStatusTransition"
+            example:
+              status: "afsluttet"
+              note: "Forløbet afsluttet planmæssigt. Borgeren har fået et stabilt netværk."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Menneske"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Ugyldig statusovergang
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Overgang fra 'ny' til 'afsluttet' er ikke tilladt"
+                code: "invalid_transition"
+
+  /v1/mennesker/{id}/helbredsnoter:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      summary: Hent krypterede helbredsnoter (Art. 9)
+      description: |
+        Kræver Raadgiver eller Admin, og at der foreligger aktivt Art. 9-samtykke.
+        Logges altid i audit_log.
+      operationId: getMenneskHelbredsnoter
+      tags: [Mennesker]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  helbredsnoter:
+                    type: string
+                    nullable: true
+                  samtykke_givet_at:
+                    type: string
+                    format: date-time
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: Opdatér helbredsnoter (Art. 9)
+      description: Kræver Raadgiver eller Admin og aktivt Art. 9-samtykke.
+      operationId: updateMenneskHelbredsnoter
+      tags: [Mennesker]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [helbredsnoter]
+              properties:
+                helbredsnoter:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Aftaler ──────────────────────────────────────────────────────────────────
+
+  /v1/aftaler:
+    get:
+      summary: Liste aftaler
+      operationId: listAftaler
+      tags: [Aftaler]
+      parameters:
+        - name: brobygger_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: menneske_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/AftaleStatus"
+        - name: fra
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filtrer aftaler fra og med denne dato
+        - name: til
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filtrer aftaler til og med denne dato
+        - $ref: "#/components/parameters/QueryHQ"
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Aftale"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+
+    post:
+      summary: Opret aftale
+      operationId: createAftale
+      tags: [Aftaler]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AftaleCreate"
+            example:
+              brobygger_id: "b00-0000-0000-0001"
+              menneske_id: "m00-0000-0000-0001"
+              dato: "2026-06-10T14:00:00+02:00"
+              varighed: 60
+              type: "moede"
+              sted: "Cafe Nørreport"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aftale"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/aftaler/uge:
+    get:
+      summary: Ugeoversigt — alle aftaler i én kalenderuge
+      operationId: getUgeOversigt
+      tags: [Aftaler]
+      parameters:
+        - name: aar
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 2026
+        - name: uge
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 53
+            example: 24
+        - name: brobygger_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer til én brobyggers uge
+        - $ref: "#/components/parameters/QueryHQ"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UgeOversigt"
+
+  /v1/aftaler/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      summary: Hent én aftale
+      operationId: getAftale
+      tags: [Aftaler]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aftale"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Opdatér aftale
+      operationId: updateAftale
+      tags: [Aftaler]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AftaleUpdate"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aftale"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Slet aftale (permanent)
+      description: Kun Admin. Aflyste aftaler slettes ikke — brug PATCH status=aflyst.
+      operationId: deleteAftale
+      tags: [Aftaler]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/aftaler/{id}/status:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    patch:
+      summary: Opdatér kun aftale-status
+      operationId: updateAftaleStatus
+      tags: [Aftaler]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: "#/components/schemas/AftaleStatus"
+                notes:
+                  type: string
+            example:
+              status: "gennemfoert"
+              notes: "God snak. Ahmad virker mere tryg."
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aftale"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Kontaktlog ───────────────────────────────────────────────────────────────
+
+  /v1/kontaktlog:
+    get:
+      summary: Liste kontaktlog-entries (på tværs)
+      description: Primært til rapporter. Brug /v1/mennesker/{id}/kontaktlog til per-menneske visning.
+      operationId: listKontaktLog
+      tags: [Kontaktlog]
+      parameters:
+        - name: menneske_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: brobygger_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/KontaktType"
+        - name: fra
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: til
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/KontaktLogEntry"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+
+    post:
+      summary: Opret kontaktlog-entry
+      operationId: createKontaktLog
+      tags: [Kontaktlog]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KontaktLogCreate"
+            example:
+              menneske_id: "m00-0000-0000-0001"
+              brobygger_id: "b00-0000-0000-0001"
+              type: "moede_brobygger"
+              dato: "2026-06-05"
+              varighed_minutter: 90
+              notat: "God samtale i parken. Ahmad snakkede om sine tanker om fremtiden."
+              naeste_skridt: "Besøg på biblioteket næste uge"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KontaktLogEntry"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/mennesker/{id}/kontaktlog:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      summary: Liste kontaktlog per menneske
+      description: Kronologisk liste over alle kontakter for ét menneske. Brobygger ser kun egne entries.
+      operationId: listKontaktLogForMeneske
+      tags: [Kontaktlog]
+      parameters:
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/KontaktType"
+        - name: fra
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: til
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/KontaktLogEntry"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/kontaktlog/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      summary: Hent én kontaktlog-entry
+      operationId: getKontaktLogEntry
+      tags: [Kontaktlog]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KontaktLogEntry"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Opdatér kontaktlog-entry
+      description: Kan kun opdateres inden for 24 timer af oprettet_af.
+      operationId: updateKontaktLogEntry
+      tags: [Kontaktlog]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notat:
+                  type: string
+                naeste_skridt:
+                  type: string
+                varighed_minutter:
+                  type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KontaktLogEntry"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Slet kontaktlog-entry
+      description: Kun Admin.
+      operationId: deleteKontaktLogEntry
+      tags: [Kontaktlog]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Matching ─────────────────────────────────────────────────────────────────
+
+  /v1/matching/kandidater:
+    get:
+      summary: Liste af umatchede mennesker klar til matching
+      description: |
+        Returnerer mennesker med status `ny` eller `venteliste` sorteret efter
+        oprettelsesdato (ældste øverst).
+      operationId: listMatchKandidater
+      tags: [Matching]
+      parameters:
+        - $ref: "#/components/parameters/QueryHQ"
+        - name: sprog
+          in: query
+          schema:
+            type: string
+          description: Filtrer på sprog (kommasepareret)
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Filtrer på brobygningstype
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Menneske"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/matching/{menneskeId}/forslag:
+    parameters:
+      - name: menneskeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Foreslå egnede brobyggere til ét menneske
+      description: |
+        Returnerer aktive brobyggere med kapacitet sorteret efter matchscore.
+        Score beregnes på baggrund af: overlappende sprog (40%), overlappende typer (40%),
+        ledig kapacitet (20%).
+      operationId: getMatchForslag
+      tags: [Matching]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchKandidat"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/matching/{menneskeId}/tildel:
+    parameters:
+      - name: menneskeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Tildel brobygger til menneske (bekræft match)
+      description: |
+        Opdaterer:
+        - `mennesker.matched_with = brobygger_id`
+        - `mennesker.status = matched`
+        - `brobyggere.active += 1`
+        Opretter automatisk en `ny_aftale`-notifikation til brobyggeren.
+        Kræver Raadgiver eller Admin.
+      operationId: tildelBrobygger
+      tags: [Matching]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MatchAssign"
+            example:
+              brobygger_id: "b00-0000-0000-0001"
+              note: "Matchet pga. fælles sprog (arabisk)"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchResultat"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Brobyggeren har ikke kapacitet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Brobyggeren har ingen ledig kapacitet (3/3)"
+                code: "no_capacity"
+
+  /v1/matching/{menneskeId}/annuller:
+    parameters:
+      - name: menneskeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Annullér match
+      description: |
+        Sætter menneske tilbage til `ny` og dekrementerer brobyggerens `active`.
+        Kræver Raadgiver eller Admin.
+      operationId: annullerMatch
+      tags: [Matching]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                aarsag:
+                  type: string
+                  example: "Brobygger og menneske var ikke et godt match"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Notifikationer ───────────────────────────────────────────────────────────
+
+  /v1/notifikationer:
+    get:
+      summary: Liste notifikationer for den aktuelle bruger
+      operationId: listNotifikationer
+      tags: [Notifikationer]
+      parameters:
+        - name: kun_ulaeste
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Returner kun ulæste notifikationer
+        - $ref: "#/components/parameters/QueryPage"
+        - $ref: "#/components/parameters/QueryPageSize"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Notifikation"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+
+  /v1/notifikationer/ulaest-antal:
+    get:
+      summary: Hent antal ulæste notifikationer
+      description: Bruges til badge-tæller i topbar. Caches 30 sekunder.
+      operationId: getUnreadCount
+      tags: [Notifikationer]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotifUnreadCount"
+              example:
+                count: 3
+
+  /v1/notifikationer/{id}/laest:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    post:
+      summary: Markér notifikation som læst
+      operationId: markNotifikationLaest
+      tags: [Notifikationer]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/notifikationer/laes-alle:
+    post:
+      summary: Markér alle notifikationer som læst
+      operationId: markAlleNotifikationerLaest
+      tags: [Notifikationer]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /v1/push/subscribe:
+    post:
+      summary: Registrér Web Push VAPID-subscription
+      operationId: subscribePush
+      tags: [Notifikationer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint, keys]
+              properties:
+                endpoint:
+                  type: string
+                  format: uri
+                keys:
+                  type: object
+                  required: [p256dh, auth]
+                  properties:
+                    p256dh:
+                      type: string
+                    auth:
+                      type: string
+                user_agent:
+                  type: string
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /v1/push/unsubscribe:
+    post:
+      summary: Afmeld Web Push-subscription
+      operationId: unsubscribePush
+      tags: [Notifikationer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint]
+              properties:
+                endpoint:
+                  type: string
+                  format: uri
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  # ── Beskeder ─────────────────────────────────────────────────────────────────
+
+  /v1/beskeder/traade:
+    get:
+      summary: Liste beskedtråde for aktuel bruger
+      operationId: listTraade
+      tags: [Beskeder]
+      parameters:
+        - name: brobygger_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer på specifik brobygger (kun Admin/Raadgiver)
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BeskedTraad"
+
+    post:
+      summary: Opret ny beskedtråd
+      description: Kun Admin og Raadgiver kan oprette officielle tråde.
+      operationId: createTraad
+      tags: [Beskeder]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titel]
+              properties:
+                titel:
+                  type: string
+                  example: "Frivilligkursus 14. juni"
+                brobygger_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                official:
+                  type: boolean
+                  default: false
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BeskedTraad"
+
+  /v1/beskeder/traade/{traadId}/beskeder:
+    parameters:
+      - name: traadId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Hent beskeder i tråd
+      operationId: getBeskeder
+      tags: [Beskeder]
+      parameters:
+        - name: siden
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Hent kun beskeder nyere end dette tidspunkt (til polling)
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Besked"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      summary: Send besked i tråd
+      operationId: sendBesked
+      tags: [Beskeder]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BeskedCreate"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Besked"
+
+  /v1/beskeder/traade/{traadId}/laest:
+    parameters:
+      - name: traadId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Markér alle beskeder i tråd som læst
+      operationId: markTraadLaest
+      tags: [Beskeder]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  # ── Rapporter ────────────────────────────────────────────────────────────────
+
+  /v1/rapporter/dashboard:
+    get:
+      summary: Dashboard KPI-nøgletal
+      operationId: getDashboardKPI
+      tags: [Rapporter]
+      parameters:
+        - $ref: "#/components/parameters/QueryHQ"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardKPI"
+              example:
+                aktive_brobyggere: 12
+                ledige_brobyggere: 4
+                aktive_mennesker: 18
+                ventende_mennesker: 3
+                planlagte_aftaler_denne_uge: 9
+                aftaler_i_dag: 2
+                ubesvarede_beskeder: 1
+                match_rate: 85.7
+
+  /v1/rapporter/aktivitet:
+    get:
+      summary: Aktivitetsrapport for en periode
+      operationId: getAktivitetsRapport
+      tags: [Rapporter]
+      parameters:
+        - name: fra
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-01-01"
+        - name: til
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-06-30"
+        - $ref: "#/components/parameters/QueryHQ"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AktivitetsRapport"
+
+  /v1/rapporter/ugeoversigt:
+    get:
+      summary: Ugeoversigt — aftaler + kontaktlog-summary
+      operationId: getRapportUgeoversigt
+      tags: [Rapporter]
+      parameters:
+        - name: aar
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: uge
+          in: query
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/QueryHQ"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uge_nr:
+                    type: integer
+                  aar:
+                    type: integer
+                  dato_fra:
+                    type: string
+                    format: date
+                  dato_til:
+                    type: string
+                    format: date
+                  aftaler:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Aftale"
+                  kontaktlog_entries:
+                    type: integer
+                  gennemfoerte_aftaler:
+                    type: integer
+                  aflyste_aftaler:
+                    type: integer
+
+  /v1/rapporter/sroi:
+    get:
+      summary: SROI-snapshot
+      operationId: getSROI
+      tags: [Rapporter]
+      parameters:
+        - $ref: "#/components/parameters/QueryHQ"
+        - name: fra
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: til
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SROISnapshot"
+
+  /v1/rapporter/eksport:
+    get:
+      summary: Eksportér data som CSV
+      description: |
+        Kræver Admin.
+        Eksporterer anonymiseret data til CSV-fil.
+        Helbredsdata er ALDRIG inkluderet.
+        Logges i audit_log.
+      operationId: eksporterCSV
+      tags: [Rapporter]
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [brobyggere, mennesker, aftaler, kontaktlog, aktivitet]
+        - name: fra
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: til
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: "#/components/parameters/QueryHQ"
+      responses:
+        "200":
+          description: CSV-fil
+          content:
+            text/csv:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              example: 'attachment; filename="brobyggere-2026-06.csv"'
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Brugere ──────────────────────────────────────────────────────────────────
+
+  /v1/brugere:
+    get:
+      summary: Liste alle brugere
+      description: Kun Admin ser alle. Raadgiver ser brugere inden for eget HQ.
+      operationId: listBrugere
+      tags: [Brugere]
+      parameters:
+        - name: rolle
+          in: query
+          schema:
+            $ref: "#/components/schemas/BrugerRolle"
+        - $ref: "#/components/parameters/QueryHQ"
+        - name: aktiv
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bruger"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/brugere/inviter:
+    post:
+      summary: Invitér ny bruger via email
+      description: |
+        Sender en invitations-email via Azure Communication Services / SMTP.
+        Opretter invitation i databasen med token-hash og udløbsdato (7 dage).
+        Kun Admin.
+      operationId: inviterBruger
+      tags: [Brugere]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrugerInvitation"
+            example:
+              email: "ny-raadgiver@sos.dk"
+              navn: "Hanne Vestergaard"
+              rolle: "Raadgiver"
+              hq: "Aarhus C"
+      responses:
+        "201":
+          description: Invitation sendt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  invitation_id:
+                    type: string
+                    format: uuid
+                  udloeber_at:
+                    type: string
+                    format: date-time
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          description: Email allerede inviteret eller aktiv bruger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/brugere/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      summary: Hent én bruger
+      operationId: getBruger
+      tags: [Brugere]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bruger"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Opdatér bruger (rolle og HQ)
+      description: Kun Admin.
+      operationId: updateBruger
+      tags: [Brugere]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrugerRolleUpdate"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bruger"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/brugere/{id}/deaktiver:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    post:
+      summary: Deaktivér bruger
+      description: Sætter aktiv=false. Kun Admin.
+      operationId: deaktiverBruger
+      tags: [Brugere]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Meta ─────────────────────────────────────────────────────────────────────
+
+  /health:
+    get:
+      summary: Health-check
+      operationId: healthCheck
+      tags: [Meta]
+      security: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  environment:
+                    type: string
+                    example: production
+                  db:
+                    type: string
+                    enum: [ok, error]
+                    example: ok
+                  tidspunkt:
+                    type: string
+                    format: date-time
