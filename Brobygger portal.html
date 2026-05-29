@@ -10428,8 +10428,7 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
               { k: 'brobygninger', l: 'Brobygninger',       i: 'match'    },
               { k: 'brobyggere',   l: 'Brobyggere',         i: 'users'    },
               { k: 'mennesker',    l: 'Mennesker',          i: 'heart'    },
-              { k: 'sroi',         l: 'Effekt & Dokumentation', i: 'sparkle' },
-            ].concat(isAdmin ? [{ k: 'rapport', l: 'Rapport & eksport', i: 'note' }] : []).map(n => (
+              ].concat(isAdmin ? [{ k: 'rapport', l: 'Rapport & eksport', i: 'note' }] : []).map(n => (
               <button key={n.k} onClick={() => setSection(n.k)} style={{
                 display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                 padding: '9px 12px 9px 10px', borderRadius: 0, marginBottom: 2,
@@ -10502,7 +10501,6 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
           {section === 'brobyggere' && <DesktopBrobyggere/>}
           {section === 'mennesker' && <DesktopMennesker/>}
           {section === 'kalender' && <DesktopKalender/>}
-          {section === 'sroi' && <DesktopSROI/>}
           {section === 'rapport' && <DesktopRapport/>}
         </div>
       </div>
@@ -11355,17 +11353,19 @@ const DesktopSROI = () => {
 
 
 const DesktopKalender = () => {
-  const [weekOffset,  setWeekOffset]  = React.useState(0);
-  const [bbFilter,    setBbFilter]    = React.useState('alle');
-  const [view,        setView]        = React.useState('uge');
-  const [selectedDay, setSelectedDay] = React.useState(null);
+  const [weekOffset,   setWeekOffset]   = React.useState(0);
+  const [bbFilter,     setBbFilter]     = React.useState('alle');
+  const [typeFilter,   setTypeFilter]   = React.useState('alle');
+  const [statusFilter, setStatusFilter] = React.useState('alle');
+  const [view,         setView]         = React.useState('uge');
+  const [selectedDay,  setSelectedDay]  = React.useState(null);
   const [selectedAppt, setSelectedAppt] = React.useState(null);
 
-  const TODAY   = '2026-04-26';
-  const MDR     = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-  const DNAMES  = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
-  const pad     = n => String(n).padStart(2, '0');
-  const fmt     = d => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  const TODAY  = '2026-04-26';
+  const DNAMES = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+  const MDR    = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  const pad    = n => String(n).padStart(2, '0');
+  const fmt    = d => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
 
   const baseDate = new Date(TODAY);
   const dow = baseDate.getDay();
@@ -11373,65 +11373,88 @@ const DesktopKalender = () => {
   monday.setDate(baseDate.getDate() + (dow === 0 ? -6 : 1 - dow) + weekOffset * 7);
 
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
+    const d = new Date(monday); d.setDate(monday.getDate() + i); return d;
   });
 
-  const weekLabel = days[0].getDate() + '. ' + MDR[days[0].getMonth()]
-    + ' – ' + days[6].getDate() + '. ' + MDR[days[6].getMonth()] + ' ' + days[6].getFullYear();
+  const weekLabel = (() => {
+    const m1 = days[0], m2 = days[6];
+    const s = `${m1.getDate()}. ${MDR[m1.getMonth()]}`;
+    const e = `${m2.getDate()}. ${MDR[m2.getMonth()]} ${m2.getFullYear()}`;
+    const d = new Date(Date.UTC(m1.getFullYear(), m1.getMonth(), m1.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const wn = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return `Uge ${wn}  ·  ${s} – ${e}`;
+  })();
 
-  const aktiveBb  = SoS_BROBYGGERE.filter(b => b.status === 'aktiv' || b.status === 'ny');
+  const aktiveBb = SoS_BROBYGGERE.filter(b => b.status === 'aktiv' || b.status === 'ny');
   const weekDates = new Set(days.map(fmt));
-  const weekAppts = SoS_APPOINTMENTS_BUSY.filter(a => weekDates.has(a.date));
-  const nOK       = weekAppts.filter(a => a.status === 'confirmed').length;
-  const nPend     = weekAppts.filter(a => a.status === 'pending').length;
 
-  const getAppts = ds => SoS_APPOINTMENTS_BUSY
-    .filter(a => a.date === ds && (bbFilter === 'alle' || a.brobyggerId === bbFilter))
-    .sort((a, b) => a.start.localeCompare(b.start));
+  const applyFilters = (appts) => appts.filter(a => {
+    if (bbFilter !== 'alle' && a.brobyggerId !== bbFilter) return false;
+    if (statusFilter === 'confirmed' && a.status !== 'confirmed') return false;
+    if (statusFilter === 'pending'   && a.status !== 'pending')   return false;
+    if (typeFilter !== 'alle') {
+      const m = SoS_MENNESKER[a.menneskeId];
+      if (!m || m.type !== typeFilter) return false;
+    }
+    return true;
+  });
 
-  const selDs      = selectedDay || TODAY;
-  const selAppts   = getAppts(selDs);
+  const weekAppts         = SoS_APPOINTMENTS_BUSY.filter(a => weekDates.has(a.date));
+  const filteredWeekAppts = applyFilters(weekAppts);
+  const nOK   = filteredWeekAppts.filter(a => a.status === 'confirmed').length;
+  const nPend = filteredWeekAppts.filter(a => a.status === 'pending').length;
+
+  const getAppts = ds => applyFilters(
+    SoS_APPOINTMENTS_BUSY.filter(a => a.date === ds)
+  ).sort((a, b) => a.start.localeCompare(b.start));
+
+  const selDs     = selectedDay || TODAY;
+  const selAppts  = getAppts(selDs);
   const listeGroups = days.filter(d => getAppts(fmt(d)).length > 0);
 
   const B = (extra) => Object.assign({
     padding: '6px 12px', borderRadius: SoS.r.sm,
     border: `1px solid ${SoS.line}`,
-    fontFamily: SoS.sans, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-    background: 'transparent', color: SoS.inkSoft,
+    fontFamily: SoS.sans, fontSize: 12, fontWeight: 500,
+    cursor: 'pointer', background: 'transparent', color: SoS.inkSoft,
   }, extra || {});
+
+  const MAX = 3;
 
   const renderRow = a => {
     const m  = SoS_MENNESKER[a.menneskeId];
     const bb = SoS_BROBYGGERE.find(b => b.id === a.brobyggerId);
+    const t  = m ? SoS_TYPER[m.type] : null;
     const ok = a.status === 'confirmed';
     return (
       <div key={a.id} onClick={() => setSelectedAppt(a)} style={{
         background: SoS.surface, borderRadius: 0, marginBottom: 8,
         border: `1px solid ${SoS.line}`, padding: '12px 14px',
-        borderLeft: '4px solid ' + (ok ? SoS.sage : SoS.sun),
-        display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 12, alignItems: 'center',
-        cursor: 'pointer',
+        borderLeft: '3px solid ' + (ok ? SoS.green : SoS.amber),
+        display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 12,
+        alignItems: 'center', cursor: 'pointer',
       }}>
-        <div style={{ textAlign: 'center', minWidth: 38 }}>
+        <div style={{ textAlign: 'center', minWidth: 40 }}>
           <div style={{ fontFamily: SoS.mono, fontSize: 14, fontWeight: 700, color: SoS.ink }}>{a.start}</div>
-          <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted }}>{a.end}</div>
+          <div style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.inkMuted }}>{a.end}</div>
         </div>
         <div>
           <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>{a.activity}</div>
-          <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, marginTop: 2 }}>
-            {m ? m.firstName + ' ' + m.lastName : '—'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+            {m && <span style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{m.firstName} {m.lastName}</span>}
+            {t  && <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+              color: t.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.short}</span>}
           </div>
           <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginTop: 1 }}>{a.location}</div>
         </div>
         {bb && (
           <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 0, background: bb.bg,
+            <div style={{ width: 28, height: 28, borderRadius: 0, background: bb.bg,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 3px', fontFamily: SoS.mono, fontSize: 10, fontWeight: 700, color: '#fff',
-            }}>{bb.avatar}</div>
+              margin: '0 auto 3px', fontFamily: SoS.mono, fontSize: 10,
+              fontWeight: 700, color: '#fff' }}>{bb.avatar}</div>
             <div style={{ fontFamily: SoS.sans, fontSize: 9, color: SoS.inkMuted }}>{bb.name.split(' ')[0]}</div>
           </div>
         )}
@@ -11439,53 +11462,231 @@ const DesktopKalender = () => {
     );
   };
 
-  const MAX = 3;
+  // ── Vagtplan ──────────────────────────────────────────────────────────────
+  const renderVagtplan = () => (
+    <div>
+      <div style={{ background: SoS.surface, border: `1px solid ${SoS.line}`, overflow: 'hidden', marginBottom: 14 }}>
+        {/* Header */}
+        <div style={{ display: 'grid', gridTemplateColumns: '170px repeat(7, 1fr)',
+          borderBottom: `1px solid ${SoS.line}`, background: SoS.surfaceAlt }}>
+          <div style={{ padding: '10px 14px', fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+            color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 }}>Brobygger</div>
+          {days.map((d, i) => {
+            const ds = fmt(d), isT = ds === TODAY;
+            return (
+              <div key={i} style={{ padding: '10px 6px', textAlign: 'center',
+                borderLeft: `1px solid ${SoS.line}`,
+                background: isT ? SoS.accent + '08' : 'transparent' }}>
+                <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                  color: isT ? SoS.accent : SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  {DNAMES[i]}
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 700,
+                  color: isT ? SoS.accent : SoS.ink, marginTop: 2 }}>
+                  {d.getDate()}.
+                </div>
+                <div style={{ fontFamily: SoS.mono, fontSize: 9, color: SoS.inkMuted, marginTop: 1 }}>
+                  {SoS_APPOINTMENTS_BUSY.filter(a => a.date === ds).length || '—'}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Rows per brobygger */}
+        {aktiveBb.map((bb, ri) => (
+          <div key={bb.id} style={{
+            display: 'grid', gridTemplateColumns: '170px repeat(7, 1fr)',
+            borderBottom: ri < aktiveBb.length - 1 ? `1px solid ${SoS.line}` : 'none',
+          }}>
+            {/* Name cell */}
+            <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8,
+              background: SoS.surface }}>
+              <div style={{ width: 26, height: 26, borderRadius: 0, background: bb.bg, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: SoS.mono, fontSize: 9, fontWeight: 700, color: '#fff' }}>{bb.avatar}</div>
+              <div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                  color: SoS.ink, whiteSpace: 'nowrap' }}>{bb.name.split(' ')[0]}</div>
+                {bb.status === 'pause' && (
+                  <div style={{ fontFamily: SoS.mono, fontSize: 8, color: SoS.amber,
+                    textTransform: 'uppercase', letterSpacing: 0.5 }}>Pause</div>
+                )}
+                {bb.active > 0 && (
+                  <div style={{ fontFamily: SoS.mono, fontSize: 8, color: SoS.inkMuted }}>
+                    {bb.active} aktive
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Day cells */}
+            {days.map((d, di) => {
+              const ds       = fmt(d);
+              const dayAppts = SoS_APPOINTMENTS_BUSY.filter(a => a.date === ds && a.brobyggerId === bb.id);
+              const isT      = ds === TODAY;
+              const isPause  = bb.pauseUntil && bb.pauseUntil >= ds && bb.pauseUntil >= TODAY;
+              return (
+                <div key={di} style={{
+                  borderLeft: `1px solid ${SoS.line}`,
+                  background: isPause ? SoS.amber + '06' : isT ? SoS.accent + '04' : 'transparent',
+                  padding: '6px 5px', minHeight: 56,
+                }}>
+                  {isPause ? (
+                    <div style={{ fontFamily: SoS.mono, fontSize: 8, color: SoS.amber,
+                      textTransform: 'uppercase', textAlign: 'center', paddingTop: 6,
+                      letterSpacing: 0.5 }}>pause</div>
+                  ) : dayAppts.map(a => {
+                    const m  = SoS_MENNESKER[a.menneskeId];
+                    const ok = a.status === 'confirmed';
+                    return (
+                      <div key={a.id} onClick={() => setSelectedAppt(a)} style={{
+                        background: ok ? SoS.green + '12' : SoS.amber + '18',
+                        borderLeft: '2px solid ' + (ok ? SoS.green : SoS.amber),
+                        padding: '3px 5px', marginBottom: 2, cursor: 'pointer',
+                      }}>
+                        <div style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 700,
+                          color: SoS.ink }}>{a.start}</div>
+                        {m && <div style={{ fontFamily: SoS.sans, fontSize: 9,
+                          color: SoS.inkSoft, lineHeight: 1.2 }}>{m.firstName}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Totals row */}
+      <div style={{ background: SoS.surface, border: `1px solid ${SoS.line}`,
+        display: 'grid', gridTemplateColumns: '170px repeat(7, 1fr)', marginBottom: 14 }}>
+        <div style={{ padding: '8px 14px', fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+          color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          I ALT
+        </div>
+        {days.map((d, i) => {
+          const ds    = fmt(d);
+          const total = SoS_APPOINTMENTS_BUSY.filter(a => a.date === ds).length;
+          const conf  = SoS_APPOINTMENTS_BUSY.filter(a => a.date === ds && a.status === 'confirmed').length;
+          const isT   = ds === TODAY;
+          return (
+            <div key={i} style={{ borderLeft: `1px solid ${SoS.line}`,
+              padding: '8px 6px', textAlign: 'center',
+              background: isT ? SoS.accent + '06' : 'transparent' }}>
+              {total > 0 ? (<>
+                <div style={{ fontFamily: SoS.mono, fontSize: 14, fontWeight: 700,
+                  color: isT ? SoS.accent : SoS.ink }}>{total}</div>
+                <div style={{ fontFamily: SoS.mono, fontSize: 8, color: SoS.green,
+                  marginTop: 1 }}>{conf} ✓</div>
+              </>) : (
+                <div style={{ fontFamily: SoS.mono, fontSize: 12,
+                  color: SoS.line }}>—</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+        {[
+          { color: SoS.green, label: 'BEKRÆFTET' },
+          { color: SoS.amber, label: 'AFVENTER' },
+        ].map(x => (
+          <div key={x.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: x.color + '20',
+              borderLeft: `2px solid ${x.color}` }}/>
+            <span style={{ fontFamily: SoS.mono, fontSize: 9.5, color: SoS.inkMuted }}>{x.label}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 12, height: 12, background: SoS.amber + '06',
+            border: `1px solid ${SoS.amber}40` }}/>
+          <span style={{ fontFamily: SoS.mono, fontSize: 9.5, color: SoS.inkMuted }}>BROBYGGER PÅ PAUSE</span>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <>
-      {/* Nav + view toggle */}
+      {/* Nav row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14,
         background: SoS.surface, borderRadius: 0, padding: '12px 16px',
         border: `1px solid ${SoS.line}` }}>
         <button style={B()} onClick={() => setWeekOffset(n => n - 1)}>&#8592;</button>
-        <div style={{ flex: 1, textAlign: 'center', fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>
-          {weekLabel}
-        </div>
+        <div style={{ flex: 1, textAlign: 'center', fontFamily: SoS.sans,
+          fontSize: 14, fontWeight: 600, color: SoS.ink }}>{weekLabel}</div>
         <button style={B(weekOffset === 0 ? { background: SoS.ink, color: '#fff', borderColor: SoS.ink } : {})}
           onClick={() => setWeekOffset(0)}>I dag</button>
         <button style={B()} onClick={() => setWeekOffset(n => n + 1)}>&#8594;</button>
         <div style={{ display: 'flex', background: SoS.surfaceAlt, borderRadius: 0, padding: 3, gap: 2,
           border: `1px solid ${SoS.line}` }}>
-          {['uge', 'dag', 'liste'].map(k => (
+          {[
+            { k: 'uge',      l: 'Uge'      },
+            { k: 'dag',      l: 'Dag'      },
+            { k: 'liste',    l: 'Liste'    },
+            { k: 'vagtplan', l: 'Vagtplan' },
+          ].map(({ k, l }) => (
             <button key={k} onClick={() => setView(k)} style={{
-              padding: '5px 10px', borderRadius: 0, border: 'none', cursor: 'pointer',
+              padding: '5px 12px', borderRadius: 0, border: 'none', cursor: 'pointer',
               fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
               background: view === k ? SoS.surface : 'transparent',
               color: view === k ? SoS.ink : SoS.inkMuted,
-              boxShadow: 'none', borderBottom: `2px solid ${view === k ? SoS.accent : 'transparent'}`,
-            }}>{k.charAt(0).toUpperCase() + k.slice(1)}</button>
+              borderBottom: `2px solid ${view === k ? SoS.accent : 'transparent'}`,
+            }}>{l}</button>
           ))}
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 14 }}>
-        {[
-          { l: 'Aftaler denne uge', v: weekAppts.length, c: SoS.ink  },
-          { l: 'Bekræftede',  v: nOK,              c: SoS.sage },
-          { l: 'Afventer',          v: nPend,             c: SoS.sun  },
-        ].map((s, i) => (
-          <div key={i} style={{ background: SoS.surface, borderRadius: 0,
-            border: `1px solid ${SoS.line}`, padding: '12px 14px' }}>
-            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
-              color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4 }}>{s.l}</div>
-            <div style={{ fontFamily: SoS.mono, fontSize: 28, fontWeight: 700, color: s.c }}>{s.v}</div>
-          </div>
-        ))}
+      {/* Filtre */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <span style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600, color: SoS.inkMuted,
+            textTransform: 'uppercase', letterSpacing: 0.5, marginRight: 4 }}>Type</span>
+          {['alle', 'sundhed', 'forening', 'social'].map(f => {
+            const t   = SoS_TYPER[f];
+            const sel = typeFilter === f;
+            return (
+              <button key={f} onClick={() => setTypeFilter(f)} style={{
+                padding: '4px 10px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                background: sel ? (t ? t.color : SoS.ink) : SoS.surface,
+                color: sel ? '#fff' : SoS.inkSoft,
+                border: `1px solid ${sel ? (t ? t.color : SoS.ink) : SoS.line}`,
+                fontFamily: SoS.sans, fontSize: 12, fontWeight: sel ? 600 : 400,
+              }}>{f === 'alle' ? 'Alle' : t.short}</button>
+            );
+          })}
+        </div>
+        <div style={{ width: 1, height: 20, background: SoS.line }}/>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <span style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600, color: SoS.inkMuted,
+            textTransform: 'uppercase', letterSpacing: 0.5, marginRight: 4 }}>Status</span>
+          {[
+            { id: 'alle',      label: 'Alle',      c: null        },
+            { id: 'confirmed', label: 'Bekræftet', c: SoS.green   },
+            { id: 'pending',   label: 'Afventer',  c: SoS.amber   },
+          ].map(s => {
+            const sel = statusFilter === s.id;
+            return (
+              <button key={s.id} onClick={() => setStatusFilter(s.id)} style={{
+                padding: '4px 10px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                background: sel ? (s.c || SoS.ink) : SoS.surface,
+                color: sel ? '#fff' : SoS.inkSoft,
+                border: `1px solid ${sel ? (s.c || SoS.ink) : SoS.line}`,
+                fontFamily: SoS.sans, fontSize: 12, fontWeight: sel ? 600 : 400,
+              }}>{s.label}</button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Filter chips */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+      {/* Brobygger-filter chips */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600, color: SoS.inkMuted,
+          textTransform: 'uppercase', letterSpacing: 0.5, marginRight: 2 }}>Brobygger</span>
         <button style={B(bbFilter === 'alle' ? { background: SoS.ink, color: '#fff', borderColor: SoS.ink } : {})}
           onClick={() => setBbFilter('alle')}>Alle</button>
         {aktiveBb.map(b => (
@@ -11495,74 +11696,94 @@ const DesktopKalender = () => {
         ))}
       </div>
 
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 14 }}>
+        {[
+          { l: 'Aftaler denne uge', v: filteredWeekAppts.length, c: SoS.ink   },
+          { l: 'Bekræftede',        v: nOK,                      c: SoS.green },
+          { l: 'Afventer svar',     v: nPend,                    c: SoS.amber },
+        ].map((s, i) => (
+          <div key={i} style={{ background: SoS.surface, borderRadius: 0,
+            border: `1px solid ${SoS.line}`, padding: '12px 14px' }}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+              color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase',
+              marginBottom: 4 }}>{s.l}</div>
+            <div style={{ fontFamily: SoS.mono, fontSize: 28, fontWeight: 700, color: s.c }}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* VAGTPLAN */}
+      {view === 'vagtplan' && renderVagtplan()}
+
       {/* UGE VIEW */}
       {view === 'uge' && (
-        <div style={{ background: SoS.surface, borderRadius: 0, border: `1px solid ${SoS.line}`, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', borderBottom: `1px solid ${SoS.line}` }}>
+        <div style={{ background: SoS.surface, borderRadius: 0,
+          border: `1px solid ${SoS.line}`, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)',
+            borderBottom: `1px solid ${SoS.line}` }}>
             {days.map((day, i) => {
-              const ds = fmt(day);
-              const isT = ds === TODAY;
-              const cnt = getAppts(ds).length;
+              const ds = fmt(day), isT = ds === TODAY, cnt = getAppts(ds).length;
               return (
                 <button key={i} onClick={() => { setSelectedDay(ds); setView('dag'); }} style={{
                   padding: '10px 8px', textAlign: 'center', border: 'none', cursor: 'pointer', width: '100%',
-                  borderRight: i < 6 ? '1px solid ' + SoS.lineSoft : 'none',
+                  borderRight: i < 6 ? `1px solid ${SoS.line}` : 'none',
                   background: isT ? SoS.accent + '10' : 'transparent',
                 }}>
-                  <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
-                    color: SoS.inkMuted, letterSpacing: 0.6, textTransform: 'uppercase' }}>{DNAMES[i]}</div>
-                  <div style={{ width: 28, height: 28, borderRadius: 14,
+                  <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                    color: isT ? SoS.accent : SoS.inkMuted, letterSpacing: 0.6,
+                    textTransform: 'uppercase' }}>{DNAMES[i]}</div>
+                  <div style={{ width: 28, height: 28, borderRadius: SoS.r.sm,
                     background: isT ? SoS.accent : 'transparent', color: isT ? '#fff' : SoS.ink,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     margin: '4px auto 2px', fontFamily: SoS.sans, fontSize: 14, fontWeight: 600 }}>
                     {day.getDate()}
                   </div>
                   {cnt > 0 && (
-                    <div style={{ fontFamily: SoS.mono, fontSize: 9, color: isT ? SoS.accent : SoS.inkMuted }}>
-                      {cnt} afd.
-                    </div>
+                    <div style={{ fontFamily: SoS.mono, fontSize: 9,
+                      color: isT ? SoS.accent : SoS.inkMuted }}>{cnt} afd.</div>
                   )}
                 </button>
               );
             })}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', minHeight: 240, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)',
+            minHeight: 240, alignItems: 'start' }}>
             {days.map((day, i) => {
-              const ds   = fmt(day);
-              const all  = getAppts(ds);
-              const vis  = all.slice(0, MAX);
-              const more = all.length - MAX;
-              const isT  = ds === TODAY;
+              const ds = fmt(day), all = getAppts(ds), vis = all.slice(0, MAX);
+              const more = all.length - MAX, isT = ds === TODAY;
               return (
                 <div key={i} style={{ padding: '8px 6px', minHeight: 120,
-                  borderRight: i < 6 ? '1px solid ' + SoS.lineSoft : 'none',
+                  borderRight: i < 6 ? `1px solid ${SoS.line}` : 'none',
                   background: isT ? SoS.accent + '06' : 'transparent' }}>
                   {all.length === 0 && (
                     <div style={{ textAlign: 'center', paddingTop: 20,
-                      fontFamily: SoS.sans, fontSize: 12, color: SoS.lineSoft }}>&#8212;</div>
+                      fontFamily: SoS.sans, fontSize: 12, color: SoS.line }}>&#8212;</div>
                   )}
                   {vis.map(a => {
                     const m  = SoS_MENNESKER[a.menneskeId];
                     const bb = SoS_BROBYGGERE.find(b => b.id === a.brobyggerId);
                     const ok = a.status === 'confirmed';
                     return (
-                      <div key={a.id} onClick={() => setSelectedAppt(a)} style={{ background: ok ? SoS.green + '10' : SoS.amber + '18',
+                      <div key={a.id} onClick={() => setSelectedAppt(a)} style={{
+                        background: ok ? SoS.green + '10' : SoS.amber + '18',
                         borderLeft: '3px solid ' + (ok ? SoS.green : SoS.amber),
-                        borderRadius: 0, padding: '5px 7px', marginBottom: 4,
-                        cursor: 'pointer' }}>
-                        <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700, color: SoS.inkSoft }}>{a.start}</div>
-                        <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600, color: SoS.ink, lineHeight: 1.2 }}>
-                          {m ? m.firstName : ''}
-                        </div>
-                        <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkSoft, lineHeight: 1.2 }}>{a.activity}</div>
+                        borderRadius: 0, padding: '5px 7px', marginBottom: 4, cursor: 'pointer',
+                      }}>
+                        <div style={{ fontFamily: SoS.mono, fontSize: 10, fontWeight: 700,
+                          color: SoS.inkSoft }}>{a.start}</div>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
+                          color: SoS.ink, lineHeight: 1.2 }}>{m ? m.firstName : ''}</div>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 10,
+                          color: SoS.inkSoft, lineHeight: 1.2 }}>{a.activity}</div>
                         {bb && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
                             <div style={{ width: 14, height: 14, borderRadius: 0, background: bb.bg,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontFamily: SoS.sans, fontSize: 7, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                              {bb.avatar[0]}
-                            </div>
-                            <div style={{ fontFamily: SoS.sans, fontSize: 9, color: SoS.inkMuted }}>{bb.name.split(' ')[0]}</div>
+                              fontFamily: SoS.mono, fontSize: 7, fontWeight: 700, color: '#fff',
+                              flexShrink: 0 }}>{bb.avatar[0]}</div>
+                            <div style={{ fontFamily: SoS.sans, fontSize: 9,
+                              color: SoS.inkMuted }}>{bb.name.split(' ')[0]}</div>
                           </div>
                         )}
                       </div>
@@ -11570,7 +11791,7 @@ const DesktopKalender = () => {
                   })}
                   {more > 0 && (
                     <button onClick={() => { setSelectedDay(ds); setView('dag'); }}
-                      style={{ width: '100%', padding: '5px 4px', borderRadius: 6, border: 'none',
+                      style={{ width: '100%', padding: '5px 4px', borderRadius: 0, border: 'none',
                         background: SoS.accent + '10', cursor: 'pointer',
                         fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.accent }}>
                       +{more} mere &#8594;
@@ -11589,10 +11810,7 @@ const DesktopKalender = () => {
           <div style={{ display: 'flex', gap: 4, marginBottom: 14, background: SoS.surface,
             borderRadius: 0, padding: 8, border: `1px solid ${SoS.line}`, overflowX: 'auto' }}>
             {days.map((d, i) => {
-              const ds  = fmt(d);
-              const sel = ds === selDs;
-              const cnt = getAppts(ds).length;
-              const isT = ds === TODAY;
+              const ds = fmt(d), sel = ds === selDs, cnt = getAppts(ds).length, isT = ds === TODAY;
               return (
                 <button key={i} onClick={() => setSelectedDay(ds)} style={{
                   flex: '0 0 auto', padding: '8px 14px', borderRadius: 0, border: 'none',
@@ -11600,9 +11818,9 @@ const DesktopKalender = () => {
                   background: 'transparent', cursor: 'pointer', textAlign: 'center',
                 }}>
                   <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
-                    color: sel ? '#fff' : SoS.inkMuted }}>{DNAMES[i]}</div>
+                    color: sel ? SoS.ink : SoS.inkMuted }}>{DNAMES[i]}</div>
                   <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700, marginTop: 2,
-                    color: sel ? '#fff' : (isT ? SoS.orange : SoS.ink) }}>{d.getDate()}</div>
+                    color: sel ? SoS.ink : (isT ? SoS.accent : SoS.ink) }}>{d.getDate()}</div>
                   {cnt > 0 && (
                     <div style={{ fontFamily: SoS.sans, fontSize: 10, marginTop: 2,
                       color: SoS.inkMuted }}>{cnt} afd.</div>
@@ -11625,19 +11843,19 @@ const DesktopKalender = () => {
           {listeGroups.length === 0
             ? <div style={{ textAlign: 'center', padding: '40px 0',
                 fontFamily: SoS.sans, fontSize: 14, color: SoS.inkMuted }}>Ingen aftaler denne uge</div>
-            : listeGroups.map((d, gi) => {
-                const ds    = fmt(d);
-                const isT   = ds === TODAY;
-                const di    = days.findIndex(x => fmt(x) === ds);
-                const apts  = getAppts(ds);
+            : listeGroups.map((d) => {
+                const ds = fmt(d), isT = ds === TODAY;
+                const di = days.findIndex(x => fmt(x) === ds);
+                const apts = getAppts(ds);
                 return (
                   <div key={ds} style={{ marginBottom: 18 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                       <div style={{ width: 38, height: 38, borderRadius: 0, flexShrink: 0,
                         background: isT ? SoS.accent : SoS.surfaceAlt,
                         border: `1px solid ${SoS.line}`,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontFamily: SoS.sans, fontSize: 8, fontWeight: 700,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        justifyContent: 'center' }}>
+                        <span style={{ fontFamily: SoS.mono, fontSize: 8, fontWeight: 700,
                           color: isT ? 'rgba(255,255,255,0.8)' : SoS.inkMuted,
                           textTransform: 'uppercase' }}>{DNAMES[di]}</span>
                         <span style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 700,
@@ -11654,9 +11872,10 @@ const DesktopKalender = () => {
           }
         </div>
       )}
-    {selectedAppt && (
-      <StaffApptDetail appt={selectedAppt} onClose={() => setSelectedAppt(null)} mode="modal"/>
-    )}
+
+      {selectedAppt && (
+        <StaffApptDetail appt={selectedAppt} onClose={() => setSelectedAppt(null)} mode="modal"/>
+      )}
     </>
   );
 };
