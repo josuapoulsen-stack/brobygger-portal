@@ -12535,8 +12535,7 @@ const DesktopKalender = () => {
             <div style={{ fontFamily: SoS.mono, fontSize: 8.5, fontWeight: 700,
               color: a.udfald === 'gennemfoert' ? SoS.green : a.udfald === 'ikke-modt' ? SoS.red : SoS.amber,
               textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' }}>
-              {a.udfald === 'gennemfoert' ? '✓ OK' : a.udfald === 'ikke-modt' ? '✗ Mødte
-ikke op' : '~ Afbud'}
+              {a.udfald === 'gennemfoert' ? '✓ OK' : a.udfald === 'ikke-modt' ? '✗ Udeblev' : '~ Afbud'}
             </div>
           )}
         </div>
