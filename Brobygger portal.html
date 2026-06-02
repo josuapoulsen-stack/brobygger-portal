@@ -12086,6 +12086,7 @@ const DesktopBrobygninger = () => {
   const [typeFilter,   setTypeFilter]   = React.useState('alle');
 
   const handleExportCSV = (filtered) => {
+    const nl = String.fromCharCode(10);
     const rows = [['Dato','Start','Slut','Menneske','Alder','Type','Aktivitet','Sted','Status','Udfald','Varighed (min)']];
     filtered.forEach(a => {
       const mn = (window.SoS_MENNESKER || {})[a.menneskeId];
@@ -12100,8 +12101,7 @@ const DesktopBrobygninger = () => {
         log && log.varighed ? log.varighed : '',
       ]);
     });
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('
-');
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a'); a.href = url;
