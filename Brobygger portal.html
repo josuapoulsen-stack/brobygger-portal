@@ -1859,6 +1859,189 @@ const isTomorrow = (iso) => {
 };
 
 // Next-up hero card — the most prominent element on the home screen
+const BrobyggerLogModal = ({ aftale, onClose, onSave }) => {
+  const [step,    setStep]    = React.useState(0); // 0=udfald, 1=detaljer
+  const [udfald,  setUdfald]  = React.useState(null);
+  const [varighed, setVarighed] = React.useState(null);
+  const [note,    setNote]    = React.useState('');
+  const menneske = SoS_MENNESKER[aftale.menneskeId];
+
+  const UDFALD = [
+    { id: 'gennemfoert', label: 'Gennemfaert',   emoji: '✓', color: SoS.green,
+      desc: 'Vi mødtes og gennemfaerte aftalen' },
+    { id: 'afbud',       label: 'Afbud',          emoji: '~', color: SoS.amber,
+      desc: 'Afbud i tide — ny aftale planlagt' },
+    { id: 'ikke-modt',  label: 'Mødte ikke op',  emoji: '✗', color: SoS.red,
+      desc: 'Ingen kontakt, mødte ikke op' },
+  ];
+
+  const VARIGHEDER = [
+    { v: 30,  label: '30 min' },
+    { v: 60,  label: '1 time' },
+    { v: 90,  label: '1½ time' },
+    { v: 120, label: '2 timer' },
+    { v: 150, label: '2½ time' },
+  ];
+
+  const save = () => {
+    const log = { udfald, varighed: udfald === 'gennemfoert' ? varighed : 0,
+      note: note.trim(), loggedAt: new Date().toISOString() };
+    // Gem på aftalen
+    const newList = (window.SoS_APPOINTMENTS_BUSY || []).map(a =>
+      a.id === aftale.id
+        ? { ...a, brobyggerLog: log, raadgiverOpfoelgning: null }
+        : a
+    );
+    window.SoS_APPOINTMENTS_BUSY = newList;
+    if (window.SoS_STORE) window.SoS_STORE.save('appointments', newList);
+    // Gem i kontaktlog
+    const kontaktType = udfald === 'gennemfoert' ? 'folge-primaer' : 'notat';
+    const k = {
+      id: 'k-' + Date.now(),
+      menneskeId: aftale.menneskeId,
+      type: kontaktType,
+      dato: aftale.date,
+      status: udfald === 'gennemfoert' ? 'gennemfoert'
+              : udfald === 'afbud' ? 'aflyst' : 'udeblev',
+      note: note.trim() || UDFALD.find(u => u.id === udfald)?.desc || '',
+      varighed: udfald === 'gennemfoert' ? varighed : null,
+      registreretDen: new Date().toISOString(),
+    };
+    window.SoS_KONTAKTER = [...(window.SoS_KONTAKTER || []), k];
+    if (window.SoS_STORE) window.SoS_STORE.save('kontakter', window.SoS_KONTAKTER);
+    onSave(newList);
+    onClose();
+  };
+
+  const canSave = udfald && (udfald !== 'gennemfoert' || varighed);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: SoS.paper,
+      zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ padding: '54px 20px 16px', background: SoS.surface,
+        borderBottom: `1px solid ${SoS.line}`, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 18,
+            background: SoS.surfaceAlt, border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="chevronL" size={18} color={SoS.ink} weight={2.2}/>
+          </button>
+          <div>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+              color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Registrér aftale
+            </div>
+            <div style={{ fontFamily: SoS.sans, fontSize: 18, fontWeight: 700,
+              color: SoS.ink, marginTop: 2 }}>
+              {aftale.activity}
+            </div>
+            <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted, marginTop: 1 }}>
+              {aftale.date} · {aftale.start}–{aftale.end}
+              {menneske ? ` · ${menneske.firstName}` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 120px' }}>
+
+        {/* Udfald */}
+        <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+          color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+          Hvad skete der?
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+          {UDFALD.map(u => (
+            <button key={u.id} onClick={() => { setUdfald(u.id); if (u.id !== 'gennemfoert') setVarighed(null); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px',
+                background: udfald === u.id ? u.color + '12' : SoS.surface,
+                border: `2px solid ${udfald === u.id ? u.color : SoS.line}`,
+                borderRadius: SoS.r.sm, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+              <div style={{ width: 40, height: 40, borderRadius: SoS.r.sm,
+                background: udfald === u.id ? u.color : SoS.surfaceAlt,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, fontFamily: SoS.mono, fontSize: 16,
+                color: udfald === u.id ? '#fff' : SoS.inkMuted }}>
+                {u.emoji}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 15, fontWeight: 700,
+                  color: udfald === u.id ? u.color : SoS.ink }}>{u.label}</div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 12,
+                  color: SoS.inkMuted, marginTop: 2 }}>{u.desc}</div>
+              </div>
+              {udfald === u.id && <Icon name="check" size={18} color={u.color}/>}
+            </button>
+          ))}
+        </div>
+
+        {/* Varighed — kun ved gennemfaert */}
+        {udfald === 'gennemfoert' && (
+          <>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+              color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+              Omtrentlig varighed
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
+              {VARIGHEDER.map(v => (
+                <button key={v.v} onClick={() => setVarighed(v.v)} style={{
+                  padding: '10px 18px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                  background: varighed === v.v ? SoS.ink : SoS.surface,
+                  color: varighed === v.v ? '#fff' : SoS.ink,
+                  border: `2px solid ${varighed === v.v ? SoS.ink : SoS.line}`,
+                  fontFamily: SoS.sans, fontSize: 14, fontWeight: 600 }}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Note — valgfrit, én linje */}
+        {udfald && (
+          <>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+              color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+              Kort note <span style={{ fontWeight: 400, textTransform: 'none',
+                letterSpacing: 0 }}>(valgfrit)</span>
+            </div>
+            <input
+              value={note} onChange={e => setNote(e.target.value)}
+              maxLength={120}
+              placeholder={
+                udfald === 'gennemfoert' ? 'Fx: Gik godt, kortere tur end planlagt' :
+                udfald === 'afbud' ? 'Fx: Ny aftale aftalt til næste uge' :
+                'Fx: Forsøgte at ringe — intet svar'
+              }
+              style={{ width: '100%', padding: '13px 14px',
+                border: `1.5px solid ${SoS.line}`, background: SoS.surface,
+                fontFamily: SoS.sans, fontSize: 14, color: SoS.ink,
+                outline: 'none', boxSizing: 'border-box', borderRadius: SoS.r.sm }}/>
+            <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted,
+              textAlign: 'right', marginTop: 4 }}>{note.length}/120</div>
+          </>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: '16px 20px 36px', borderTop: `1px solid ${SoS.line}`,
+        background: SoS.surface, flexShrink: 0 }}>
+        <button onClick={save} disabled={!canSave} style={{
+          width: '100%', padding: '16px 0',
+          background: canSave ? SoS.ink : SoS.line,
+          color: '#fff', border: 'none', borderRadius: SoS.r.sm,
+          fontFamily: SoS.sans, fontSize: 15, fontWeight: 700,
+          cursor: canSave ? 'pointer' : 'not-allowed' }}>
+          Gem registrering
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
 const NextAppointment = ({ appt, onOpen }) => {
   if (!appt) return null;
   const menneske = SoS_MENNESKER[appt.menneskeId];
@@ -2014,6 +2197,19 @@ const MonthChips = ({ data }) => (
 );
 
 const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'busy' }) => {
+  const [logTarget, setLogTarget] = React.useState(null);
+  const [apptVersion, setApptVersion] = React.useState(0);
+  const TODAY_STR = new Date().toISOString().slice(0, 10);
+
+  // Seneste afholdte aftaler der mangler registrering (maks 3 dage tilbage)
+  const uregistrerede = React.useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 3);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return (window.SoS_APPOINTMENTS_BUSY || [])
+      .filter(a => a.date < TODAY_STR && a.date >= cutoffStr && !a.brobyggerLog)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [apptVersion]);
   const next = appointments[0];
   const rest = appointments.slice(1, 4);
   const greet = (() => {
@@ -2155,6 +2351,47 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
           </div>
         );
       })()}
+
+      {/* Uregistrerede aftaler */}
+      {uregistrerede.length > 0 && (
+        <div style={{ padding: '0 20px 20px' }}>
+          <SectionHead title="Mangler registrering" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {uregistrerede.map(a => {
+              const m = SoS_MENNESKER[a.menneskeId];
+              return (
+                <div key={a.id} style={{ background: SoS.amber + '10',
+                  border: `1px solid ${SoS.amber}44`, borderRadius: SoS.r.sm,
+                  padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 700,
+                      color: SoS.ink, marginBottom: 2 }}>{a.activity}</div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted }}>
+                      {a.date} · {a.start}
+                      {m ? ` · ${m.firstName}` : ''}
+                    </div>
+                  </div>
+                  <button onClick={() => setLogTarget(a)} style={{
+                    padding: '8px 14px', background: SoS.ink, color: '#fff',
+                    border: 'none', borderRadius: SoS.r.sm,
+                    fontFamily: SoS.sans, fontSize: 13, fontWeight: 700,
+                    cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    Registrér
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {logTarget && (
+        <BrobyggerLogModal
+          aftale={logTarget}
+          onClose={() => setLogTarget(null)}
+          onSave={() => { setApptVersion(v => v + 1); setLogTarget(null); }}
+        />
+      )}
 
       <div style={{ padding: '0 20px 20px' }}>
         <SectionHead title="Brobygningstyper" />
@@ -11059,6 +11296,109 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
       ))}
     </div>
 
+    {/* Opfølgning afventer */}
+    {(() => {
+      const TODAY_S = new Date().toISOString().slice(0, 10);
+      const pending = (window.SoS_APPOINTMENTS_BUSY || [])
+        .filter(a => a.date < TODAY_S && a.brobyggerLog && !a.raadgiverOpfoelgning)
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      const [expanded, setExpanded] = React.useState(false);
+      const [version,  setVersion]  = React.useState(0);
+
+      const setOpfoelgning = (apptId, val) => {
+        const newList = (window.SoS_APPOINTMENTS_BUSY || []).map(a =>
+          a.id === apptId ? { ...a, raadgiverOpfoelgning: val } : a
+        );
+        window.SoS_APPOINTMENTS_BUSY = newList;
+        if (window.SoS_STORE) window.SoS_STORE.save('appointments', newList);
+        setVersion(v => v + 1);
+      };
+
+      if (pending.length === 0) return null;
+
+      return (
+        <DSCard style={{ marginBottom: 14, padding: 0, overflow: 'hidden' }}>
+          {/* Header — klikbar */}
+          <button onClick={() => setExpanded(v => !v)} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            width: '100%', padding: '14px 18px', background: 'none',
+            border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 0,
+              background: SoS.amber + '20', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon name="bell" size={15} color={SoS.amber}/>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 700,
+                color: SoS.ink }}>
+                {pending.length} {pending.length === 1 ? 'aftale afventer' : 'aftaler afventer'} din opfølgning
+              </div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginTop: 1 }}>
+                Brobyggerne har registreret — ring og tilføj din vurdering
+              </div>
+            </div>
+            <Icon name={expanded ? 'chevronD' : 'chevron'} size={14} color={SoS.inkMuted}/>
+          </button>
+
+          {expanded && (
+            <div style={{ borderTop: `1px solid ${SoS.line}` }}>
+              {pending.map((a, i) => {
+                const m  = SoS_MENNESKER[a.menneskeId];
+                const bb = SoS_BROBYGGERE.find(b => b.id === a.brobyggerId);
+                const log = a.brobyggerLog || {};
+                const UDFALD_COLOR = {
+                  gennemfoert: SoS.green, afbud: SoS.amber, 'ikke-modt': SoS.red };
+                const UDFALD_LABEL = {
+                  gennemfoert: 'Gennemfaert', afbud: 'Afbud', 'ikke-modt': 'Mødte ikke op' };
+                return (
+                  <div key={a.id} style={{
+                    padding: '14px 18px',
+                    borderBottom: i < pending.length - 1 ? `1px solid ${SoS.lineSoft}` : 'none',
+                    display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'start' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 700,
+                          color: SoS.ink }}>
+                          {m ? m.firstName + ' ' + m.lastName : '—'}
+                        </span>
+                        <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 700,
+                          color: UDFALD_COLOR[log.udfald] || SoS.inkMuted,
+                          textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          {UDFALD_LABEL[log.udfald] || log.udfald}
+                          {log.varighed ? ` · ${log.varighed >= 60 ? Math.round(log.varighed/60*10)/10 + 't' : log.varighed + 'm'}` : ''}
+                        </span>
+                      </div>
+                      <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
+                        {a.date} · {bb ? bb.name.split(' ')[0] : '—'}
+                        {log.note ? ` · "${log.note}"` : ''}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      <button onClick={() => setOpfoelgning(a.id, 'fulgt-op')} style={{
+                        padding: '6px 12px', background: SoS.ink, color: '#fff',
+                        border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer',
+                        fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+                        whiteSpace: 'nowrap' }}>
+                        Ring &amp; notér
+                      </button>
+                      <button onClick={() => setOpfoelgning(a.id, 'ikke-noedvendigt')} style={{
+                        padding: '6px 10px', background: SoS.surfaceAlt, color: SoS.inkMuted,
+                        border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                        cursor: 'pointer', fontFamily: SoS.sans, fontSize: 11,
+                        whiteSpace: 'nowrap' }}>
+                        Ikke nødvendigt
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DSCard>
+      );
+    })()}
+
     {/* Row 2 */}
     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr',
       gap: 10, marginBottom: 14 }}>
@@ -12674,7 +13014,32 @@ const DesktopKalender = () => {
               Udfald?
             </button>
           )}
-          {a.udfald && (
+          {a.brobyggerLog && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: SoS.mono, fontSize: 8.5, fontWeight: 700,
+                color: a.brobyggerLog.udfald === 'gennemfoert' ? SoS.green
+                     : a.brobyggerLog.udfald === 'ikke-modt'  ? SoS.red : SoS.amber,
+                textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {a.brobyggerLog.udfald === 'gennemfoert' ? '✓ OK'
+                : a.brobyggerLog.udfald === 'ikke-modt'  ? '✗ Udeblev' : '~ Afbud'}
+              </div>
+              {a.brobyggerLog.varighed > 0 && (
+                <div style={{ fontFamily: SoS.mono, fontSize: 8, color: SoS.inkMuted, marginTop: 1 }}>
+                  {a.brobyggerLog.varighed >= 60
+                    ? Math.round(a.brobyggerLog.varighed/60*10)/10 + 't'
+                    : a.brobyggerLog.varighed + 'm'}
+                </div>
+              )}
+              {!a.raadgiverOpfoelgning && (
+                <div style={{ fontFamily: SoS.mono, fontSize: 7.5, fontWeight: 600,
+                  color: SoS.amber, marginTop: 2 }}>AFVENT</div>
+              )}
+              {a.raadgiverOpfoelgning === 'fulgt-op' && (
+                <div style={{ fontFamily: SoS.mono, fontSize: 7.5, color: SoS.green }}>FULGT OP</div>
+              )}
+            </div>
+          )}
+          {!a.brobyggerLog && a.udfald && (
             <div style={{ fontFamily: SoS.mono, fontSize: 8.5, fontWeight: 700,
               color: a.udfald === 'gennemfoert' ? SoS.green : a.udfald === 'ikke-modt' ? SoS.red : SoS.amber,
               textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' }}>
