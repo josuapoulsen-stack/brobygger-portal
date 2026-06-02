@@ -368,14 +368,14 @@ const SoS_APPOINTMENTS_BUSY = (() => {
     // Denne uge
     { id: 'a-4',  menneskeId: 'b-4', brobyggerId: 'bb-1', date: d(-4),  start: '15:30', end: '16:30', activity: 'Rolig gåtur',           location: 'Botanisk Have',           status: 'confirmed' },
     { id: 'a-8',  menneskeId: 'b-3', brobyggerId: 'bb-3', date: d(-3),  start: '11:00', end: '12:30', activity: 'Sprogcafé',             location: 'VokalFolk, Mejlgade',     status: 'confirmed' },
-    { id: 'a-9',  menneskeId: 'b-1', brobyggerId: 'bb-8', date: d(-2),  start: '15:00', end: '16:00', activity: 'Bankkontakt',           location: 'Sydbank, Søndergade',     status: 'confirmed' },
+    { id: 'a-9',  menneskeId: 'b-1', brobyggerId: 'bb-8', date: d(-2),  start: '15:00', end: '16:00', activity: 'Bankkontakt',           location: 'Sydbank, Søndergade',     status: 'confirmed', kategori: 'bank' },
     { id: 'a-5',  menneskeId: 'b-1', brobyggerId: 'bb-8', date: d(-1),  start: '10:00', end: '11:00', activity: 'Kaffe hjemme',          location: 'Skovvejen 14',            status: 'confirmed' },
     { id: 'a-10', menneskeId: 'b-2', brobyggerId: 'bb-1', date: d(0),   start: '10:30', end: '11:30', activity: 'Gåtur i Botanisk Have', location: 'Botanisk Have',           status: 'pending'   },
     { id: 'a-11', menneskeId: 'b-3', brobyggerId: 'bb-5', date: d(0),   start: '14:00', end: '15:00', activity: 'Sangeftermiddag',       location: 'Musikhuset Aarhus',       status: 'confirmed' },
     // Næste uge
     { id: 'a-12', menneskeId: 'b-4', brobyggerId: 'bb-7', date: d(4),   start: '10:00', end: '11:00', activity: 'Læsehøjt',              location: 'Hjemme hos Hans',         status: 'confirmed' },
     { id: 'a-13', menneskeId: 'b-1', brobyggerId: 'bb-3', date: d(5),   start: '11:00', end: '12:00', activity: 'Gåtur ved åen',         location: 'Åboulevarden',            status: 'confirmed' },
-    { id: 'a-14', menneskeId: 'b-2', brobyggerId: 'bb-8', date: d(6),   start: '09:00', end: '10:30', activity: 'Lægekontakt',           location: 'Klinik Trøjborg',         status: 'pending'   },
+    { id: 'a-14', menneskeId: 'b-2', brobyggerId: 'bb-8', date: d(6),   start: '09:00', end: '10:30', activity: 'Lægekontakt',           location: 'Klinik Trøjborg',         status: 'pending',   kategori: 'laege', underkategori: 'almen' },
     { id: 'a-15', menneskeId: 'b-3', brobyggerId: 'bb-1', date: d(7),   start: '13:00', end: '14:00', activity: 'Kulturcafé',            location: 'Godsbanen',               status: 'confirmed' },
     { id: 'a-16', menneskeId: 'b-4', brobyggerId: 'bb-5', date: d(8),   start: '10:00', end: '11:30', activity: 'Gåtur Marselisborg',    location: 'Marselisborg Skov',       status: 'confirmed' },
   ];
@@ -12104,6 +12104,68 @@ const DesktopSROI = () => {
 
 
 
+const AKTIVITET_KATEGORIER = {
+  laege: {
+    label: 'Praktiserende læge', icon: 'shield',
+    sub: [
+      { id: 'almen',       label: 'Almen konsultation' },
+      { id: 'diabetes',    label: 'Diabetes-kontrol' },
+      { id: 'hjerte',      label: 'Hjerte-/blodtryks-kontrol' },
+      { id: 'psykisk',     label: 'Psykisk sundhed' },
+      { id: 'kraeft',      label: 'Kræftscreening / -kontrol' },
+      { id: 'kol',         label: 'KOL / lungekontrol' },
+      { id: 'vaccination', label: 'Vaccination' },
+      { id: 'recept',      label: 'Receptfornyelse' },
+      { id: 'andet',       label: 'Andet' },
+    ],
+  },
+  specialist: {
+    label: 'Specialist / hospital', icon: 'shield',
+    sub: [
+      { id: 'kardiologi',  label: 'Kardiologi' },
+      { id: 'ortopædi',   label: 'Ortopædi / ryg' },
+      { id: 'onkologi',    label: 'Onkologi / kræft' },
+      { id: 'psykiatri',   label: 'Psykiatri' },
+      { id: 'neurologi',   label: 'Neurologi' },
+      { id: 'øjenlæge',   label: 'Øjenlæge' },
+      { id: 'høre',        label: 'Høre / audiologi' },
+      { id: 'geriatri',    label: 'Geriatri / ældre' },
+      { id: 'andet',       label: 'Andet speciale' },
+    ],
+  },
+  tandlaege:  { label: 'Tandlæge', icon: 'shield', sub: [] },
+  apotek:     { label: 'Apotek', icon: 'shield', sub: [] },
+  fysio:      { label: 'Fysio- / ergoterapi', icon: 'shield', sub: [] },
+  kommune: {
+    label: 'Kommunalt kontor', icon: 'building',
+    sub: [
+      { id: 'jobcenter',    label: 'Jobcenter' },
+      { id: 'socialforv',   label: 'Socialforvaltning' },
+      { id: 'borgerserv',   label: 'Borgerservice' },
+      { id: 'aeldreomr',    label: 'Ældreomsorg' },
+      { id: 'psyk_koord',   label: 'Psykiatrikoordinator' },
+      { id: 'andet',        label: 'Andet kontor' },
+    ],
+  },
+  bank:       { label: 'Bank / økonomi', icon: 'building', sub: [] },
+  politi:     { label: 'Politi / immigration', icon: 'building', sub: [] },
+  gaaatur:    { label: 'Gåtur / motion', icon: 'heart', sub: [] },
+  kaffe:      { label: 'Kaffe / socialt besøg', icon: 'heart', sub: [] },
+  kultur:     { label: 'Kulturarrangement', icon: 'heart', sub: [] },
+  indkoeb:    { label: 'Indkøb / ærinder', icon: 'heart', sub: [] },
+  sprogcafe:  { label: 'Sprogcafé / -øvelse', icon: 'users', sub: [] },
+  brev:       { label: 'Brevlæsning / -skrivning', icon: 'users', sub: [] },
+  andet:      { label: 'Andet', icon: 'note', sub: [] },
+};
+
+const AKTIVITET_GRUPPER = [
+  { label: 'Sundhed', ids: ['laege','specialist','tandlaege','apotek','fysio'] },
+  { label: 'Myndigheder', ids: ['kommune','bank','politi'] },
+  { label: 'Socialt', ids: ['gaaatur','kaffe','kultur','indkoeb'] },
+  { label: 'Sprog & integration', ids: ['sprogcafe','brev'] },
+  { label: 'Andet', ids: ['andet'] },
+];
+
 const DesktopApptModal = ({ initial = {}, onClose, onSave, onDelete }) => {
   const [form, setForm] = React.useState({
     date:        initial.date        || new Date().toISOString().slice(0,10),
@@ -12113,9 +12175,13 @@ const DesktopApptModal = ({ initial = {}, onClose, onSave, onDelete }) => {
     menneskeId:  initial.menneskeId  || '',
     activity:    initial.activity    || '',
     location:    initial.location    || '',
-    status:      initial.status      || 'pending',
+    status:        initial.status        || 'pending',
+    kategori:      initial.kategori      || '',
+    underkategori: initial.underkategori || '',
+    brobyggerNote: initial.brobyggerNote || '',
   });
   const upd = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+  const selKat = form.kategori ? AKTIVITET_KATEGORIER[form.kategori] : null;
   const aktiveBb = SoS_BROBYGGERE.filter(b => b.status === 'aktiv' || b.status === 'ny');
   const alleMennesker = Object.values(SoS_MENNESKER)
     .sort((a, b) => (a.firstName + a.lastName).localeCompare(b.firstName + b.lastName));
@@ -12226,6 +12292,83 @@ const DesktopApptModal = ({ initial = {}, onClose, onSave, onDelete }) => {
               <option value="pending">Afventer bekræftelse</option>
               <option value="confirmed">Bekræftet</option>
             </select>
+          </div>
+        </div>
+
+        {/* Aktivitetskategori */}
+        <div style={{ padding: '0 20px 16px' }}>
+          <div style={labelStyle}>Aktivitetstype</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {AKTIVITET_GRUPPER.map(grp => (
+              <div key={grp.label}>
+                <div style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+                  color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase',
+                  marginBottom: 6 }}>{grp.label}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {grp.ids.map(id => {
+                    const kat = AKTIVITET_KATEGORIER[id];
+                    const sel = form.kategori === id;
+                    return (
+                      <button key={id}
+                        onClick={() => setForm(f => ({ ...f,
+                          kategori: sel ? '' : id,
+                          underkategori: '' }))}
+                        style={{ padding: '6px 12px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                          background: sel ? SoS.ink : SoS.surface,
+                          color: sel ? '#fff' : SoS.ink,
+                          border: `1px solid ${sel ? SoS.ink : SoS.line}`,
+                          fontFamily: SoS.sans, fontSize: 12 }}>
+                        {kat.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Underkategori */}
+          {selKat && selKat.sub && selKat.sub.length > 0 && (
+            <div style={{ marginTop: 12, padding: '12px 14px',
+              background: SoS.surfaceAlt, border: `1px solid ${SoS.line}` }}>
+              <div style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
+                color: SoS.accent, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
+                Præcisér — {selKat.label}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {selKat.sub.map(s => {
+                  const sel = form.underkategori === s.id;
+                  return (
+                    <button key={s.id}
+                      onClick={() => setForm(f => ({ ...f,
+                        underkategori: sel ? '' : s.id }))}
+                      style={{ padding: '5px 11px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                        background: sel ? SoS.accent : SoS.surface,
+                        color: sel ? '#fff' : SoS.ink,
+                        border: `1px solid ${sel ? SoS.accent : SoS.line}`,
+                        fontFamily: SoS.sans, fontSize: 12 }}>
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Brobygger-note */}
+          <div style={{ marginTop: 14 }}>
+            <div style={{ ...labelStyle, marginBottom: 4 }}>
+              Note til brobbygger
+              <span style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 400,
+                textTransform: 'none', letterSpacing: 0, color: SoS.inkMuted }}>
+                {' '}— vises kun for brobyggeren og rådgiver
+              </span>
+            </div>
+            <textarea
+              placeholder="Fx: Husk at medbringe medicinlisten. Navn på læge er Hansen."
+              value={form.brobyggerNote}
+              onChange={e => setForm(f => ({ ...f, brobyggerNote: e.target.value }))}
+              style={{ ...inputStyle, minHeight: 64, resize: 'vertical' }}/>
           </div>
         </div>
 
@@ -13690,28 +13833,20 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
   const [form, setForm] = React.useState({ firstName: '', lastName: '', age: '', phone: '' });
   const [type, setType] = React.useState(null);
   const [selectedBehov, setSelectedBehov] = React.useState([]);
-  const [udfordringer, setUdfordringer] = React.useState('');
-  const [sroiMaalgruppe, setSroiMaalgruppe] = React.useState('');
-  const [helbredsKategorier, setHelbredsKategorier] = React.useState([]);
   const [note, setNote] = React.useState('');
   const [consent, setConsent] = React.useState(false);
   const [done, setDone] = React.useState(false);
 
-  const STEPS = ['Kilde', 'Basisinfo', 'Behov', 'Brobygningsønske', 'Samtykke'];
+  const STEPS = ['Kilde', 'Basisinfo', 'Behov', 'Samtykke'];
   const selectedKildeObj = INTAKE_KILDER.find(k => k.id === kilde);
   const kildeHasSub = !!(selectedKildeObj && selectedKildeObj.sub);
   const canNext0 = !!kilde && (!kildeHasSub || !!kildeDetalje);
   const phoneDigits = form.phone.replace(/\D/g, '');
   const phoneOk = phoneDigits.length === 8;
   const canNext1 = form.firstName.trim().length > 0 && form.age.trim().length > 0 && phoneOk;
-  const canNext2 = !!type && selectedBehov.length > 0;
-  const [brobygDato, setBrobygDato] = React.useState(new Date().toISOString().slice(0,10));
-  const [brobygStart, setBrobygStart] = React.useState(null);
-  const [brobygDuration, setBrobygDuration] = React.useState(null);
-  const [brobygFrekvens, setBrobygFrekvens] = React.useState(null);
-  const [brobygNote, setBrobygNote] = React.useState('');
-  const [brobygSted, setBrobygSted] = React.useState(null);
-  const canNext3 = !!brobygDato && !!brobygStart && !!brobygDuration;
+  const canNext2 = selectedBehov.length > 0 || !!type;
+  const [tidspraef, setTidspraef] = React.useState(null); // 'morgen','formiddag','eftermiddag','aften','fleksibel'
+  const [frekvens, setFrekvens]   = React.useState(null); // 'ugentlig','hver14','maanedlig','variabel'
   const canFinish = consent;
 
   const toggleBehov = (b) =>
@@ -13721,27 +13856,25 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
     const id = 'b-' + Date.now();
     const newPerson = {
       id,
-      firstName: form.firstName.trim(),
-      lastName:  form.lastName.trim(),
-      age:       parseInt(form.age) || 0,
-      contact:   form.phone.trim(),
-      type:      type || 'social',
-      kilde:     kilde || 'andet',
+      firstName:    form.firstName.trim(),
+      lastName:     form.lastName.trim(),
+      age:          parseInt(form.age) || 0,
+      mobil:        form.phone.trim(),
+      type:         type || 'social',
+      status:       'afventer',
+      kilde:        kilde || 'andet',
       kildeDetalje: kildeDetalje || null,
-      needs:     selectedBehov,
-      health:    udfordringer.trim() || 'Ingen særlige forhold.',
-      sroiMaalgruppe:    sroiMaalgruppe || 'uoplyst',
-      helbredsKategorier,
-      address:   '', meetPoint: '', language: 'Dansk',
-      activeCount: 0, completedCount: 0, cancelledCount: 0,
-      notes:     [],
-      hq:        viewingHq || 'Aarhus',
-      createdAt: new Date().toISOString().split('T')[0],
-      brobygning: {
-        dato: brobygDato, start: brobygStart,
-        duration: brobygDuration, frekvens: brobygFrekvens,
-        note: brobygNote, sted: brobygSted,
-      },
+      needs:        selectedBehov,
+      address:      '', meetPoint: '', language: 'Dansk',
+      notes:        [],
+      hq:           viewingHq || 'Aarhus',
+      registeredAt: new Date().toISOString(),
+      createdAt:    new Date().toISOString().split('T')[0],
+      initials:     (form.firstName.trim()[0] || '') + (form.lastName.trim()[0] || ''),
+      praeferencer: { tidspunkt: tidspraef, frekvens },
+      contact:      { name: '', role: 'Koordinator', phone: '' },
+      mobilOptOut:  false,
+      email:        null,
     };
     const updated = { ...(window.SoS_MENNESKER || {}), [id]: newPerson };
     window.SoS_MENNESKER = updated;
@@ -13975,16 +14108,16 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
           </>
         )}
 
-        {/* ── STEP 2: Behov ── */}
+                {/* ── STEP 2: Behov ── */}
         {step === 2 && (
           <>
             <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500,
               color: SoS.ink, marginBottom: 6, letterSpacing: -0.2 }}>
-              Behov og situation
+              Hvad har personen brug for?
             </div>
             <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft,
               marginBottom: 18, lineHeight: 1.5 }}>
-              Vælg brobygningstype og beskriv de behov og udfordringer du kender til.
+              Vælg den type brobygning der passer bedst, og marker de behov du kender til.
             </div>
 
             {/* Brobygningstype */}
@@ -13995,15 +14128,13 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
                 return (
                   <button key={t.id} onClick={() => { setType(t.id); setSelectedBehov([]); }} style={{
                     display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-                    background: sel ? t.soft : '#fff',
+                    background: sel ? t.soft : SoS.surface,
                     border: `2px solid ${sel ? t.color : SoS.line}`,
-                    borderRadius: SoS.r.md, cursor: 'pointer', textAlign: 'left',
+                    borderRadius: SoS.r.sm, cursor: 'pointer', textAlign: 'left',
                   }}>
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 17, flexShrink: 0,
-                      background: sel ? t.color : SoS.creamDeep,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
+                    <div style={{ width: 34, height: 34, borderRadius: SoS.r.sm, flexShrink: 0,
+                      background: sel ? t.color : SoS.surfaceAlt,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Icon name={t.icon} size={16} color={sel ? '#fff' : SoS.inkSoft}/>
                     </div>
                     <div style={{ flex: 1 }}>
@@ -14019,356 +14150,76 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
             </div>
 
             {/* Specifikke behov */}
-            <FieldLabel note={type ? 'vælg alle der passer' : 'vælg en type ovenfor først'}>Specifikke behov</FieldLabel>
+            <FieldLabel note={type ? 'vælg alle der passer' : 'valgfrit'}>Specifikke behov</FieldLabel>
+            {type && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 22 }}>
+                {(INTAKE_BEHOV_BY_TYPE[type] || []).map(b => {
+                  const sel = selectedBehov.includes(b);
+                  return (
+                    <button key={b} onClick={() => toggleBehov(b)} style={{
+                      padding: '8px 14px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                      background: sel ? SoS.ink : SoS.surface,
+                      color: sel ? '#fff' : SoS.ink,
+                      border: `1.5px solid ${sel ? SoS.ink : SoS.line}`,
+                      fontFamily: SoS.sans, fontSize: 13, fontWeight: sel ? 600 : 400,
+                    }}>{b}</button>
+                  );
+                })}
+              </div>
+            )}
             {!type && (
-              <div style={{ padding: '14px 16px', background: SoS.surface,
-                borderRadius: SoS.r.sm, marginBottom: 22,
-                fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
+              <div style={{ marginBottom: 22, padding: '12px 14px', background: SoS.surfaceAlt,
+                border: `1px solid ${SoS.line}`, fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
                 Vælg en brobygningstype ovenfor for at se relevante behov.
               </div>
             )}
-            {type && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 22 }}>
-              {(INTAKE_BEHOV_BY_TYPE[type] || []).map(b => {
-                const sel = selectedBehov.includes(b);
-                return (
-                  <button key={b} onClick={() => toggleBehov(b)} style={{
-                    padding: '8px 14px',
-                    fontFamily: SoS.sans, fontSize: 13,
-                    fontWeight: sel ? 600 : 400,
-                    color: sel ? SoS.orange : SoS.inkSoft,
-                    background: sel ? SoS.orange + '15' : '#fff',
-                    border: `1.5px solid ${sel ? SoS.orange : SoS.line}`,
-                    borderRadius: SoS.r.sm, cursor: 'pointer',
-                  }}>
-                    {b}
-                  </button>
-                );
-              })}
-            </div>}
 
-            {/* GDPR-følsomme felter — Art. 9 */}
-            <div style={{
-              border: `1.5px solid ${SoS.orange}30`,
-              borderRadius: SoS.r.lg,
-              overflow: 'hidden',
-              marginBottom: 20,
-            }}>
-              {/* GDPR-header */}
-              <div style={{
-                background: `${SoS.orange}12`,
-                borderBottom: `1px solid ${SoS.orange}25`,
-                padding: '10px 14px',
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}>
-                <Icon name="shield" size={14} color={SoS.orange}/>
-                <div>
-                  <span style={{ fontFamily: SoS.sans, fontSize: 12,
-                    fontWeight: 700, color: SoS.orange }}>
-                    Følsomme oplysninger — GDPR art. 9
-                  </span>
-                  <span style={{ fontFamily: SoS.sans, fontSize: 11,
-                    color: SoS.inkSoft, marginLeft: 8 }}>
-                    Frivilligt · kun til fagligt brug
-                  </span>
-                </div>
-              </div>
-              <div style={{ padding: '14px 14px 4px' }}>
-            {/* Sundhedsudfordring — intern klassifikation */}
-            <div style={{
-              background: SoS.surface, borderRadius: SoS.r.md,
-              padding: '12px 14px', marginBottom: 12,
-            }}>
-              <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700,
-                color: SoS.ink, marginBottom: 6 }}>
-                Primær sundhedsudfordring
-              </div>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft,
-                marginBottom: 10, lineHeight: 1.4 }}>
-                Bruges til at forstå personens udgangspunkt og understøtte den rette brobygning.
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {(window.SROI_MAALGRUPPE_OPTIONS || []).map(opt => (
-                  <label key={opt.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 12px', borderRadius: SoS.r.sm,
-                    background: sroiMaalgruppe === opt.id ? SoS.orange + '15' : '#fff',
-                    border: `1.5px solid ${sroiMaalgruppe === opt.id ? SoS.orange : SoS.line}`,
-                    cursor: 'pointer',
-                  }}>
-                    <input
-                      type="radio"
-                      name="sroiMaalgruppe"
-                      value={opt.id}
-                      checked={sroiMaalgruppe === opt.id}
-                      onChange={() => setSroiMaalgruppe(opt.id)}
-                      style={{ accentColor: SoS.orange, width: 16, height: 16, flexShrink: 0 }}
-                    />
-                    <span style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.ink }}>
-                      {opt.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Faglig helbreds-sektion — kun hvis aktiveret i admin */}
-            {(window.SoS_SETTINGS || {}).visHelbredsforhold !== false && (
-              <div style={{
-                background: '#FFF8F0', border: `1.5px solid ${SoS.orange}30`,
-                borderRadius: SoS.r.md, padding: '12px 14px', marginBottom: 14,
-              }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
-                  <Icon name="shield" size={14} color={SoS.orange} style={{ marginTop: 1 }}/>
-                  <div>
-                    <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700,
-                      color: SoS.orange }}>
-                      Relevante helbredsforhold — fagligt brug
-                    </div>
-                    <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft,
-                      marginTop: 2, lineHeight: 1.4 }}>
-                      Frivilligt. GDPR art. 9. Bruges kun af brobygger til at støtte relationen
-                      — bruges udelukkende til at støtte relationen.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Kategori-flervalg */}
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
-                    color: SoS.inkSoft, marginBottom: 6, letterSpacing: 0.4,
-                    textTransform: 'uppercase' }}>Overordnet kategori</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {(window.HELBREDS_KATEGORIER || []).map(kat => {
-                      const on = helbredsKategorier.includes(kat.id);
-                      return (
-                        <button key={kat.id}
-                          onClick={() => setHelbredsKategorier(prev =>
-                            on ? prev.filter(k => k !== kat.id) : [...prev, kat.id]
-                          )}
-                          style={{
-                            padding: '5px 12px', borderRadius: SoS.r.sm,
-                            border: `1.5px solid ${on ? SoS.orange : SoS.line}`,
-                            background: on ? SoS.orange + '15' : '#fff',
-                            fontFamily: SoS.sans, fontSize: 12,
-                            color: on ? SoS.orangeDeep : SoS.ink,
-                            fontWeight: on ? 600 : 400,
-                            cursor: 'pointer',
-                          }}>
-                          {kat.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Fritekst */}
-                <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
-                  color: SoS.inkSoft, marginBottom: 6, letterSpacing: 0.4,
-                  textTransform: 'uppercase' }}>Faglige noter til brobygger</div>
-                <textarea
-                  placeholder="F.eks. let demens, angst, mobilitetsvanskeligheder, kronisk smerte..."
-                  value={udfordringer}
-                  onChange={e => setUdfordringer(e.target.value)}
-                  rows={3}
-                  style={{
-                    width: '100%', padding: '10px 12px',
-                    fontFamily: SoS.sans, fontSize: 14, color: SoS.ink,
-                    background: '#fff',
-                    border: `1.5px solid ${SoS.orange}40`,
-                    borderRadius: SoS.r.sm, outline: 'none', resize: 'none',
-                    boxSizing: 'border-box', lineHeight: 1.5,
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Faglig helbreds-sektion — kun hvis aktiveret i admin */}
-            {(window.SoS_SETTINGS || {}).visHelbredsforhold !== false && (
-              <div style={{
-                background: '#FFF8F0', border: `1.5px solid ${SoS.orange}30`,
-                borderRadius: SoS.r.md, padding: '12px 14px', marginBottom: 14,
-              }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
-                  <Icon name="shield" size={14} color={SoS.orange} style={{ marginTop: 1 }}/>
-                  <div>
-                    <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700,
-                      color: SoS.orange }}>
-                      Relevante helbredsforhold — fagligt brug
-                    </div>
-                    <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft,
-                      marginTop: 2, lineHeight: 1.4 }}>
-                      Frivilligt. GDPR art. 9. Bruges kun af brobygger til at støtte relationen
-                      — bruges udelukkende til at støtte relationen.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Kategori-flervalg */}
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
-                    color: SoS.inkSoft, marginBottom: 6, letterSpacing: 0.4,
-                    textTransform: 'uppercase' }}>Overordnet kategori</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {(window.HELBREDS_KATEGORIER || []).map(kat => {
-                      const on = helbredsKategorier.includes(kat.id);
-                      return (
-                        <button key={kat.id}
-                          onClick={() => setHelbredsKategorier(prev =>
-                            on ? prev.filter(k => k !== kat.id) : [...prev, kat.id]
-                          )}
-                          style={{
-                            padding: '5px 12px', borderRadius: SoS.r.sm,
-                            border: `1.5px solid ${on ? SoS.orange : SoS.line}`,
-                            background: on ? SoS.orange + '15' : '#fff',
-                            fontFamily: SoS.sans, fontSize: 12,
-                            color: on ? SoS.orangeDeep : SoS.ink,
-                            fontWeight: on ? 600 : 400,
-                            cursor: 'pointer',
-                          }}>
-                          {kat.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Fritekst */}
-                <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
-                  color: SoS.inkSoft, marginBottom: 6, letterSpacing: 0.4,
-                  textTransform: 'uppercase' }}>Faglige noter til brobygger</div>
-                <textarea
-                  placeholder="F.eks. let demens, angst, mobilitetsvanskeligheder, kronisk smerte..."
-                  value={udfordringer}
-                  onChange={e => setUdfordringer(e.target.value)}
-                  rows={3}
-                  style={{
-                    width: '100%', padding: '10px 12px',
-                    fontFamily: SoS.sans, fontSize: 14, color: SoS.ink,
-                    background: '#fff',
-                    border: `1.5px solid ${SoS.orange}40`,
-                    borderRadius: SoS.r.sm, outline: 'none', resize: 'none',
-                    boxSizing: 'border-box', lineHeight: 1.5,
-                  }}
-                />
-              </div>
-            )}
-
-              </div>
-            </div>
-
-            {/* Kontekstnote */}
-            <FieldLabel note="valgfrit">Kontekstnote</FieldLabel>
-            <textarea
-              placeholder="Anden relevant kontekst om personen eller situationen..."
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              rows={2}
-              style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }}
-            />
-          </>
-        )}
-
-        {/* ── STEP 3: Brobygningsønske ── */}
-        {step === 3 && (
-          <>
-            <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500,
-              color: SoS.ink, marginBottom: 6, letterSpacing: -0.2 }}>
-              Brobygningsønske
-            </div>
-            <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft,
-              marginBottom: 20, lineHeight: 1.5 }}>
-              Hvornår og hvor ofte ønsker personen brobygning?
-            </div>
-
-            {/* Dato */}
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                color: SoS.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Dato</div>
-              <input type="date" value={brobygDato} onChange={e => setBrobygDato(e.target.value)}
-                style={{ ...inputStyle }}/>
-            </div>
-
-            {/* Starttidspunkt */}
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                color: SoS.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Starttidspunkt</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'].map(s => (
-                  <button key={s} onClick={() => setBrobygStart(s)} style={{
-                    padding: '8px 12px', borderRadius: SoS.r.md, cursor: 'pointer',
-                    background: brobygStart === s ? SoS.orange : '#fff',
-                    color: brobygStart === s ? '#fff' : SoS.ink,
-                    border: `1.5px solid ${brobygStart === s ? SoS.orange : SoS.line}`,
-                    fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
-                  }}>{s}</button>
-                ))}
-              </div>
-            </div>
-
-            {/* Varighed */}
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                color: SoS.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Varighed</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[{label:'30 min',v:30},{label:'1 time',v:60},{label:'1½ time',v:90},{label:'2 timer',v:120}].map(d => (
-                  <button key={d.v} onClick={() => setBrobygDuration(d.v)} style={{
-                    padding: '8px 14px', borderRadius: SoS.r.md, cursor: 'pointer', flex: 1, minWidth: 80,
-                    background: brobygDuration === d.v ? SoS.orange : '#fff',
-                    color: brobygDuration === d.v ? '#fff' : SoS.ink,
-                    border: `1.5px solid ${brobygDuration === d.v ? SoS.orange : SoS.line}`,
-                    fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
-                  }}>{d.label}</button>
-                ))}
-              </div>
+            {/* Tidspræference */}
+            <FieldLabel note="valgfrit">Hvornår passer det bedst?</FieldLabel>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 22 }}>
+              {[
+                { id: 'morgen',       label: 'Morgen',       sub: '8–10' },
+                { id: 'formiddag',    label: 'Formiddag',    sub: '10–12' },
+                { id: 'eftermiddag',  label: 'Eftermiddag',  sub: '12–16' },
+                { id: 'aften',        label: 'Aften',        sub: '16–19' },
+                { id: 'fleksibel',    label: 'Fleksibelt',   sub: 'Når det passer' },
+              ].map(t => (
+                <button key={t.id} onClick={() => setTidspraef(tidspraef === t.id ? null : t.id)} style={{
+                  padding: '9px 14px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                  background: tidspraef === t.id ? SoS.ink : SoS.surface,
+                  color: tidspraef === t.id ? '#fff' : SoS.ink,
+                  border: `1px solid ${tidspraef === t.id ? SoS.ink : SoS.line}`,
+                  fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
+                  <div>{t.label}</div>
+                  <div style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>{t.sub}</div>
+                </button>
+              ))}
             </div>
 
             {/* Frekvens */}
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                color: SoS.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
-                Frekvens <span style={{ fontWeight: 400, color: SoS.inkMuted }}>(valgfrit)</span>
-              </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {['Éngangs','Ugentlig','Hver 2. uge','Månedlig'].map(f => (
-                  <button key={f} onClick={() => setBrobygFrekvens(prev => prev === f ? null : f)} style={{
-                    padding: '8px 14px', borderRadius: SoS.r.sm, cursor: 'pointer',
-                    background: brobygFrekvens === f ? SoS.orange : '#fff',
-                    color: brobygFrekvens === f ? '#fff' : SoS.ink,
-                    border: `1.5px solid ${brobygFrekvens === f ? SoS.orange : SoS.line}`,
-                    fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
-                  }}>{f}</button>
-                ))}
-              </div>
-            </div>
-
-            {/* Notat */}
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                color: SoS.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
-                Notat <span style={{ fontWeight: 400, color: SoS.inkMuted }}>(valgfrit)</span>
-              </div>
-              <textarea
-                value={brobygNote}
-                onChange={e => setBrobygNote(e.target.value)}
-                rows={2}
-                placeholder="F.eks. foretrækker formiddage..."
-                style={{ ...inputStyle, resize: 'none', lineHeight: 1.5 }}
-              />
-            </div>
-
-            {/* Foretrukket mødested */}
-            <div>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                color: SoS.inkSoft, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
-                Foretrukket mødested <span style={{ fontWeight: 400, color: SoS.inkMuted }}>(valgfrit)</span>
-              </div>
-              <StedSoeg value={brobygSted} onChange={setBrobygSted} viewingHq={viewingHq}/>
+            <FieldLabel note="valgfrit">Hvor ofte?</FieldLabel>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              {[
+                { id: 'ugentlig',   label: 'Ugentligt' },
+                { id: 'hver14',     label: 'Hver 14. dag' },
+                { id: 'maanedlig',  label: 'Månedligt' },
+                { id: 'variabel',   label: 'Variabelt' },
+              ].map(f => (
+                <button key={f.id} onClick={() => setFrekvens(frekvens === f.id ? null : f.id)} style={{
+                  padding: '8px 16px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                  background: frekvens === f.id ? SoS.ink : SoS.surface,
+                  color: frekvens === f.id ? '#fff' : SoS.ink,
+                  border: `1px solid ${frekvens === f.id ? SoS.ink : SoS.line}`,
+                  fontFamily: SoS.sans, fontSize: 13 }}>
+                  {f.label}
+                </button>
+              ))}
             </div>
           </>
         )}
 
-        {/* ── STEP 4: Samtykke + opsummering ── */}
-        {step === 4 && (
+                {/* ── STEP 3: Samtykke ── */}
+        {step === 3 && (
           <>
             <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500,
               color: SoS.ink, marginBottom: 6, letterSpacing: -0.2 }}>
@@ -14443,7 +14294,7 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
             </div>
 
             {/* GDPR consent — særligt vigtigt ved følsomme data */}
-            {udfordringer && (
+            {false && (
               <div style={{
                 background: '#FFF8F0', border: `1.5px solid ${SoS.orange}40`,
                 borderRadius: SoS.r.md, padding: '12px 14px', marginBottom: 12,
@@ -14488,7 +14339,7 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
                   Personen er informeret om formålet med registreringen, hvem der
                   har adgang til oplysningerne, og at de til enhver tid kan
                   trække samtykket tilbage.
-                  {udfordringer && ' Særskilt samtykke til helbredsoplysninger er dokumenteret.'}
+                  {false && ' Særskilt samtykke til helbredsoplysninger er dokumenteret.'}
                 </div>
               </div>
             </button>
@@ -14514,13 +14365,13 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
               Tilbage
             </button>
           )}
-          {step < 4 ? (
+          {step < 3 ? (
             <button
-              disabled={step === 0 ? !canNext0 : step === 1 ? !canNext1 : step === 2 ? !canNext2 : !canNext3}
+              disabled={step === 0 ? !canNext0 : step === 1 ? !canNext1 : !canNext2}
               onClick={() => setStep(s => s + 1)}
               style={{
                 flex: 2, padding: '14px 0',
-                background: (step === 0 ? canNext0 : step === 1 ? canNext1 : step === 2 ? canNext2 : canNext3)
+                background: (step === 0 ? canNext0 : step === 1 ? canNext1 : canNext2)
                   ? SoS.orange : SoS.line,
                 color: (step === 0 ? canNext0 : step === 1 ? canNext1 : step === 2 ? canNext2 : canNext3)
                   ? '#fff' : SoS.inkMuted,
