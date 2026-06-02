@@ -5041,6 +5041,7 @@ window.OnboardingWizard = OnboardingWizard;
 const MSLogin = ({ onDone, onCancel }) => {
   const [step, setStep] = React.useState(0); // 0 pick, 1 password, 2 2FA, 3 success
   const [code, setCode] = React.useState(['', '', '', '', '', '']);
+  const [selectedRolle, setSelectedRolle] = React.useState('raadgiver');
   const inputRefs = React.useRef([]);
 
   const handleCode = (i, v) => {
@@ -5048,7 +5049,7 @@ const MSLogin = ({ onDone, onCancel }) => {
     if (!/^\d*$/.test(v)) return;
     const nc = [...code]; nc[i] = v; setCode(nc);
     if (v && i < 5) inputRefs.current[i+1]?.focus();
-    if (nc.every(c => c !== '')) setTimeout(() => setStep(3), 400);
+    if (nc.every(c => c !== '')) setTimeout(() => { setStep(3); setTimeout(() => onDone(selectedRolle), 900); }, 400);
   };
 
   return (
@@ -5096,35 +5097,33 @@ const MSLogin = ({ onDone, onCancel }) => {
               til at fortsætte til Social Sundhed
             </div>
 
-            <button onClick={() => setStep(1)} style={{
-              display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-              padding: '12px 8px', background: 'none', border: 'none',
-              borderBottom: `1px solid ${SoS.line}`, cursor: 'pointer', textAlign: 'left',
-            }}>
-              <Avatar initials="MH" bg={SoS.orange} size={36}/>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>
-                  Maja Holmberg
+            {/* Demo-personas — erstattes af rigtige MS-konti i produktion */}
+            {[
+              { rolle: 'admin',     initials: 'SA', bg: SoS.ink,    navn: 'Sarah Andersen', email: 'sarah@socialsundhed.org',  label: 'Administrator' },
+              { rolle: 'raadgiver', initials: 'LT', bg: SoS.accent, navn: 'Linda Thomsen',  email: 'linda@socialsundhed.org',  label: 'Rådgiver' },
+              { rolle: 'brobygger', initials: 'MH', bg: SoS.orange, navn: 'Maja Holmberg',  email: 'maja.holmberg@socialsundhed.org', label: 'Brobygger' },
+            ].map((p, i, arr) => (
+              <button key={p.rolle} onClick={() => { setSelectedRolle(p.rolle); setStep(1); }} style={{
+                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                padding: '12px 8px', background: 'none', border: 'none',
+                borderBottom: i < arr.length - 1 ? `1px solid ${SoS.line}` : 'none',
+                cursor: 'pointer', textAlign: 'left',
+              }}>
+                <Avatar initials={p.initials} bg={p.bg} size={36}/>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>
+                    {p.navn}
+                  </div>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>
+                    {p.email}
+                  </div>
                 </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>
-                  maja.holmberg@socialsundhed.org
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft,
+                  background: SoS.creamDeep, borderRadius: SoS.r.sm, padding: '2px 8px' }}>
+                  {p.label}
                 </div>
-              </div>
-            </button>
-
-            <button style={{
-              display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-              padding: '12px 8px', background: 'none', border: 'none',
-              cursor: 'pointer', textAlign: 'left',
-            }}>
-              <div style={{ width: 36, height: 36, borderRadius: 18, background: SoS.creamDeep,
-                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="plus" size={18} color={SoS.inkSoft}/>
-              </div>
-              <span style={{ fontFamily: SoS.sans, fontSize: 14, color: SoS.ink }}>
-                Brug en anden konto
-              </span>
-            </button>
+              </button>
+            ))}
           </>}
 
           {step === 1 && <>
@@ -14511,7 +14510,10 @@ const AppWithTweaks = () => {
 
   let content;
   if (tweaks.flow === "mslogin") {
-    content = <MSLogin onDone={() => setTweak("flow", "none")} onCancel={() => setTweak("flow", "none")} />;
+    content = <MSLogin
+      onDone={(rolle) => { if (rolle) setTweak("role", rolle); setTweak("flow", "none"); }}
+      onCancel={() => setTweak("flow", "none")}
+    />;
   } else if (tweaks.flow === "export" && activeRole !== "brobygger") {
     content = <ExportReport onClose={() => setTweak("flow", "none")} />;
   } else if (tweaks.flow === "onboarding") {

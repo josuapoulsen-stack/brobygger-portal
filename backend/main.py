@@ -12,6 +12,7 @@ Miljøvariable læses fra .env (se .env.example).
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from .config import settings
 from .routers import (
@@ -79,11 +80,61 @@ app.include_router(notifikationer.router)
 # ── Health-check ──────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Meta"])
 def health_check():
+    """
+    Returnér API-status og DB-forbindelsestjek.
+
+    - `status: "ok"` → alt kører
+    - `status: "degraded"` → API kører, DB er utilgængelig
+    """
+    db_ok = False
+    db_error: str | None = None
+    db_version: str | None = None
+
+    try:
+        from .database import engine
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            row = conn.execute(text("SELECT version()")).fetchone()
+            db_version = str(row[0]).split(" ")[0] + " " + str(row[0]).split(" ")[1] if row else None
+            db_ok = True
+    except Exception as exc:
+        db_error = str(exc)
+
     return {
-        "status": "ok",
+        "status":      "ok" if db_ok else "degraded",
         "environment": settings.ENVIRONMENT,
-        "version": app.version,
+        "version":     app.version,
+        "timestamp":   datetime.now(timezone.utc).isoformat(),
+        "database": {
+            "connected": db_ok,
+            "version":   db_version,
+            "error":     db_error,
+        },
+        "backend_mode": "FASE 2 (live DB)" if db_ok else "FASE 1 (prototype — ingen DB)",
     }
+
+
+@app.get("/v1/status", tags=["Meta"])
+def api_status():
+    """
+    Returnér en quick oversigt af datamængder (kun når DB er tilgængelig).
+    Bruges af frontenden til at vise 'backend er aktiv'-banner.
+    """
+    try:
+        from .database import engine
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            counts = {}
+            for tbl in ("mennesker", "brobyggere", "aftaler", "brugere"):
+                try:
+                    row = conn.execute(text(f"SELECT COUNT(*) FROM {tbl}")).fetchone()
+                    counts[tbl] = row[0] if row else 0
+                except Exception:
+                    counts[tbl] = None
+        return {"live": True, "counts": counts}
+    except Exception:
+        # Ingen DB → returnér prototype-tilstand
+        return {"live": False, "counts": {}, "note": "Kør backend med PostgreSQL for live data"}
 
 
 @app.get("/", tags=["Meta"])
