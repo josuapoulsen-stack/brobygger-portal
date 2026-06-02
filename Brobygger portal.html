@@ -8379,17 +8379,65 @@ MenneskeDetailPanel = ({ menneske: m, onClose }) => {
           </div>
         )}
 
-        {/* Kontakt */}
+        {/* Stamoplysninger: køn, postnummer, kontaktperson */}
+        {(m.koen || m.postnummer || m.kontaktperson) && (
+          <div style={{ background: '#fff', borderRadius: SoS.r.lg, padding: 16,
+            border: `1px solid ${SoS.lineSoft}` }}>
+            <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+              color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10 }}>
+              Stamoplysninger
+            </div>
+            {m.koen && m.koen !== 'vil-ikke-oplyse' && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                <span style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted, width: 90 }}>Køn</span>
+                <span style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.ink }}>
+                  {{ mand: 'Mand', kvinde: 'Kvinde', 'non-binaer': 'Non-binær' }[m.koen] || m.koen}
+                </span>
+              </div>
+            )}
+            {m.postnummer && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                <span style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted, width: 90 }}>Postnummer</span>
+                <span style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.ink }}>{m.postnummer}</span>
+              </div>
+            )}
+            {m.kontaktperson && (
+              <div style={{ marginTop: m.koen || m.postnummer ? 10 : 0, paddingTop: m.koen || m.postnummer ? 10 : 0,
+                borderTop: m.koen || m.postnummer ? `1px solid ${SoS.lineSoft}` : 'none' }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginBottom: 4 }}>
+                  Kontaktperson · {
+                    { plejepersonale: 'Plejepersonale', kommunal: 'Kommunal socialrådgiver',
+                      paaroerende: 'Pårørende', ven: 'Ven / bekendt', laege: 'Læge / sygeplejerske',
+                      frivillig: 'Frivilligkoordinator', anden: 'Anden'
+                    }[m.kontaktperson.type] || m.kontaktperson.type
+                  }
+                </div>
+                {m.kontaktperson.navn && (
+                  <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>
+                    {m.kontaktperson.navn}
+                  </div>
+                )}
+                {m.kontaktperson.tlf && (
+                  <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.orange, marginTop: 4 }}>
+                    {m.kontaktperson.tlf}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Koordinator */}
         <div style={{ background: '#fff', borderRadius: SoS.r.lg, padding: 16,
           border: `1px solid ${SoS.lineSoft}` }}>
           <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
             color: SoS.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10 }}>
             Koordinator
           </div>
-          <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>{m.contact.name}</div>
-          <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginTop: 2 }}>{m.contact.role}</div>
+          <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>{m.contact && m.contact.name}</div>
+          <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginTop: 2 }}>{m.contact && m.contact.role}</div>
           <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600,
-            color: SoS.orange, marginTop: 8 }}>{m.contact.phone}</div>
+            color: SoS.orange, marginTop: 8 }}>{m.contact && m.contact.phone}</div>
         </div>
 
         {/* Seneste kontakter */}
@@ -11569,9 +11617,10 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
       const [expanded, setExpanded] = React.useState(false);
       const [version,  setVersion]  = React.useState(0);
 
-      const setOpfoelgning = (apptId, val) => {
+      const setOpfoelgning = (apptId, val, trivsel) => {
         const newList = (window.SoS_APPOINTMENTS_BUSY || []).map(a =>
-          a.id === apptId ? { ...a, raadgiverOpfoelgning: val } : a
+          a.id === apptId ? { ...a, raadgiverOpfoelgning: val,
+            brobyggerTrivsel: trivsel || a.brobyggerTrivsel || null } : a
         );
         window.SoS_APPOINTMENTS_BUSY = newList;
         if (window.SoS_STORE) window.SoS_STORE.save('appointments', newList);
@@ -11637,7 +11686,26 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
                         {log.note ? ` · "${log.note}"` : ''}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, alignItems: 'flex-end' }}>
+                      {/* Trivsel-signal */}
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <span style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted, marginRight: 2 }}>BB:</span>
+                        {[
+                          { id: 'engageret',   emoji: '💪', label: 'Engageret' },
+                          { id: 'neutral',     emoji: '😐', label: 'Neutral' },
+                          { id: 'overbelastet',emoji: '😔', label: 'Overbelastet' },
+                        ].map(t => (
+                          <button key={t.id}
+                            onClick={() => setOpfoelgning(a.id, 'fulgt-op', t.id)}
+                            title={`Ring & notér · Brobygger virker ${t.label}`}
+                            style={{ padding: '4px 8px', background: SoS.surface,
+                              border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                              cursor: 'pointer', fontSize: 14 }}>
+                            {t.emoji}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={() => setOpfoelgning(a.id, 'fulgt-op')} style={{
                         padding: '6px 12px', background: SoS.ink, color: '#fff',
                         border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer',
@@ -11652,6 +11720,7 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
                         whiteSpace: 'nowrap' }}>
                         Ikke nødvendigt
                       </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -11667,34 +11736,53 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
       gap: 10, marginBottom: 14 }}>
       <DSCard title="Gennemførte aftaler" subtitle="12 måneder">
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 140 }}>
-          {[412, 456, 523, 578, 605, 611, 583, 524, 498, 467, 534, 602].map((v, i) => {
-            const max = 620;
-            return (
+          {(() => {
+            const now = new Date();
+            const months = Array.from({ length: 12 }, (_, i) => {
+              const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+              return { y: d.getFullYear(), m: d.getMonth() + 1,
+                lbl: ['J','F','M','A','M','J','J','A','S','O','N','D'][d.getMonth()] };
+            });
+            const appts = window.SoS_APPOINTMENTS_BUSY || [];
+            const counts = months.map(({ y, m }) =>
+              appts.filter(a => {
+                const [ay, am] = a.date.split('-').map(Number);
+                return ay === y && am === m && a.brobyggerLog && a.brobyggerLog.udfald === 'gennemfoert';
+              }).length
+            );
+            const max = Math.max(...counts, 1);
+            return counts.map((v, i) => (
               <div key={i} style={{ flex: 1, display: 'flex',
                 flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', width: '100%' }}>
-                  <div style={{ width: '100%', height: `${(v/max) * 100}%`,
+                  <div style={{ width: '100%', height: `${Math.max((v/max) * 100, 4)}%`,
                     background: i >= 9 ? SoS.accent : SoS.accent + '40',
                     borderRadius: '3px 3px 0 0' }}/>
                 </div>
                 <div style={{ fontFamily: SoS.sans, fontSize: 9, color: SoS.inkMuted }}>
-                  {['M','J','J','A','S','O','N','D','J','F','M','A'][i]}
+                  {months[i].lbl}
                 </div>
               </div>
-            );
-          })}
+            ));
+          })()}
         </div>
       </DSCard>
 
       <DSCard title="Type-fordeling" subtitle="Aktive forløb">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <TypeDonut sundhed={22} forening={31} social={41} size={90}/>
-          <div style={{ flex: 1 }}>
-            {[
-              { k: 'social', v: 41 },
-              { k: 'forening', v: 31 },
-              { k: 'sundhed', v: 22 },
-            ].map(x => {
+          {(() => {
+            const alle = Object.values(window.SoS_MENNESKER || {}).filter(m => m.status === 'aktiv');
+            const social   = alle.filter(m => m.type === 'social').length;
+            const forening = alle.filter(m => m.type === 'forening').length;
+            const sundhed  = alle.filter(m => m.type === 'sundhed').length;
+            return <>
+              <TypeDonut sundhed={sundhed} forening={forening} social={social} size={90}/>
+              <div style={{ flex: 1 }}>
+                {[
+                  { k: 'social', v: social },
+                  { k: 'forening', v: forening },
+                  { k: 'sundhed', v: sundhed },
+                ].map(x => {
               const t = SoS_TYPER[x.k];
               return (
                 <div key={x.k} style={{ display: 'flex', alignItems: 'center',
@@ -11707,7 +11795,9 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
                 </div>
               );
             })}
-          </div>
+              </div>
+            </>;
+          })()}
         </div>
       </DSCard>
     </div>
@@ -13837,6 +13927,7 @@ const DesktopRapport = () => {
 
   const RAP_TABS = [
     { id: 'rapporter',    label: 'Rapporter & eksport' },
+    { id: 'statistik',    label: 'Statistik' },
     { id: 'definitioner', label: 'Definitioner' },
   ];
 
@@ -13913,6 +14004,206 @@ const DesktopRapport = () => {
     </DSCard>
     {showExport && <ExportReport onClose={() => setShowExport(false)}/>}
     </>}
+
+    {/* ── STATISTIK-FANE ── */}
+    {rapTab === 'statistik' && (() => {
+      const appts    = window.SoS_APPOINTMENTS_BUSY || [];
+      const mns      = Object.values(window.SoS_MENNESKER || {});
+      const logged   = appts.filter(a => a.brobyggerLog);
+      const done     = logged.filter(a => a.brobyggerLog.udfald === 'gennemfoert');
+      const afbud    = logged.filter(a => a.brobyggerLog.udfald === 'afbud');
+      const udeblev  = logged.filter(a => a.brobyggerLog.udfald === 'ikke-modt');
+      const total    = logged.length || 1;
+      const afsluttede = mns.filter(m => m.status === 'afsluttet');
+      const medTrivsel = afsluttede.filter(m => m.afslutTrivsel != null);
+
+      // Udfald pct
+      const udfalds = [
+        { l: 'Gennemfaert', v: done.length, pct: Math.round(done.length/total*100), c: SoS.green },
+        { l: 'Afbud',       v: afbud.length, pct: Math.round(afbud.length/total*100), c: SoS.amber },
+        { l: 'Udeblev',     v: udeblev.length, pct: Math.round(udeblev.length/total*100), c: SoS.rose },
+      ];
+
+      // Aktivitetskategorier
+      const katCount = {};
+      appts.forEach(a => {
+        if (a.kategori) katCount[a.kategori] = (katCount[a.kategori] || 0) + 1;
+      });
+      const topKat = Object.entries(katCount)
+        .sort((a,b) => b[1]-a[1]).slice(0,6);
+
+      // Kilde-fordeling
+      const kildeCount = {};
+      mns.forEach(m => { const k = m.kilde || 'andet'; kildeCount[k] = (kildeCount[k] || 0) + 1; });
+      const kildeTotal = mns.length || 1;
+      const KILDE_LABEL = {
+        kommune: 'Kommune', hospital: 'Hospital', paarørende: 'Pårørende',
+        selv: 'Selvhenvendelse', org: 'Organisation', laege: 'Læge/klinik', andet: 'Andet'
+      };
+
+      // Årsagskoder
+      const aarsagCount = {};
+      afsluttede.forEach(m => { if (m.afslutAarsag) aarsagCount[m.afslutAarsag] = (aarsagCount[m.afslutAarsag] || 0) + 1; });
+      const AARSAG_LABEL = {
+        'maal-naaet': 'Mål nået', 'borger-onsket': 'Ønskede at stoppe',
+        'borger-netvaerk': 'Fandt eget netværk', 'borger-fraflyttet': 'Fraflyttet',
+        'ingen-fremmøde': 'Ingen fremmøde', 'kapacitet': 'Kapacitet', 'andet': 'Andet',
+      };
+
+      // Trivsel gns
+      const trivselGns = medTrivsel.length
+        ? (medTrivsel.reduce((s, m) => s + m.afslutTrivsel, 0) / medTrivsel.length).toFixed(1)
+        : null;
+
+      // Køn-fordeling
+      const koenCount = {};
+      mns.forEach(m => { const k = m.koen || 'uoplyst'; koenCount[k] = (koenCount[k] || 0) + 1; });
+      const KOEN_LABEL = { mand: 'Mand', kvinde: 'Kvinde', 'non-binaer': 'Non-binær', 'vil-ikke-oplyse': 'Ønsker ikke', uoplyst: 'Ikke registreret' };
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Udfald + trivsel side om side */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <DSCard title="Udfald" subtitle={`${logged.length} registrerede aftaler`}>
+              {udfalds.map(u => (
+                <div key={u.l} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <div style={{ width: 80, fontFamily: SoS.sans, fontSize: 12, color: SoS.ink }}>{u.l}</div>
+                  <div style={{ flex: 1, height: 8, background: SoS.lineSoft, borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ width: `${u.pct}%`, height: '100%', background: u.c, borderRadius: 4 }}/>
+                  </div>
+                  <div style={{ width: 42, textAlign: 'right', fontFamily: SoS.mono, fontSize: 12, fontWeight: 700, color: u.c }}>
+                    {u.pct}%
+                  </div>
+                  <div style={{ width: 24, textAlign: 'right', fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
+                    ({u.v})
+                  </div>
+                </div>
+              ))}
+            </DSCard>
+
+            <DSCard title="Trivsel ved afslutning" subtitle={medTrivsel.length > 0 ? `${medTrivsel.length} vurderinger` : 'Ingen data endnu'}>
+              {trivselGns ? (
+                <>
+                  <div style={{ fontFamily: SoS.mono, fontSize: 36, fontWeight: 700,
+                    color: parseFloat(trivselGns) >= 4 ? SoS.green : parseFloat(trivselGns) <= 2 ? SoS.rose : SoS.amber,
+                    letterSpacing: -1, marginBottom: 6 }}>
+                    {trivselGns} <span style={{ fontSize: 14, color: SoS.inkSoft, fontWeight: 400 }}>/ 5</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[1,2,3,4,5].map(n => {
+                      const cnt = medTrivsel.filter(m => m.afslutTrivsel === n).length;
+                      return (
+                        <div key={n} style={{ flex: 1, textAlign: 'center' }}>
+                          <div style={{ height: Math.max(cnt * 8, 4), background:
+                            n <= 2 ? SoS.rose : n >= 4 ? SoS.green : SoS.amber,
+                            borderRadius: '2px 2px 0 0', marginBottom: 4 }}/>
+                          <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted }}>{n}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted,
+                  textAlign: 'center', padding: '16px 0' }}>
+                  Registreres ved afslutning af forløb
+                </div>
+              )}
+            </DSCard>
+          </div>
+
+          {/* Aktivitetskategorier + kilde */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <DSCard title="Aktivitetskategorier" subtitle="Top 6">
+              {topKat.length === 0 ? (
+                <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted,
+                  textAlign: 'center', padding: '16px 0' }}>Ingen kategorier registreret endnu</div>
+              ) : topKat.map(([k, v], i) => {
+                const maxKat = topKat[0][1] || 1;
+                const AKTIVITET_LABEL = (window.AKTIVITET_KATEGORIER && window.AKTIVITET_KATEGORIER[k])
+                  ? window.AKTIVITET_KATEGORIER[k].label : k;
+                return (
+                  <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div style={{ width: 90, fontFamily: SoS.sans, fontSize: 11, color: SoS.ink,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {AKTIVITET_LABEL}
+                    </div>
+                    <div style={{ flex: 1, height: 6, background: SoS.lineSoft, borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${(v/maxKat)*100}%`, height: '100%',
+                        background: SoS.accent, borderRadius: 3 }}/>
+                    </div>
+                    <div style={{ width: 24, textAlign: 'right', fontFamily: SoS.mono, fontSize: 11,
+                      fontWeight: 600, color: SoS.inkMuted }}>{v}</div>
+                  </div>
+                );
+              })}
+            </DSCard>
+
+            <DSCard title="Henvisningskanal">
+              {Object.entries(kildeCount).sort((a,b)=>b[1]-a[1]).map(([k,v]) => (
+                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <div style={{ width: 100, fontFamily: SoS.sans, fontSize: 11, color: SoS.ink }}>
+                    {KILDE_LABEL[k] || k}
+                  </div>
+                  <div style={{ flex: 1, height: 6, background: SoS.lineSoft, borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ width: `${(v/kildeTotal)*100}%`, height: '100%',
+                      background: SoS.sky, borderRadius: 3 }}/>
+                  </div>
+                  <div style={{ width: 32, textAlign: 'right', fontFamily: SoS.mono, fontSize: 11,
+                    fontWeight: 600, color: SoS.inkMuted }}>
+                    {Math.round(v/kildeTotal*100)}%
+                  </div>
+                </div>
+              ))}
+            </DSCard>
+          </div>
+
+          {/* Årsagskoder + køn */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <DSCard title="Afslutningsårsager" subtitle={`${afsluttede.length} afsluttede forløb`}>
+              {afsluttede.length === 0 ? (
+                <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted,
+                  textAlign: 'center', padding: '16px 0' }}>Ingen afsluttede forløb endnu</div>
+              ) : Object.entries(aarsagCount).sort((a,b)=>b[1]-a[1]).map(([k,v]) => {
+                const maxA = Math.max(...Object.values(aarsagCount), 1);
+                const isPositiv = k === 'maal-naaet' || k === 'borger-netvaerk';
+                return (
+                  <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div style={{ width: 110, fontFamily: SoS.sans, fontSize: 11, color: SoS.ink,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {AARSAG_LABEL[k] || k}
+                    </div>
+                    <div style={{ flex: 1, height: 6, background: SoS.lineSoft, borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${(v/maxA)*100}%`, height: '100%',
+                        background: isPositiv ? SoS.green : SoS.inkMuted, borderRadius: 3 }}/>
+                    </div>
+                    <div style={{ width: 20, textAlign: 'right', fontFamily: SoS.mono, fontSize: 11,
+                      fontWeight: 600, color: SoS.inkMuted }}>{v}</div>
+                  </div>
+                );
+              })}
+            </DSCard>
+
+            <DSCard title="Køn" subtitle={`${mns.length} registrerede mennesker`}>
+              {Object.entries(koenCount).sort((a,b)=>b[1]-a[1]).map(([k,v]) => (
+                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <div style={{ width: 120, fontFamily: SoS.sans, fontSize: 11, color: SoS.ink }}>
+                    {KOEN_LABEL[k] || k}
+                  </div>
+                  <div style={{ flex: 1, height: 6, background: SoS.lineSoft, borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ width: `${(v/kildeTotal)*100}%`, height: '100%',
+                      background: SoS.sage, borderRadius: 3 }}/>
+                  </div>
+                  <div style={{ width: 32, textAlign: 'right', fontFamily: SoS.mono, fontSize: 11,
+                    fontWeight: 600, color: SoS.inkMuted }}>{v}</div>
+                </div>
+              ))}
+            </DSCard>
+          </div>
+        </div>
+      );
+    })()}
 
     {/* ── DEFINITIONER-FANE ── */}
     {rapTab === 'definitioner' && (
