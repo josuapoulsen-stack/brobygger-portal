@@ -2225,6 +2225,17 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
     return 'God aften';
   })();
 
+  // Milestone smiley: vis efter 5. gennemfærte aftale, dimissibelt
+  const [milestoneDismissed, setMilestoneDismissed] = React.useState(
+    () => !!localStorage.getItem('sos_milestone_' + (user?.id || 'x') + '_5')
+  );
+  const milestoneSmiley = React.useMemo(() => {
+    if (milestoneDismissed) return false;
+    const done = (window.SoS_APPOINTMENTS_BUSY || [])
+      .filter(a => a.brobyggerLog && a.brobyggerLog.udfald === 'gennemfoert').length;
+    return done >= 5 && done < 10;
+  }, [apptVersion, milestoneDismissed]);
+
   const monthStats = (() => {
     const apptCount = appointments.length;
     const uniqueM = new Set(appointments.map(a => a.menneskeId)).size;
@@ -2286,6 +2297,50 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
         <SectionHead title={variant === 'new' ? 'Din rejse' : 'Denne måned'} />
       </div>
       <MonthChips data={monthStats} />
+
+      {milestoneSmiley && (
+        <div style={{ margin: '0 20px 16px', borderRadius: SoS.r.lg, padding: '16px 18px',
+          background: SoS.sageSoft, border: `1px solid ${SoS.sage}30`,
+          display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+          <div style={{ fontSize: 28, lineHeight: 1 }}>🌟</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 700, color: SoS.ink, marginBottom: 3 }}>
+              Tillykke — 5 gennemfærte aftaler!
+            </div>
+            <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginBottom: 12,
+              lineHeight: 1.45 }}>
+              Godt gået. Hvordan oplever du det at være brobygger?
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {[
+                { id: 'godt',    label: '😊  Det går godt',    color: SoS.green },
+                { id: 'ok',      label: '😐  Det går okay',    color: SoS.amber },
+                { id: 'svaert',  label: '😓  Det er svært',    color: SoS.rose },
+              ].map(s => (
+                <button key={s.id}
+                  onClick={() => {
+                    localStorage.setItem('sos_milestone_' + (user?.id || 'x') + '_5',
+                      JSON.stringify({ svar: s.id, dato: new Date().toISOString() }));
+                    setMilestoneDismissed(true);
+                  }}
+                  style={{ flex: 1, padding: '9px 6px', borderRadius: SoS.r.md, cursor: 'pointer',
+                    fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                    background: '#fff', border: `1.5px solid ${SoS.line}`, color: SoS.ink }}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => {
+                localStorage.setItem('sos_milestone_' + (user?.id || 'x') + '_5', 'dismissed');
+                setMilestoneDismissed(true);
+              }}
+              style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
+              Spring over
+            </button>
+          </div>
+        </div>
+      )}
 
       {variant === 'new' && (
         <div style={{ margin: '0 20px 20px', borderRadius: SoS.r.lg, padding: 18,
@@ -2649,7 +2704,7 @@ const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift }) => {
                   Rådighed meldt!
                 </div>
                 <div style={{ fontFamily: SoS.sans, fontSize: 14, color: SoS.inkSoft, marginBottom: 24 }}>
-                  Koordinatoren kan nu matche dig med en borger {selected ? 'd. ' + selected.split('-').reverse().join('/') : 'denne dag'}.
+                  Koordinatoren kan nu matche dig med et menneske {selected ? 'd. ' + selected.split('-').reverse().join('/') : 'denne dag'}.
                 </div>
                 <Button full onClick={() => { setAddShiftSheet(false); setAddShiftDone(false); }}>Luk</Button>
               </div>
@@ -2921,13 +2976,13 @@ const AppointmentDetailScreen = ({ appt, onBack, onComplete }) => {
                 menneske.mobilOptOut
                   ? <InfoRow icon="phone" label="Mobilkontakt" value={
                       <span style={{ color: SoS.inkMuted, fontStyle: 'italic' }}>
-                        Borgeren ønsker ikke mobilkontakt – kontakt via koordinator
+                        Mennesket ønsker ikke mobilkontakt – kontakt via koordinator
                       </span>
                     } />
                   : menneske.mobil
-                    ? <InfoRow icon="phone" label="Mobil (borger)" value={menneske.mobil}
+                    ? <InfoRow icon="phone" label="Mobil" value={menneske.mobil}
                         action={<Icon name="phone" size={16} color={SoS.orange} />} />
-                    : <InfoRow icon="phone" label="Mobil (borger)" value={
+                    : <InfoRow icon="phone" label="Mobil" value={
                         <span style={{ color: SoS.rose, fontStyle: 'italic' }}>Ikke registreret</span>
                       } />
               )}
@@ -2935,13 +2990,13 @@ const AppointmentDetailScreen = ({ appt, onBack, onComplete }) => {
                 menneske.mobilOptOut
                   ? <InfoRow icon="phone" label="Mobilkontakt" value={
                       <span style={{ color: SoS.inkMuted, fontStyle: 'italic' }}>
-                        Borgeren ønsker ikke mobilkontakt – kontakt via koordinator
+                        Mennesket ønsker ikke mobilkontakt – kontakt via koordinator
                       </span>
                     } />
                   : menneske.mobil
-                    ? <InfoRow icon="phone" label="Mobil (borger)" value={menneske.mobil}
+                    ? <InfoRow icon="phone" label="Mobil" value={menneske.mobil}
                         action={<Icon name="phone" size={16} color={SoS.orange} />} />
-                    : <InfoRow icon="phone" label="Mobil (borger)" value={
+                    : <InfoRow icon="phone" label="Mobil" value={
                         <span style={{ color: SoS.rose, fontStyle: 'italic' }}>Ikke registreret</span>
                       } />
               )}
@@ -5248,7 +5303,7 @@ const SoS_THREADS = [
     last: 'Aftalen er bekræftet — glæder mig!', time: '22. apr', unread: 0, fromBrobygger: true },
   // Urgent-eksempel (koordinator modtager vigtig besked fra brobygger)
   { id: 't-9', withName: 'Lise Nygaard', withRole: 'Brobygger · aktiv', avatar: 'LN', bg: '#D64545',
-    last: 'VIGTIGT: Borger indlagt i dag', time: '09:14', unread: 1, fromBrobygger: true, urgent: true },
+    last: 'VIGTIGT: Menneske indlagt i dag', time: '09:14', unread: 1, fromBrobygger: true, urgent: true },
 ];
 
 const SoS_MESSAGES = [
@@ -5266,7 +5321,7 @@ const SoS_TEMPLATES = [
   { id: 'noter', emoji: '📋', label: 'Husk at notere',
     text: 'Husk at udfylde en registrering efter din næste aftale. Det tager 2 minutter og er vigtigt for vores dokumentation.' },
   { id: 'afbud', emoji: '📞', label: 'Meld afbud i tid',
-    text: 'Husk altid at melde afbud til din koordinator senest 24 timer før en planlagt aftale, så vi kan underrette borgeren i god tid.' },
+    text: 'Husk altid at melde afbud til din koordinator senest 24 timer før en planlagt aftale, så vi kan underrette mennesket i god tid.' },
   { id: 'info', emoji: '📅', label: 'Infomøde',
     text: 'Vi holder infomøde for brobyggere snart. Dato og program følger — sæt allerede et kryds i kalenderen!' },
   { id: 'ros', emoji: '⭐', label: 'Tak og ros',
@@ -5805,7 +5860,7 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate }) =>
         <Icon name="lock" size={16} color={SoS.orangeDeep}/>
         <div style={{ flex: 1, fontFamily: SoS.sans, fontSize: 11,
           color: SoS.orangeDeep, lineHeight: 1.5 }}>
-          Al kommunikation til borgere sker via koordinator.
+          Al kommunikation til mennesker sker via koordinator.
         </div>
       </div>
     )}
@@ -7972,20 +8027,41 @@ const MenneskeTimelineInline = ({ m }) => {
 const AfslutForloebModal = ({ menneske: m, onClose, onSaved }) => {
   const AARSAGER = [
     { id: 'maal-naaet',       label: 'Mål nået / naturlig afslutning' },
-    { id: 'borger-onsket',    label: 'Borger ønsker at stoppe' },
-    { id: 'borger-netvaerk',  label: 'Borger har fundet eget netværk' },
-    { id: 'borger-fraflyttet',label: 'Borger fraflyttet' },
+    { id: 'borger-onsket',    label: 'Mennesket ønsker at stoppe' },
+    { id: 'borger-netvaerk',  label: 'Mennesket har fundet eget netværk' },
+    { id: 'borger-fraflyttet',label: 'Mennesket fraflyttet' },
     { id: 'ingen-fremmøde',   label: 'Ingen fremmøde / kontakt mistet' },
     { id: 'kapacitet',        label: 'Kapacitetsmæssige årsager' },
     { id: 'andet',            label: 'Andet' },
   ];
-  const [aarsag, setAarsag] = React.useState('');
-  const [note,   setNote]   = React.useState('');
+  const [aarsag,  setAarsag]  = React.useState('');
+  const [note,    setNote]    = React.useState('');
+  const [trivsel, setTrivsel] = React.useState(null); // 1–5 rådgiverens vurdering
+  const [outcome, setOutcome] = React.useState({}); // { key: 'ja'|'nej'|'ved-ikke' }
+
+  // Typespecifikke outcome-spørgsmål
+  const OUTCOME_SPM = m.type === 'sundhed' ? [
+    { id: 'mod-sundhed',   label: 'Mennesket virker mere trygt ved at navigere sundhedssystemet' },
+    { id: 'selvstaendigt', label: 'Mennesket fortsætter sandsynligvis kontakten med sundhedsvæsenet selv' },
+  ] : [
+    { id: 'sociale-rel',  label: 'Mennesket har fået nye sociale relationer' },
+    { id: 'forbundet',    label: 'Mennesket virker mere socialt forbundet end ved opstart' },
+  ];
+  const SVAR = ['ja', 'nej', 'ved-ikke'];
+  const SVAR_LABEL = { 'ja': 'Ja', 'nej': 'Nej', 'ved-ikke': 'Ved ikke' };
+  const SVAR_COLOR = { 'ja': SoS.green, 'nej': SoS.rose, 'ved-ikke': SoS.inkMuted };
 
   const handleSave = () => {
     if (!aarsag) return;
     const updated = { ...(window.SoS_MENNESKER || {}) };
-    updated[m.id] = { ...m, status: 'afsluttet', afsluttetAt: new Date().toISOString(), afslutAarsag: aarsag, afslutNote: note || null };
+    updated[m.id] = { ...m,
+      status: 'afsluttet',
+      afsluttetAt:   new Date().toISOString(),
+      afslutAarsag:  aarsag,
+      afslutNote:    note || null,
+      afslutTrivsel: trivsel,
+      afslutOutcome: Object.keys(outcome).length ? outcome : null,
+    };
     window.SoS_MENNESKER = updated;
     window.SoS_STORE.save('mennesker', updated);
     onSaved && onSaved();
@@ -8024,6 +8100,59 @@ const AfslutForloebModal = ({ menneske: m, onClose, onSaved }) => {
           style={{ width: '100%', padding: '10px 12px', borderRadius: SoS.r.md, border: `1px solid ${SoS.line}`,
             fontFamily: SoS.sans, fontSize: 13, resize: 'none', height: 72, boxSizing: 'border-box',
             background: SoS.cream, color: SoS.ink, marginBottom: 20 }}/>
+
+        {/* Typespecifikke outcome-spørgsmål */}
+        <div style={{ borderTop: `1px solid ${SoS.lineSoft}`, paddingTop: 16, marginBottom: 16 }}>
+          <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600, color: SoS.inkMuted,
+            letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>
+            Rådgiverens vurdering ved afslutning
+          </div>
+
+          {/* Outcome checkboxes */}
+          {OUTCOME_SPM.map(spm => (
+            <div key={spm.id} style={{ marginBottom: 12 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.ink, marginBottom: 6,
+                lineHeight: 1.4 }}>{spm.label}</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {SVAR.map(s => (
+                  <button key={s} onClick={() => setOutcome(o => ({ ...o, [spm.id]: o[spm.id] === s ? undefined : s }))}
+                    style={{ padding: '5px 12px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                      fontFamily: SoS.sans, fontSize: 12,
+                      background: outcome[spm.id] === s ? SVAR_COLOR[s] + '18' : '#fff',
+                      border: `1.5px solid ${outcome[spm.id] === s ? SVAR_COLOR[s] : SoS.line}`,
+                      color: outcome[spm.id] === s ? SVAR_COLOR[s] : SoS.inkSoft,
+                      fontWeight: outcome[spm.id] === s ? 600 : 400 }}>
+                    {SVAR_LABEL[s]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Trivselsvurdering 1–5 */}
+          <div style={{ marginTop: 4 }}>
+            <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.ink, marginBottom: 8 }}>
+              Trivsel ved afslutning <span style={{ color: SoS.inkMuted }}>(1 = meget lav · 5 = meget høj)</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[1,2,3,4,5].map(n => (
+                <button key={n} onClick={() => setTrivsel(trivsel === n ? null : n)}
+                  style={{ width: 40, height: 40, borderRadius: SoS.r.md, cursor: 'pointer',
+                    fontFamily: SoS.sans, fontSize: 15, fontWeight: 700,
+                    background: trivsel === n
+                      ? (n <= 2 ? SoS.rose : n >= 4 ? SoS.green : SoS.amber)
+                      : SoS.creamDeep,
+                    border: `2px solid ${trivsel === n
+                      ? (n <= 2 ? SoS.rose : n >= 4 ? SoS.green : SoS.amber)
+                      : SoS.line}`,
+                    color: trivsel === n ? '#fff' : SoS.inkMuted }}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose}
             style={{ flex: 1, padding: '11px 0', borderRadius: SoS.r.md, border: `1px solid ${SoS.line}`,
@@ -10458,7 +10587,7 @@ const AdminSettings = ({ currentHq, ownHq, onPick, onClose, isAdmin }) => {
                 </div>
                 <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft,
                   marginTop: 3, lineHeight: 1.4 }}>
-                  Kategorier og helbredsnoter i intake-flow og borger-profil.
+                  Kategorier og helbredsnoter i intake-flow og menneske-profil.
                 </div>
               </div>
               <button
@@ -14005,7 +14134,7 @@ const DesktopRapport = () => {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
             {[
-              { label: '1 følgeskab', sublabel: 'Enkelt-forløb', desc: 'Borger er nået til følgeskab-niveau. Tæller i SROI, men indgår ikke i fler-aftaleforløb.', color: '#E87A3E' },
+              { label: '1 følgeskab', sublabel: 'Enkelt-forløb', desc: 'Mennesket er nået til følgeskab-niveau. Tæller i SROI, men indgår ikke i fler-aftaleforløb.', color: '#E87A3E' },
               { label: '2–3 følgeskaber', sublabel: 'Fler-aftaleforløb', desc: 'Vedvarende kontakt. Primær SROI-population for intensitetsanalyse.', color: '#D64545' },
               { label: '4+ følgeskaber', sublabel: 'Intensivt forløb', desc: 'Højintensivt forløb. Rapporteres separat som højeste SROI-kategori.', color: '#9B2335' },
             ].map((k, i) => (
@@ -14474,6 +14603,11 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
   const canNext2 = selectedBehov.length > 0 || !!type;
   const [tidspraef, setTidspraef] = React.useState(null); // 'morgen','formiddag','eftermiddag','aften','fleksibel'
   const [frekvens, setFrekvens]   = React.useState(null); // 'ugentlig','hver14','maanedlig','variabel'
+  const [koen,        setKoen]        = React.useState(null);
+  const [postnummer,  setPostnummer]  = React.useState('');
+  const [kpType,      setKpType]      = React.useState(null);
+  const [kpNavn,      setKpNavn]      = React.useState('');
+  const [kpTlf,       setKpTlf]       = React.useState('');
   const canFinish = consent;
 
   const toggleBehov = (b) =>
@@ -14498,12 +14632,15 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
       registeredAt: new Date().toISOString(),
       createdAt:    new Date().toISOString().split('T')[0],
       initials:     (form.firstName.trim()[0] || '') + (form.lastName.trim()[0] || ''),
-      praeferencer: { tidspunkt: tidspraef, frekvens },
-      contact:      { name: '', role: 'Koordinator', phone: '' },
-      mobilOptOut:  false,
-      email:        null,
-      consentAt:    new Date().toISOString(),
-      brobyggerId:  null,
+      praeferencer:  { tidspunkt: tidspraef, frekvens },
+      koen:          koen || null,
+      postnummer:    postnummer.trim() || null,
+      contact:       { name: '', role: 'Koordinator', phone: '' },
+      kontaktperson: kpType ? { type: kpType, navn: kpNavn.trim(), tlf: kpTlf.trim() } : null,
+      mobilOptOut:   false,
+      email:         null,
+      consentAt:     new Date().toISOString(),
+      brobyggerId:   null,
     };
     const updated = { ...(window.SoS_MENNESKER || {}), [id]: newPerson };
     window.SoS_MENNESKER = updated;
@@ -14734,6 +14871,81 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
                 )}
               </div>
             ))}
+
+            {/* Køn */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink, marginBottom: 6 }}>
+                Køn <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, fontWeight: 400 }}>— valgfri</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  { id: 'mand',            label: 'Mand' },
+                  { id: 'kvinde',          label: 'Kvinde' },
+                  { id: 'non-binaer',      label: 'Non-binær' },
+                  { id: 'vil-ikke-oplyse', label: 'Ønsker ikke at oplyse' },
+                ].map(k => (
+                  <button key={k.id} onClick={() => setKoen(koen === k.id ? null : k.id)}
+                    style={{ padding: '8px 14px', borderRadius: SoS.r.md, cursor: 'pointer',
+                      fontFamily: SoS.sans, fontSize: 13,
+                      background: koen === k.id ? SoS.accent + '15' : '#fff',
+                      border: `2px solid ${koen === k.id ? SoS.accent : SoS.line}`,
+                      color: koen === k.id ? SoS.accent : SoS.ink,
+                      fontWeight: koen === k.id ? 600 : 400 }}>
+                    {k.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Postnummer */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink, marginBottom: 6 }}>
+                Postnummer <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, fontWeight: 400 }}>— valgfri</span>
+              </div>
+              <input type="text" inputMode="numeric" maxLength={4} value={postnummer}
+                onChange={e => setPostnummer(e.target.value.replace(/\D/g,''))}
+                placeholder="f.eks. 8000"
+                style={{ ...inputStyle, width: 120 }}
+              />
+            </div>
+
+            {/* Kontaktperson */}
+            <div style={{ marginBottom: 6 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink, marginBottom: 6 }}>
+                Tilknyttet kontaktperson <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, fontWeight: 400 }}>— valgfri</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'plejepersonale', label: 'Plejepersonale' },
+                    { id: 'kommunal',       label: 'Kommunal socialrådgiver' },
+                    { id: 'paaroerende',    label: 'Pårørende' },
+                    { id: 'ven',            label: 'Ven / bekendt' },
+                    { id: 'laege',          label: 'Læge / sygeplejerske' },
+                    { id: 'frivillig',      label: 'Frivilligkoordinator' },
+                    { id: 'anden',          label: 'Anden' },
+                  ].map(t => (
+                    <button key={t.id} onClick={() => setKpType(kpType === t.id ? null : t.id)}
+                      style={{ padding: '6px 12px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                        fontFamily: SoS.sans, fontSize: 12,
+                        background: kpType === t.id ? SoS.sky + '20' : '#fff',
+                        border: `1.5px solid ${kpType === t.id ? SoS.sky : SoS.line}`,
+                        color: kpType === t.id ? SoS.sky : SoS.inkSoft,
+                        fontWeight: kpType === t.id ? 600 : 400 }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                {kpType && (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input type="text" value={kpNavn} onChange={e => setKpNavn(e.target.value)}
+                      placeholder="Navn" style={{ ...inputStyle, flex: 2 }} />
+                    <input type="tel" value={kpTlf} onChange={e => setKpTlf(e.target.value)}
+                      placeholder="Telefon" style={{ ...inputStyle, flex: 1 }} />
+                  </div>
+                )}
+              </div>
+            </div>
           </>
         )}
 
