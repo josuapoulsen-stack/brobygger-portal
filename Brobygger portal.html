@@ -2225,17 +2225,6 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
     return 'God aften';
   })();
 
-  // Milestone smiley: vis efter 5. gennemfærte aftale, dimissibelt
-  const [milestoneDismissed, setMilestoneDismissed] = React.useState(
-    () => !!localStorage.getItem('sos_milestone_' + (user?.id || 'x') + '_5')
-  );
-  const milestoneSmiley = React.useMemo(() => {
-    if (milestoneDismissed) return false;
-    const done = (window.SoS_APPOINTMENTS_BUSY || [])
-      .filter(a => a.brobyggerLog && a.brobyggerLog.udfald === 'gennemfoert').length;
-    return done >= 5 && done < 10;
-  }, [apptVersion, milestoneDismissed]);
-
   const monthStats = (() => {
     const apptCount = appointments.length;
     const uniqueM = new Set(appointments.map(a => a.menneskeId)).size;
@@ -2297,50 +2286,6 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
         <SectionHead title={variant === 'new' ? 'Din rejse' : 'Denne måned'} />
       </div>
       <MonthChips data={monthStats} />
-
-      {milestoneSmiley && (
-        <div style={{ margin: '0 20px 16px', borderRadius: SoS.r.lg, padding: '16px 18px',
-          background: SoS.sageSoft, border: `1px solid ${SoS.sage}30`,
-          display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-          <div style={{ fontSize: 28, lineHeight: 1 }}>🌟</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 700, color: SoS.ink, marginBottom: 3 }}>
-              Tillykke — 5 gennemfærte aftaler!
-            </div>
-            <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginBottom: 12,
-              lineHeight: 1.45 }}>
-              Godt gået. Hvordan oplever du det at være brobygger?
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {[
-                { id: 'godt',    label: '😊  Det går godt',    color: SoS.green },
-                { id: 'ok',      label: '😐  Det går okay',    color: SoS.amber },
-                { id: 'svaert',  label: '😓  Det er svært',    color: SoS.rose },
-              ].map(s => (
-                <button key={s.id}
-                  onClick={() => {
-                    localStorage.setItem('sos_milestone_' + (user?.id || 'x') + '_5',
-                      JSON.stringify({ svar: s.id, dato: new Date().toISOString() }));
-                    setMilestoneDismissed(true);
-                  }}
-                  style={{ flex: 1, padding: '9px 6px', borderRadius: SoS.r.md, cursor: 'pointer',
-                    fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
-                    background: '#fff', border: `1.5px solid ${SoS.line}`, color: SoS.ink }}>
-                  {s.label}
-                </button>
-              ))}
-            </div>
-            <button onClick={() => {
-                localStorage.setItem('sos_milestone_' + (user?.id || 'x') + '_5', 'dismissed');
-                setMilestoneDismissed(true);
-              }}
-              style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
-              Spring over
-            </button>
-          </div>
-        </div>
-      )}
 
       {variant === 'new' && (
         <div style={{ margin: '0 20px 20px', borderRadius: SoS.r.lg, padding: 18,
