@@ -687,6 +687,8 @@ const Icon = ({ name, size = 24, color = 'currentColor', weight = 1.8 }) => {
     search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></>,
     star: <><path d="M12 3l2.8 6 6.2.8-4.5 4.2 1.2 6.2L12 17l-5.7 3.2L7.5 14 3 9.8 9.2 9z"/></>,
     more: <><circle cx="5" cy="12" r="1.5" fill={color} stroke="none"/><circle cx="12" cy="12" r="1.5" fill={color} stroke="none"/><circle cx="19" cy="12" r="1.5" fill={color} stroke="none"/></>,
+    chat: <><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2z"/></>,
+    send: <><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>,
     home: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></>,
     calendar: <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
     play: <><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16 10 8"/></>,
@@ -789,11 +791,10 @@ const SectionHead = ({ title, action, actionLabel }) => (
 // Tab bar — bottom nav
 const TabBar = ({ active, onChange, notifCount = 0 }) => {
   const tabs = [
-    { id: 'hjem', label: 'Hjem', icon: 'home' },
-    { id: 'kalender', label: 'Kalender', icon: 'calendar' },
-    { id: 'historik', label: 'Historik', icon: 'clock' },
-    { id: 'notif', label: 'Beskeder', icon: 'bell' },
-    { id: 'profil', label: 'Profil', icon: 'user' },
+    { id: 'hjem',    label: 'Hjem',      icon: 'home'     },
+    { id: 'kalender',label: 'Kalender',  icon: 'calendar' },
+    { id: 'notif',   label: 'Beskeder',  icon: 'chat'     },
+    { id: 'profil',  label: 'Profil',    icon: 'user'     },
   ];
   return (
     <div style={{
@@ -11503,7 +11504,229 @@ const DesktopGlobalSearch = ({ onClose, onNavigate }) => {
 };
 
 
-const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
+const 
+DesktopBeskeder = () => {
+  const brobyggere = (window.SoS_BROBYGGERE || []).filter(b => ['aktiv', 'ny'].includes(b.status));
+  const [valgtBB, setValgtBB] = React.useState(brobyggere[0]?.id || '');
+  const [tekst,   setTekst]   = React.useState('');
+  const [alle,    setAlle]    = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('sos_beskeder') || '[]'); } catch { return []; }
+  });
+  const bottomRef = React.useRef(null);
+
+  React.useEffect(() => {
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+  }, [valgtBB, alle.length]);
+
+  const gemBeskeder = (updated) => {
+    setAlle(updated);
+    localStorage.setItem('sos_beskeder', JSON.stringify(updated));
+  };
+
+  const sendBesked = () => {
+    const t = tekst.trim();
+    if (!t || !valgtBB) return;
+    gemBeskeder([...alle, {
+      id:    'msg-' + Date.now(),
+      fra:   'admin',
+      til:   valgtBB,
+      tekst: t,
+      sendt: new Date().toISOString(),
+      laest: false,
+    }]);
+    setTekst('');
+  };
+
+  const trad = alle
+    .filter(m => m.fra === valgtBB || m.til === valgtBB)
+    .sort((a, b) => a.sendt.localeCompare(b.sendt));
+
+  const sidsteBesked = bbId => {
+    const msgs = alle.filter(m => m.fra === bbId || m.til === bbId);
+    return msgs.sort((a, b) => b.sendt.localeCompare(a.sendt))[0] || null;
+  };
+
+  const ulaestCount = bbId =>
+    alle.filter(m => m.til === 'admin' && m.fra === bbId && !m.laest).length;
+
+  const formatTid = iso => {
+    const d = new Date(iso);
+    const today = new Date();
+    if (d.toDateString() === today.toDateString())
+      return d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+  };
+
+  const bb = brobyggere.find(b => b.id === valgtBB);
+
+  return (
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+
+      {/* ── Sidebar: brobygger-liste ─────────────────────────────────── */}
+      <div style={{ width: 260, borderRight: `1px solid ${SoS.line}`,
+        display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        <div style={{ padding: '16px 16px 12px', borderBottom: `1px solid ${SoS.line}` }}>
+          <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 700,
+            letterSpacing: 1, color: SoS.inkMuted }}>BROBYGGERE</div>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          {brobyggere.map(b => {
+            const sidst  = sidsteBesked(b.id);
+            const ulast  = ulaestCount(b.id);
+            const valgt  = valgtBB === b.id;
+            return (
+              <button key={b.id} onClick={() => setValgtBB(b.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                  padding: '12px 16px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  borderBottom: `1px solid ${SoS.lineSoft}`,
+                  background: valgt ? SoS.accent + '14' : 'transparent' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 18, background: b.bg || SoS.accent,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: SoS.sans, fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0,
+                  outline: valgt ? `2px solid ${SoS.accent}` : 'none', outlineOffset: 1 }}>
+                  {b.avatar}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+                    color: valgt ? SoS.accent : SoS.ink }}>{b.name}</div>
+                  {sidst ? (
+                    <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft,
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
+                      {sidst.fra === 'admin' ? 'Dig: ' : ''}{sidst.tekst.slice(0, 38)}
+                    </div>
+                  ) : (
+                    <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginTop: 2 }}>
+                      Ingen beskeder endnu
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                  {sidst && (
+                    <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted }}>
+                      {formatTid(sidst.sendt)}
+                    </div>
+                  )}
+                  {ulast > 0 && (
+                    <div style={{ minWidth: 18, height: 18, borderRadius: 9, background: SoS.accent,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px',
+                      fontFamily: SoS.sans, fontSize: 10, fontWeight: 700, color: '#fff' }}>
+                      {ulast}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Besked-tråd ──────────────────────────────────────────────── */}
+      {valgtBB && bb ? (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+          {/* Header */}
+          <div style={{ padding: '12px 20px', borderBottom: `1px solid ${SoS.line}`,
+            display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 16, background: bb.bg || SoS.accent,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: '#fff' }}>
+              {bb.avatar}
+            </div>
+            <div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 700, color: SoS.ink }}>
+                {bb.name}
+              </div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>
+                {bb.email || ''}{bb.mobil ? ` · ${bb.mobil}` : ''}
+              </div>
+            </div>
+          </div>
+
+          {/* Beskeder */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px',
+            display: 'flex', flexDirection: 'column', gap: 10,
+            background: SoS.creamDeep || '#F8F5F0' }}>
+            {trad.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>💬</div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 14, color: SoS.inkMuted }}>
+                  Ingen beskeder til {bb.name.split(' ')[0]} endnu.<br/>Skriv den første!
+                </div>
+              </div>
+            )}
+            {trad.map(msg => {
+              const erAdmin = msg.fra === 'admin';
+              return (
+                <div key={msg.id}
+                  style={{ display: 'flex', justifyContent: erAdmin ? 'flex-end' : 'flex-start' }}>
+                  <div style={{ maxWidth: '72%' }}>
+                    <div style={{
+                      padding: '10px 14px', lineHeight: 1.5,
+                      fontFamily: SoS.sans, fontSize: 13,
+                      background: erAdmin ? SoS.accent : '#fff',
+                      color: erAdmin ? '#fff' : SoS.ink,
+                      border: erAdmin ? 'none' : `1px solid ${SoS.line}`,
+                      borderRadius: erAdmin
+                        ? `${SoS.r.md} ${SoS.r.md} 4px ${SoS.r.md}`
+                        : `${SoS.r.md} ${SoS.r.md} ${SoS.r.md} 4px`,
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                    }}>
+                      {msg.tekst}
+                    </div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted,
+                      marginTop: 4, textAlign: erAdmin ? 'right' : 'left' }}>
+                      {formatTid(msg.sendt)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={bottomRef}/>
+          </div>
+
+          {/* Input */}
+          <div style={{ padding: '12px 20px', borderTop: `1px solid ${SoS.line}`,
+            display: 'flex', gap: 10, alignItems: 'flex-end',
+            background: SoS.paper }}>
+            <textarea
+              value={tekst}
+              onChange={e => setTekst(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBesked(); }
+              }}
+              placeholder={`Skriv til ${bb.name.split(' ')[0]}… (Enter for at sende)`}
+              rows={2}
+              style={{ flex: 1, padding: '10px 14px', border: `1px solid ${SoS.line}`,
+                borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 13,
+                color: SoS.ink, outline: 'none', resize: 'none', lineHeight: 1.45,
+                background: SoS.surface }}
+            />
+            <button onClick={sendBesked} disabled={!tekst.trim()}
+              style={{ padding: '10px 18px', borderRadius: SoS.r.md, border: 'none',
+                background: tekst.trim() ? SoS.accent : SoS.lineSoft,
+                color: tekst.trim() ? '#fff' : SoS.inkMuted,
+                fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+                cursor: tekst.trim() ? 'pointer' : 'default',
+                display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-end' }}>
+              <Icon name="send" size={14} color={tekst.trim() ? '#fff' : SoS.inkMuted} weight={2}/>
+              Send
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 12 }}>
+          <Icon name="chat" size={48} color={SoS.lineSoft} weight={1.5}/>
+          <div style={{ fontFamily: SoS.sans, fontSize: 14, color: SoS.inkMuted }}>
+            Vælg en brobygger for at se beskeder
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
   const [section, setSection] = React.useState('kalender');
   const [viewingHq, setViewingHq] = React.useState(isAdmin ? 'Alle hovedsæder' : ownHq);
   const [deskExported, setDeskExported] = React.useState(false);
@@ -11578,6 +11801,7 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
               { k: 'brobygninger', l: 'Brobygninger',       i: 'match'    },
               { k: 'brobyggere',   l: 'Brobyggere',         i: 'users'    },
               { k: 'mennesker',    l: 'Mennesker',          i: 'heart'    },
+              { k: 'beskeder',    l: 'Beskeder',           i: 'chat'    },
               ].concat(isAdmin ? [{ k: 'rapport', l: 'Rapport & eksport', i: 'note' }] : []).map(n => (
               <button key={n.k} onClick={() => setSection(n.k)} style={{
                 display: 'flex', alignItems: 'center', gap: 10, width: '100%',
@@ -11621,7 +11845,7 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
               <div style={{ fontFamily: SoS.sans, fontSize: 26, fontWeight: 700,
                 color: SoS.ink, letterSpacing: -0.5, marginTop: 2 }}>
                 {{ dashboard: 'Dashboard', brobygninger: 'Brobygninger',
-                   brobyggere: 'Brobyggere', mennesker: 'Mennesker',
+                   brobyggere: 'Brobyggere', mennesker: 'Mennesker', beskeder: 'Beskeder',
                    kalender: 'Kalender', sroi: 'Effekt & Dokumentation', rapport: 'Rapport & eksport' }[section]}
               </div>
             </div>
@@ -11651,6 +11875,7 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
           {section === 'brobyggere' && <DesktopBrobyggere initialTarget={searchTarget} onTargetConsumed={() => setSearchTarget(null)}/>}
           {section === 'mennesker' && <DesktopMennesker initialTarget={searchTarget} onTargetConsumed={() => setSearchTarget(null)}/>}
           {section === 'kalender' && <DesktopKalender/>}
+          {section === 'beskeder' && <DesktopBeskeder/>}
           {section === 'rapport' && <DesktopRapport/>}
           {showSearch && (
             <DesktopGlobalSearch
@@ -13065,7 +13290,11 @@ const DesktopApptModal = ({ initial = {}, onClose, onSave, onDelete }) => {
     status:        initial.status        || 'pending',
     kategori:      initial.kategori      || '',
     underkategori: initial.underkategori || '',
-    brobyggerNote: initial.brobyggerNote || '',
+    brobyggerNote:  initial.brobyggerNote  || '',
+    aftaleForm:    initial.aftaleForm    || 'enkelt',
+    gentagelse:    initial.gentagelse    || '',
+    fremmoedeType: initial.fremmoedeType || '',
+    aktivitetsTid: initial.aktivitetsTid || '',
   });
   const upd = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
   const selKat = form.kategori ? AKTIVITET_KATEGORIER[form.kategori] : null;
@@ -13170,6 +13399,89 @@ const DesktopApptModal = ({ initial = {}, onClose, onSave, onDelete }) => {
             <div style={labelStyle}>Mødested</div>
             <input type="text" value={form.location} onChange={upd('location')}
               placeholder="Adresse eller beskrivelse" style={inputStyle}/>
+          </div>
+
+          {/* Fremmøde */}
+          <div>
+            <div style={labelStyle}>Fremmøde</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { v: 'hjemme',    l: '🏠 Følges fra hjemmet' },
+                { v: 'sted',      l: '📍 Mødes på stedet' },
+                { v: 'brobygger', l: '🤝 Mødes hos brobygger' },
+              ].map(o => (
+                <button key={o.v}
+                  onClick={() => setForm(f => ({ ...f, fremmoedeType: f.fremmoedeType === o.v ? '' : o.v }))}
+                  style={{ padding: '6px 12px', border: `1.5px solid ${form.fremmoedeType === o.v ? SoS.accent : SoS.line}`,
+                    borderRadius: 0, background: form.fremmoedeType === o.v ? SoS.accent + '14' : SoS.surface,
+                    fontFamily: SoS.sans, fontSize: 12, cursor: 'pointer',
+                    color: form.fremmoedeType === o.v ? SoS.accent : SoS.inkSoft,
+                    fontWeight: form.fremmoedeType === o.v ? 600 : 400 }}>
+                  {o.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tidspunkt for aktiviteten */}
+          <div>
+            <div style={labelStyle}>Tidspunkt for aktiviteten</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input type="time" value={form.aktivitetsTid} onChange={upd('aktivitetsTid')}
+                style={{ ...inputStyle, width: 'auto' }}/>
+              {form.aktivitetsTid && (
+                <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>
+                  F.eks. kl. {form.aktivitetsTid} hos lægen — brobygger ankommer tidligere
+                </div>
+              )}
+            </div>
+            {!form.aktivitetsTid && (
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginTop: 4 }}>
+                Selve aftaletidspunktet (f.eks. lægetid kl. 14:30). Brobyggers ankomst sættes i Start/Slut.
+              </div>
+            )}
+          </div>
+
+          {/* Aftaleform: enkelt / gentagende */}
+          <div>
+            <div style={labelStyle}>Aftaleform</div>
+            <div style={{ display: 'flex', border: `1px solid ${SoS.line}`, borderRadius: 0, overflow: 'hidden' }}>
+              {[
+                { v: 'enkelt',     l: 'Enkelt aftale' },
+                { v: 'gentagende', l: '↻ Gentagende' },
+              ].map((o, i) => (
+                <button key={o.v}
+                  onClick={() => setForm(f => ({ ...f, aftaleForm: o.v, gentagelse: '' }))}
+                  style={{ flex: 1, padding: '8px 0', border: 'none',
+                    borderLeft: i > 0 ? `1px solid ${SoS.line}` : 'none',
+                    cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                    background: form.aftaleForm === o.v ? SoS.ink : SoS.surface,
+                    color: form.aftaleForm === o.v ? '#fff' : SoS.inkSoft }}>
+                  {o.l}
+                </button>
+              ))}
+            </div>
+            {form.aftaleForm === 'gentagende' && (
+              <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[
+                  { v: 'ugentligt',  l: 'Ugentligt' },
+                  { v: 'hver14dag',  l: 'Hver 14. dag' },
+                  { v: 'maanedligt', l: 'Månedligt' },
+                  { v: 'variabelt',  l: 'Variabelt' },
+                ].map(o => (
+                  <button key={o.v}
+                    onClick={() => setForm(f => ({ ...f, gentagelse: o.v }))}
+                    style={{ padding: '5px 12px',
+                      border: `1.5px solid ${form.gentagelse === o.v ? SoS.ink : SoS.line}`,
+                      borderRadius: 0, cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12,
+                      background: form.gentagelse === o.v ? SoS.ink : SoS.surface,
+                      color: form.gentagelse === o.v ? '#fff' : SoS.inkSoft,
+                      fontWeight: form.gentagelse === o.v ? 600 : 400 }}>
+                    {o.l}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Status */}
