@@ -168,6 +168,7 @@ const SoS_MENNESKER = {
     type: 'social',
     status: 'aktiv',
     startedAt: '2025-12-04',
+    brobyggerId: 'bb-8',
     contactCount: 18,
     completedCount: 9,
     cancelledCount: 1,
@@ -197,6 +198,7 @@ const SoS_MENNESKER = {
     type: 'forening',
     status: 'aktiv',
     startedAt: '2026-01-22',
+    brobyggerId: 'bb-3',
     contactCount: 11,
     completedCount: 5,
     cancelledCount: 0,
@@ -225,6 +227,7 @@ const SoS_MENNESKER = {
     type: 'social',
     status: 'pause',
     startedAt: '2025-09-10',
+    brobyggerId: 'bb-5',
     contactCount: 22,
     completedCount: 14,
     cancelledCount: 2,
@@ -251,6 +254,7 @@ const SoS_MENNESKER = {
     type: 'sundhed',
     status: 'aktiv',
     startedAt: '2026-03-15',
+    brobyggerId: 'bb-7',
     contactCount: 4,
     completedCount: 1,
     cancelledCount: 0,
@@ -280,6 +284,7 @@ const SoS_MENNESKER = {
     status: 'venter',
     registeredAt: '2026-04-21T09:00:00',
     matchedWith: null,
+    brobyggerId: null,
     contactCount: 0,
     needs: ['Selskab og samtale', 'Gaature'],
     health: 'Ingen kendte saerlige forhold.',
@@ -305,6 +310,7 @@ const SoS_MENNESKER = {
     status: 'venter',
     registeredAt: '2026-04-23T14:30:00',
     matchedWith: null,
+    brobyggerId: null,
     contactCount: 0,
     needs: ['Integration', 'Sproglig stoette', 'Foreningsliv'],
     health: 'Ingen saerlige forhold.',
@@ -4473,6 +4479,18 @@ const MatchingFlow = ({ onClose }) => {
     const updatedAppts = [...(window.SoS_APPOINTMENTS_BUSY || []), newAppt];
     window.SoS_APPOINTMENTS_BUSY = updatedAppts;
     window.SoS_STORE?.save('appointments', updatedAppts);
+    // Notifikation til brobygger
+    const _notifKey = 'sos_notifikationer';
+    const _notifs = JSON.parse(localStorage.getItem(_notifKey) || '[]');
+    const _bb = (window.SoS_BROBYGGERE || []).find(b => b.id === newAppt.brobyggerId);
+    const _mn = (window.SoS_MENNESKER || {})[newAppt.menneskeId];
+    if (_bb && _mn) {
+      _notifs.push({ id: 'n-' + Date.now(), type: 'ny-aftale', read: false,
+        createdAt: new Date().toISOString(),
+        text: `Ny aftale: ${_mn.firstName} ${_mn.lastName} d. ${newAppt.date} kl. ${newAppt.start}`,
+        brobyggerId: newAppt.brobyggerId });
+      localStorage.setItem(_notifKey, JSON.stringify(_notifs));
+    }
 
     setDone(true);
   };
@@ -7951,13 +7969,166 @@ const MenneskeTimelineInline = ({ m }) => {
   );
 };
 
-const MenneskeDetailPanel = ({ menneske: m, onClose }) => {
+const AfslutForloebModal = ({ menneske: m, onClose, onSaved }) => {
+  const AARSAGER = [
+    { id: 'maal-naaet',       label: 'Mål nået / naturlig afslutning' },
+    { id: 'borger-onsket',    label: 'Borger ønsker at stoppe' },
+    { id: 'borger-netvaerk',  label: 'Borger har fundet eget netværk' },
+    { id: 'borger-fraflyttet',label: 'Borger fraflyttet' },
+    { id: 'ingen-fremmøde',   label: 'Ingen fremmøde / kontakt mistet' },
+    { id: 'kapacitet',        label: 'Kapacitetsmæssige årsager' },
+    { id: 'andet',            label: 'Andet' },
+  ];
+  const [aarsag, setAarsag] = React.useState('');
+  const [note,   setNote]   = React.useState('');
+
+  const handleSave = () => {
+    if (!aarsag) return;
+    const updated = { ...(window.SoS_MENNESKER || {}) };
+    updated[m.id] = { ...m, status: 'afsluttet', afsluttetAt: new Date().toISOString(), afslutAarsag: aarsag, afslutNote: note || null };
+    window.SoS_MENNESKER = updated;
+    window.SoS_STORE.save('mennesker', updated);
+    onSaved && onSaved();
+    onClose();
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: SoS.paper, borderRadius: SoS.r.lg, width: '100%', maxWidth: 420,
+        padding: 28, boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+        <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700, color: SoS.ink, marginBottom: 4 }}>
+          Afslut forløb
+        </div>
+        <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginBottom: 20 }}>
+          {m.firstName} {m.lastName} · {m.age} år
+        </div>
+        <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600, color: SoS.inkMuted,
+          letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Årsag til afslutning *</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+          {AARSAGER.map(a => (
+            <button key={a.id} onClick={() => setAarsag(a.id)}
+              style={{ textAlign: 'left', padding: '10px 14px', borderRadius: SoS.r.md,
+                fontFamily: SoS.sans, fontSize: 13, cursor: 'pointer',
+                border: `2px solid ${aarsag === a.id ? SoS.accent : SoS.line}`,
+                background: aarsag === a.id ? SoS.accent + '15' : SoS.paper,
+                color: aarsag === a.id ? SoS.accent : SoS.ink, fontWeight: aarsag === a.id ? 600 : 400 }}>
+              {a.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600, color: SoS.inkMuted,
+          letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>Note (valgfri)</div>
+        <textarea value={note} onChange={e => setNote(e.target.value)} maxLength={200}
+          placeholder="Kort note om afslutningen..."
+          style={{ width: '100%', padding: '10px 12px', borderRadius: SoS.r.md, border: `1px solid ${SoS.line}`,
+            fontFamily: SoS.sans, fontSize: 13, resize: 'none', height: 72, boxSizing: 'border-box',
+            background: SoS.cream, color: SoS.ink, marginBottom: 20 }}/>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onClose}
+            style={{ flex: 1, padding: '11px 0', borderRadius: SoS.r.md, border: `1px solid ${SoS.line}`,
+              background: 'none', fontFamily: SoS.sans, fontSize: 14, color: SoS.inkSoft, cursor: 'pointer' }}>
+            Annuller
+          </button>
+          <button onClick={handleSave} disabled={!aarsag}
+            style={{ flex: 2, padding: '11px 0', borderRadius: SoS.r.md, border: 'none',
+              background: aarsag ? SoS.accent : SoS.lineSoft, fontFamily: SoS.sans, fontSize: 14,
+              fontWeight: 600, color: aarsag ? '#fff' : SoS.inkMuted, cursor: aarsag ? 'pointer' : 'default' }}>
+            Afslut forløb
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
+  const brobyggere = (window.SoS_BROBYGGERE || []).filter(b => b.status === 'aktiv');
+  const [valgt, setValgt] = React.useState('');
+
+  const handleSave = () => {
+    if (!valgt) return;
+    const updated = { ...(window.SoS_MENNESKER || {}) };
+    updated[m.id] = { ...m, brobyggerId: valgt, status: 'aktiv', matchedAt: new Date().toISOString() };
+    window.SoS_MENNESKER = updated;
+    window.SoS_STORE.save('mennesker', updated);
+    onSaved && onSaved();
+    onClose();
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: SoS.paper, borderRadius: SoS.r.lg, width: '100%', maxWidth: 400,
+        padding: 28, boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+        <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700, color: SoS.ink, marginBottom: 4 }}>
+          Tilknyt brobygger
+        </div>
+        <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginBottom: 20 }}>
+          {m.firstName} {m.lastName} afventer match
+        </div>
+        {brobyggere.length === 0 && (
+          <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted, textAlign: 'center', padding: '20px 0' }}>
+            Ingen aktive brobyggere med ledig kapacitet
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20, maxHeight: 280, overflowY: 'auto' }}>
+          {brobyggere.map(b => {
+            const myAppts = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => a.brobyggerId === b.id);
+            const aktive = myAppts.filter(a => a.status === 'confirmed').length;
+            return (
+              <button key={b.id} onClick={() => setValgt(b.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
+                  padding: '10px 14px', borderRadius: SoS.r.md, cursor: 'pointer',
+                  border: `2px solid ${valgt === b.id ? SoS.accent : SoS.line}`,
+                  background: valgt === b.id ? SoS.accent + '12' : SoS.paper }}>
+                <div style={{ width: 36, height: 36, borderRadius: 18, background: b.bg || SoS.accent,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: SoS.sans, fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                  {b.avatar}
+                </div>
+                <div>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600,
+                    color: valgt === b.id ? SoS.accent : SoS.ink }}>{b.name}</div>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft, marginTop: 1 }}>
+                    {aktive} aktive aftaler
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onClose}
+            style={{ flex: 1, padding: '11px 0', borderRadius: SoS.r.md, border: `1px solid ${SoS.line}`,
+              background: 'none', fontFamily: SoS.sans, fontSize: 14, color: SoS.inkSoft, cursor: 'pointer' }}>
+            Annuller
+          </button>
+          <button onClick={handleSave} disabled={!valgt}
+            style={{ flex: 2, padding: '11px 0', borderRadius: SoS.r.md, border: 'none',
+              background: valgt ? SoS.accent : SoS.lineSoft, fontFamily: SoS.sans, fontSize: 14,
+              fontWeight: 600, color: valgt ? '#fff' : SoS.inkMuted, cursor: valgt ? 'pointer' : 'default' }}>
+            Tilknyt brobygger
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+MenneskeDetailPanel = ({ menneske: m, onClose }) => {
   const type = SoS_TYPER[m.type];
-  const [addOpen, setAddOpen]       = React.useState(false);
-  const [refreshKey, setRefreshKey] = React.useState(0);
-  const [activeTab, setActiveTab]   = React.useState(0);
+  const [addOpen,     setAddOpen]     = React.useState(false);
+  const [refreshKey,  setRefreshKey]  = React.useState(0);
+  const [activeTab,   setActiveTab]   = React.useState(0);
+  const [afslutOpen,  setAfslutOpen]  = React.useState(false);
+  const [tilknytOpen, setTilknytOpen] = React.useState(false);
   const stats       = React.useMemo(() => calcMenneskeStats(m.id), [m.id, refreshKey]);
   const niveauMeta  = INDSATS_META[stats.indsatsniveau];
+  const tilknyttetBB = React.useMemo(() => {
+    if (!m.brobyggerId) return null;
+    return (window.SoS_BROBYGGERE || []).find(b => b.id === m.brobyggerId) || null;
+  }, [m.brobyggerId, refreshKey]);
   const recentKontakter = [...stats.alle]
     .sort((a, b) => b.dato.localeCompare(a.dato))
     .slice(0, 4);
@@ -8195,6 +8366,21 @@ const MenneskeDetailPanel = ({ menneske: m, onClose }) => {
         )}
 
         {/* Tilfoej kontakt/aftale */}
+        {(m.status === 'afventer' || m.status === 'venter') && (
+          <Button full onClick={() => setTilknytOpen(true)}
+            icon={<Icon name="link" size={16} color="#fff" weight={2.5}/>}
+            style={{ background: SoS.green }}>
+            Tilknyt brobygger
+          </Button>
+        )}
+
+        {m.status !== 'afsluttet' && (
+          <Button full onClick={() => setAfslutOpen(true)} variant="secondary"
+            style={{ color: SoS.rose, borderColor: SoS.rose }}>
+            Afslut forløb…
+          </Button>
+        )}
+
         <Button full onClick={() => setAddOpen(true)}
           icon={<Icon name="plus" size={16} color="#fff" weight={2.5}/>}>
           Tilføj kontakt/aftale
@@ -8203,6 +8389,9 @@ const MenneskeDetailPanel = ({ menneske: m, onClose }) => {
         <Button full onClick={onClose} variant="secondary">Luk</Button>
       </div>
       )}
+
+      {afslutOpen && <AfslutForloebModal menneske={m} onClose={() => setAfslutOpen(false)} onSaved={() => { setRefreshKey(k => k+1); onClose(); }}/>}
+      {tilknytOpen && <TilknytBrobyggerModal menneske={m} onClose={() => setTilknytOpen(false)} onSaved={() => setRefreshKey(k => k+1)}/>}
     </div>
   );
 };
@@ -11522,29 +11711,41 @@ const DesktopDashboard = ({ viewingHq, isAdmin }) => (
           </tr>
         </thead>
         <tbody>
-          {[
-            { t: 'I dag 11:45', bb: 'Maja H.', br: 'Ingrid N. (78)', ty: 'social', s: 'Gennemført', d: '1t 30m' },
-            { t: 'I dag 10:22', bb: 'Søren N.', br: 'Peter J. (56)', ty: 'sundhed', s: 'Gennemført', d: '45m' },
-            { t: 'I går 15:10', bb: 'Fatima E.', br: 'Ahmad K. (34)', ty: 'forening', s: 'Gennemført', d: '1t' },
-            { t: 'I går 14:00', bb: 'Lise A.', br: 'Birthe S. (82)', ty: 'social', s: 'Aflyst', d: '—' },
-            { t: 'I går 11:30', bb: 'Anja P.', br: 'Karim O. (42)', ty: 'forening', s: 'Gennemført', d: '1t 15m' },
-            { t: 'Ons 09:00', bb: 'Mikkel H.', br: 'Anne L. (71)', ty: 'sundhed', s: 'Gennemført', d: '2t' },
-          ].map((r, i) => {
-            const t = SoS_TYPER[r.ty];
-            return (
-              <tr key={i} style={{ borderBottom: `1px solid ${SoS.lineSoft}` }}>
-                <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{r.t}</td>
-                <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.ink, fontWeight: 500 }}>{r.bb}</td>
-                <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.ink }}>{r.br}</td>
-                <td style={{ padding: '10px 4px' }}><Pill bg={t.soft} color={t.color}>{t.short}</Pill></td>
-                <td style={{ padding: '10px 4px' }}>
-                  <Pill bg={r.s === 'Gennemført' ? SoS.sageSoft : SoS.roseSoft}
-                    color={r.s === 'Gennemført' ? SoS.sage : SoS.rose}>{r.s}</Pill>
-                </td>
-                <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{r.d}</td>
-              </tr>
+          {(() => {
+            const myAppts = (window.SoS_APPOINTMENTS_BUSY || [])
+              .filter(a => a.brobyggerId === b.id)
+              .sort((x, y) => (y.date + y.start).localeCompare(x.date + x.start))
+              .slice(0, 8);
+            if (myAppts.length === 0) return (
+              <tr><td colSpan={5} style={{ padding: '20px 4px', textAlign: 'center',
+                fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted }}>
+                Ingen registrerede aftaler endnu
+              </td></tr>
             );
-          })}
+            return myAppts.map((a, i) => {
+              const mn = (window.SoS_MENNESKER || {})[a.menneskeId];
+              const mnLabel = mn ? `${mn.firstName} ${mn.lastName[0]}. (${mn.age})` : a.menneskeId;
+              const ty = mn ? SoS_TYPER[mn.type] : null;
+              const log = a.brobyggerLog;
+              const udfalds = { gennemfoert: 'Gennemført', afbud: 'Afbud', 'ikke-modt': 'Udeblev' };
+              const udfaldsColor = { gennemfoert: SoS.green, afbud: SoS.amber, 'ikke-modt': SoS.rose };
+              const udfaldsLabel = log ? (udfalds[log.udfald] || log.udfald) : (a.status === 'confirmed' ? 'Afventer' : 'Pending');
+              const udfaldsC = log ? (udfaldsColor[log.udfald] || SoS.inkMuted) : SoS.inkMuted;
+              const varLabel = log && log.varighed ? `${log.varighed >= 60 ? Math.floor(log.varighed/60)+'t' : ''} ${log.varighed % 60 ? (log.varighed%60)+'m' : ''}`.trim() : '—';
+              return (
+                <tr key={i} style={{ borderBottom: `1px solid ${SoS.lineSoft}` }}>
+                  <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{a.date} {a.start}</td>
+                  <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.ink }}>{mnLabel}</td>
+                  {ty && <td style={{ padding: '10px 4px' }}><Pill bg={ty.soft} color={ty.color}>{ty.short}</Pill></td>}
+                  {!ty && <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted }}>—</td>}
+                  <td style={{ padding: '10px 4px' }}>
+                    <Pill bg={log ? (udfaldsC + '22') : SoS.creamDeep} color={udfaldsC}>{udfaldsLabel}</Pill>
+                  </td>
+                  <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{varLabel}</td>
+                </tr>
+              );
+            });
+          })()}
         </tbody>
       </table>
     </DSCard>
@@ -11720,6 +11921,30 @@ const DesktopBrobygninger = () => {
   const [statusFilter, setStatusFilter] = React.useState('alle');
   const [typeFilter,   setTypeFilter]   = React.useState('alle');
 
+  const handleExportCSV = (filtered) => {
+    const rows = [['Dato','Start','Slut','Menneske','Alder','Type','Aktivitet','Sted','Status','Udfald','Varighed (min)']];
+    filtered.forEach(a => {
+      const mn = (window.SoS_MENNESKER || {})[a.menneskeId];
+      const log = a.brobyggerLog;
+      rows.push([
+        a.date, a.start, a.end,
+        mn ? `${mn.firstName} ${mn.lastName}` : a.menneskeId,
+        mn ? mn.age : '',
+        mn ? (SoS_TYPER[mn.type]?.label || mn.type) : '',
+        a.activity, a.location,
+        a.status, log ? log.udfald : '',
+        log && log.varighed ? log.varighed : '',
+      ]);
+    });
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('
+');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a'); a.href = url;
+    a.download = `brobygninger-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
   const appts = SoS_APPOINTMENTS_BUSY || [];
   const filtered = appts.filter(a => {
     const m = SoS_MENNESKER[a.menneskeId];
@@ -11768,7 +11993,7 @@ const DesktopBrobygninger = () => {
       </div>
 
       {/* Filterlinje */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted,
           letterSpacing: 0.5, textTransform: 'uppercase', fontWeight: 700 }}>Type:</span>
         {['alle', 'sundhed', 'forening', 'social'].map(f => {
@@ -11799,6 +12024,13 @@ const DesktopBrobygninger = () => {
             }}>{s === 'alle' ? 'Alle' : STATUS_LABEL[s]}</button>
           );
         })}
+        <button onClick={() => handleExportCSV(filtered)}
+          style={{ marginLeft: 'auto', padding: '5px 12px', borderRadius: SoS.r.sm,
+            background: 'none', border: `1px solid ${SoS.line}`, cursor: 'pointer',
+            fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft,
+            display: 'flex', alignItems: 'center', gap: 5 }}>
+          <Icon name="download" size={13} color={SoS.inkSoft} weight={2}/> CSV
+        </button>
       </div>
 
       {/* Aftaletabel */}
@@ -12277,6 +12509,36 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
             setRefreshKey(k => k + 1);
           }}
         />
+        {/* Tilknyttet brobygger-banner */}
+        {(() => {
+          const bb = selected.brobyggerId ? (window.SoS_BROBYGGERE || []).find(b => b.id === selected.brobyggerId) : null;
+          if (bb) return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px',
+              background: SoS.sageSoft, borderBottom: `1px solid ${SoS.line}` }}>
+              <div style={{ width: 28, height: 28, borderRadius: 14, background: bb.bg || SoS.accent,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: SoS.sans, fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                {bb.avatar}
+              </div>
+              <div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink }}>
+                  {bb.name}
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>
+                  Tilknyttet brobygger{selected.matchedAt ? ` · matchet ${selected.matchedAt.slice(0,10)}` : ''}
+                </div>
+              </div>
+            </div>
+          );
+          if (selected.status === 'afventer' || selected.status === 'venter') return (
+            <div style={{ padding: '8px 16px', background: SoS.amberSoft || '#FFF8E1',
+              borderBottom: `1px solid ${SoS.line}`, fontFamily: SoS.sans, fontSize: 12,
+              color: SoS.amber, display: 'flex', alignItems: 'center', gap: 6 }}>
+              ⏳ Afventer match med brobygger
+            </div>
+          );
+          return null;
+        })()}
 
         {/* The mobile-style panel (reused as-is) */}
         <div style={{ fontSize: '0.9em' }}>
@@ -14240,6 +14502,8 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
       contact:      { name: '', role: 'Koordinator', phone: '' },
       mobilOptOut:  false,
       email:        null,
+      consentAt:    new Date().toISOString(),
+      brobyggerId:  null,
     };
     const updated = { ...(window.SoS_MENNESKER || {}), [id]: newPerson };
     window.SoS_MENNESKER = updated;
