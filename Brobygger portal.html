@@ -3712,6 +3712,70 @@ const ProfileScreen = ({ user, onSwitchRole }) => {
         </div>
       </div>
 
+      {/* Brobygger-statuskort */}
+      {user.role === 'brobygger' && (() => {
+        const bb = (window.SoS_BROBYGGERE || []).find(b =>
+          b.name === user.name || b.id === user.id || b.name?.toLowerCase().includes(user.name?.split(' ')[0]?.toLowerCase())
+        );
+        const [bbStatus, setBbStatus] = React.useState(bb?.status || 'aktiv');
+        const toggleStatus = () => {
+          const next = bbStatus === 'aktiv' ? 'pause' : 'aktiv';
+          setBbStatus(next);
+          if (bb && window.SoS_BROBYGGERE) {
+            const idx = window.SoS_BROBYGGERE.findIndex(b => b.id === bb.id);
+            if (idx >= 0) window.SoS_BROBYGGERE[idx].status = next;
+          }
+        };
+        return (
+          <div style={{ background: '#fff', borderRadius: SoS.r.lg,
+            border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 20 }}>
+            <div style={{ padding: '14px 16px', borderBottom: `1px solid ${SoS.lineSoft}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>
+                  Min status
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, marginTop: 2 }}>
+                  {bbStatus === 'aktiv' ? '🟢 Aktiv — tager imod nye aftaler' : '⏸️ Pause — modtager ikke nye aftaler'}
+                </div>
+              </div>
+              <button onClick={toggleStatus} style={{
+                width: 48, height: 28, borderRadius: 14,
+                background: bbStatus === 'aktiv' ? SoS.sage : SoS.lineSoft,
+                border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0,
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 10, background: '#fff',
+                  position: 'absolute', top: 4,
+                  left: bbStatus === 'aktiv' ? 24 : 4,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }}/>
+              </button>
+            </div>
+            <div style={{ padding: '12px 16px', display: 'flex', gap: 24 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 600, color: SoS.ink }}>
+                  {bb?.openShifts ?? 0}
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>Åbne vagter</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 600, color: SoS.ink }}>
+                  {(window.SoS_APPOINTMENTS_BUSY || []).filter(a => a.brobyggerId === bb?.id && a.status === 'confirmed').length}
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>Aktive aftaler</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 600, color: SoS.ink }}>
+                  {bb?.hq || '—'}
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>HQ</div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <div style={{ background: '#fff', borderRadius: SoS.r.lg,
         border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 20 }}>
         {[
@@ -5598,6 +5662,18 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate }) =>
   const [expanded, setExpanded]   = React.useState(null); // notif-id der vises udvidet
   const [sosNotifs, setSosNotifs] = React.useState(() => JSON.parse(localStorage.getItem('sos_notifikationer') || '[]'));
   const [sosBesk,   setSosBesk]   = React.useState(() => JSON.parse(localStorage.getItem('sos_beskeder')      || '[]'));
+  const [bbTekst,   setBbTekst]   = React.useState('');
+
+  const sendBbBesked = () => {
+    const t = bbTekst.trim();
+    if (!t) return;
+    const nm = { id: 'msg-' + Date.now(), fra: 'brobygger', til: 'admin',
+      tekst: t, sendt: new Date().toISOString(), laest: false };
+    const updated = [...sosBesk, nm];
+    setSosBesk(updated);
+    localStorage.setItem('sos_beskeder', JSON.stringify(updated));
+    setBbTekst('');
+  };
 
   const handleAcceptMatch = (n) => {
     const upd = { ...(window.SoS_MENNESKER || {}) };
@@ -5609,6 +5685,7 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate }) =>
     }
     const ns = sosNotifs.map(x => x.id === n.id ? { ...x, status: 'accepteret', read: true } : x);
     setSosNotifs(ns); localStorage.setItem('sos_notifikationer', JSON.stringify(ns));
+    window.dispatchEvent(new Event('sos-mennesker-updated'));
   };
   const handleDeclineMatch = (n) => {
     const upd = { ...(window.SoS_MENNESKER || {}) };
@@ -5621,6 +5698,7 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate }) =>
     }
     const ns = sosNotifs.map(x => x.id === n.id ? { ...x, status: 'afvist', read: true } : x);
     setSosNotifs(ns); localStorage.setItem('sos_notifikationer', JSON.stringify(ns));
+    window.dispatchEvent(new Event('sos-mennesker-updated'));
   };
 
   const NOTIF_ICON  = { match: 'match', reminder: 'clock', message: 'bell' };
@@ -5890,6 +5968,34 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate }) =>
           </div>
         </div>
       ))}
+      {role === 'brobygger' && (
+        <div style={{ display: 'flex', gap: 8, paddingTop: 12, marginTop: 4,
+          borderTop: `1px solid ${SoS.lineSoft}` }}>
+          <input
+            value={bbTekst}
+            onChange={e => setBbTekst(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBbBesked(); } }}
+            placeholder="Skriv til Social Sundhed…"
+            style={{
+              flex: 1, fontFamily: SoS.sans, fontSize: 13,
+              border: `1px solid ${SoS.line}`, borderRadius: SoS.r.md,
+              padding: '10px 12px', outline: 'none',
+              background: '#fff', color: SoS.ink,
+            }}
+          />
+          <button
+            onClick={sendBbBesked}
+            disabled={!bbTekst.trim()}
+            style={{
+              width: 42, height: 42, borderRadius: 21, flexShrink: 0,
+              background: bbTekst.trim() ? SoS.orange : SoS.lineSoft,
+              border: 'none', cursor: bbTekst.trim() ? 'pointer' : 'default',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+            <Icon name="send" size={17} color="#fff"/>
+          </button>
+        </div>
+      )}
       {role !== 'brobygger' && visibleThreads.map(t => (
         <button key={t.id} onClick={() => onOpen(t.id)} style={{
           display: 'flex', gap: 12, width: '100%', padding: 14,
@@ -12936,7 +13042,17 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
     }
   }, [initialTarget]);
 
-  const alle = Object.values(SoS_MENNESKER);
+  // Live-opdatering når brobygger accepterer/afviser via mobil
+  React.useEffect(() => {
+    const refresh = () => {
+      setRefreshKey(k => k + 1);
+      setSelected(prev => prev ? (window.SoS_MENNESKER?.[prev.id] || prev) : null);
+    };
+    window.addEventListener('sos-mennesker-updated', refresh);
+    return () => window.removeEventListener('sos-mennesker-updated', refresh);
+  }, []);
+
+  const alle = Object.values(window.SoS_MENNESKER || SoS_MENNESKER);
   const filtered = alle.filter(m => {
     const navn = (m.firstName + ' ' + m.lastName).toLowerCase();
     if (search && !navn.includes(search.toLowerCase())) return false;
@@ -14010,7 +14126,14 @@ const DesktopKalender = () => {
           <div style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.inkMuted }}>{a.end}</div>
         </div>
         <div>
-          <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>{a.activity}</div>
+          <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink,
+            display: 'flex', alignItems: 'center', gap: 5 }}>
+            {a.activity}
+            {a.aftaleForm === 'gentagende' && (
+              <span title="Gentagende aftale" style={{ fontSize: 11, color: SoS.orange,
+                fontFamily: SoS.mono, fontWeight: 700 }}>↻</span>
+            )}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
             {m && <span style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{m.firstName} {m.lastName}</span>}
             {t  && <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 600,
@@ -15116,7 +15239,8 @@ const AppWithTweaks = () => {
   const openAppt = (id) => setDetailId(id);
   const backFromAppt = () => setDetailId(null);
   const navigate = (s) => { setDetailId(null); setScreen(s); };
-  const unreadCount = SoS_NOTIFICATIONS.filter(n => n.unread).length;
+  const unreadCount = SoS_NOTIFICATIONS.filter(n => n.unread).length
+    + JSON.parse(localStorage.getItem('sos_notifikationer') || '[]').filter(n => !n.read && !n.status).length;
 
   let content;
   if (tweaks.flow === "mslogin") {
