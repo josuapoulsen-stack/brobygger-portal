@@ -3535,6 +3535,21 @@ const ProfileScreen = ({ user, onSwitchRole }) => {
     nyeAftaler: true, pamindelser: true, beskeder: true, systemOpdateringer: false,
   });
   const toggleNotif = (k) => setNotifToggles(p => ({ ...p, [k]: !p[k] }));
+  const _profBb = user.role === 'brobygger'
+    ? (window.SoS_BROBYGGERE || []).find(b =>
+        b.name === user.name || b.id === user.id ||
+        b.name?.toLowerCase().includes(user.name?.split(' ')[0]?.toLowerCase())
+      )
+    : null;
+  const [bbStatus, setBbStatus] = React.useState(_profBb?.status || 'aktiv');
+  const toggleBbStatus = () => {
+    const next = bbStatus === 'aktiv' ? 'pause' : 'aktiv';
+    setBbStatus(next);
+    if (_profBb && window.SoS_BROBYGGERE) {
+      const idx = window.SoS_BROBYGGERE.findIndex(b => b.id === _profBb.id);
+      if (idx >= 0) window.SoS_BROBYGGERE[idx].status = next;
+    }
+  };
 
   const SubToggle = ({ label, sublabel, on, onToggle }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14,
@@ -3757,68 +3772,54 @@ const ProfileScreen = ({ user, onSwitchRole }) => {
       </div>
 
       {/* Brobygger-statuskort */}
-      {user.role === 'brobygger' && (() => {
-        const bb = (window.SoS_BROBYGGERE || []).find(b =>
-          b.name === user.name || b.id === user.id || b.name?.toLowerCase().includes(user.name?.split(' ')[0]?.toLowerCase())
-        );
-        const [bbStatus, setBbStatus] = React.useState(bb?.status || 'aktiv');
-        const toggleStatus = () => {
-          const next = bbStatus === 'aktiv' ? 'pause' : 'aktiv';
-          setBbStatus(next);
-          if (bb && window.SoS_BROBYGGERE) {
-            const idx = window.SoS_BROBYGGERE.findIndex(b => b.id === bb.id);
-            if (idx >= 0) window.SoS_BROBYGGERE[idx].status = next;
-          }
-        };
-        return (
-          <div style={{ background: '#fff', borderRadius: SoS.r.lg,
-            border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 20 }}>
-            <div style={{ padding: '14px 16px', borderBottom: `1px solid ${SoS.lineSoft}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>
-                  Min status
-                </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, marginTop: 2 }}>
-                  {bbStatus === 'aktiv' ? '🟢 Aktiv — tager imod nye aftaler' : '⏸️ Pause — modtager ikke nye aftaler'}
-                </div>
+      {_profBb && (
+        <div style={{ background: '#fff', borderRadius: SoS.r.lg,
+          border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 20 }}>
+          <div style={{ padding: '14px 16px', borderBottom: `1px solid ${SoS.lineSoft}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>
+                Min status
               </div>
-              <button onClick={toggleStatus} style={{
-                width: 48, height: 28, borderRadius: 14,
-                background: bbStatus === 'aktiv' ? SoS.sage : SoS.lineSoft,
-                border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0,
-              }}>
-                <div style={{
-                  width: 20, height: 20, borderRadius: 10, background: '#fff',
-                  position: 'absolute', top: 4,
-                  left: bbStatus === 'aktiv' ? 24 : 4,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                }}/>
-              </button>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, marginTop: 2 }}>
+                {bbStatus === 'aktiv' ? '🟢 Aktiv — tager imod nye aftaler' : '⏸️ Pause — modtager ikke nye aftaler'}
+              </div>
             </div>
-            <div style={{ padding: '12px 16px', display: 'flex', gap: 24 }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 600, color: SoS.ink }}>
-                  {bb?.openShifts ?? 0}
-                </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>Åbne vagter</div>
+            <button onClick={toggleBbStatus} style={{
+              width: 48, height: 28, borderRadius: 14,
+              background: bbStatus === 'aktiv' ? SoS.sage : SoS.lineSoft,
+              border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0,
+            }}>
+              <div style={{
+                width: 20, height: 20, borderRadius: 10, background: '#fff',
+                position: 'absolute', top: 4,
+                left: bbStatus === 'aktiv' ? 24 : 4,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }}/>
+            </button>
+          </div>
+          <div style={{ padding: '12px 16px', display: 'flex', gap: 24 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 600, color: SoS.ink }}>
+                {_profBb?.openShifts ?? 0}
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 600, color: SoS.ink }}>
-                  {(window.SoS_APPOINTMENTS_BUSY || []).filter(a => a.brobyggerId === bb?.id && a.status === 'confirmed').length}
-                </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>Aktive aftaler</div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>Åbne vagter</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 600, color: SoS.ink }}>
+                {(window.SoS_APPOINTMENTS_BUSY || []).filter(a => a.brobyggerId === _profBb?.id && a.status === 'confirmed').length}
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 600, color: SoS.ink }}>
-                  {bb?.hq || '—'}
-                </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>HQ</div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>Aktive aftaler</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: SoS.font, fontSize: 24, fontWeight: 600, color: SoS.ink }}>
+                {_profBb?.hq || '—'}
               </div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>HQ</div>
             </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       <div style={{ background: '#fff', borderRadius: SoS.r.lg,
         border: `1px solid ${SoS.lineSoft}`, overflow: 'hidden', marginBottom: 20 }}>
@@ -12701,10 +12702,11 @@ const DesktopBrobyggere = ({ initialTarget, onTargetConsumed }) => {
               {selectedBb.name}
             </span>
             <button onClick={() => setSelectedBb(null)} style={{
-              width: 28, height: 28, borderRadius: 0, background: SoS.surfaceAlt,
-              border: `1px solid ${SoS.line}`, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="x" size={14} color={SoS.inkMuted}/>
+              width: 36, height: 36, borderRadius: 18, background: SoS.creamDeep,
+              border: `1.5px solid ${SoS.line}`, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0 }}>
+              <Icon name="x" size={18} color={SoS.ink} weight={2.2}/>
             </button>
           </div>
           <BrobyggerProfilePanel brobygger={selectedBb} onClose={() => setSelectedBb(null)}/>
@@ -14694,7 +14696,7 @@ const DesktopKalender = () => {
           }}
         />
       )}
-    </>
+
       {/* ── Brobygger-detaljepanel ── */}
       {bbDetaljeId && (() => {
         const bbD = SoS_BROBYGGERE.find(b => b.id === bbDetaljeId);
@@ -14788,6 +14790,7 @@ const DesktopKalender = () => {
           </div>
         );
       })()}
+    </>
   );
 };
 
