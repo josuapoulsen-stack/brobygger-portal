@@ -11504,8 +11504,7 @@ const DesktopGlobalSearch = ({ onClose, onNavigate }) => {
 };
 
 
-const 
-DesktopBeskeder = () => {
+const DesktopBeskeder = () => {
   const brobyggere = (window.SoS_BROBYGGERE || []).filter(b => ['aktiv', 'ny'].includes(b.status));
   const [valgtBB, setValgtBB] = React.useState(brobyggere[0]?.id || '');
   const [tekst,   setTekst]   = React.useState('');
@@ -11726,7 +11725,7 @@ DesktopBeskeder = () => {
   );
 };
 
-DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
+const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
   const [section, setSection] = React.useState('kalender');
   const [viewingHq, setViewingHq] = React.useState(isAdmin ? 'Alle hovedsæder' : ownHq);
   const [deskExported, setDeskExported] = React.useState(false);
