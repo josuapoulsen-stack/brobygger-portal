@@ -10198,6 +10198,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
     mennesker:  'Mennesker',
     brobyggere: 'Brobyggere',
     matching:   'Matching',
+    beskeder:   'Beskeder',
   };
   const title = TAB_TITLES[tab] || 'Oversigt';
 
@@ -10629,12 +10630,16 @@ const QuickLink = ({ icon, label, count, onClick }) => (
 );
 
 const AdminMobileTabBar = ({ active, onChange, isAdmin }) => {
-  const tabs = [
+  const tabs = isAdmin ? [
     { id: 'oversigt',   label: 'Oversigt',   icon: 'home'     },
     { id: 'kalender',   label: 'Kalender',   icon: 'calendar' },
     { id: 'mennesker',  label: 'Mennesker',  icon: 'heart'    },
     { id: 'brobyggere', label: 'Brobyggere', icon: 'users'    },
     { id: 'matching',   label: 'Matching',   icon: 'match'    },
+  ] : [
+    { id: 'oversigt', label: 'Oversigt', icon: 'home'     },
+    { id: 'kalender', label: 'Kalender', icon: 'calendar' },
+    { id: 'beskeder', label: 'Beskeder', icon: 'chat'     },
   ];
   return (
     <div style={{
@@ -12381,20 +12386,24 @@ const DSCard = ({ children, title, subtitle, style = {}, action }) => (
 const DesktopDashboard = ({ viewingHq, canRapport }) => (
   <>
     {/* KPI row */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+    <div style={{ display: 'grid', gridTemplateColumns: canRapport ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)',
       gap: 10, marginBottom: 14 }}>
       {(() => {
         const aktive = SoS_BROBYGGERE ? SoS_BROBYGGERE.filter(b => b.status === 'aktiv').length : 0;
         const afventer = Object.values(SoS_MENNESKER || {}).filter(m => m.status === 'afventer' || m.status === 'venter').length;
         const konfirmerede = (SoS_APPOINTMENTS_BUSY || []).filter(a => a.status === 'confirmed').length;
         const pendende = (SoS_APPOINTMENTS_BUSY || []).filter(a => a.status === 'pending').length;
-        return [
+        const afsluttede = Object.values(SoS_MENNESKER || {}).filter(m => m.status === 'afsluttet');
+        const sroiEst = afsluttede.length * 47000;
+        const kpis = [
           { l: 'Aktive brobyggere', v: String(aktive), d: aktive > 0 ? 'aktive' : '—', c: SoS.accent },
           { l: 'Afventer match', v: String(afventer), d: afventer > 0 ? 'ikke matchet' : 'alle matchet', c: SoS.amber },
           { l: 'Bekræftede aftaler', v: String(konfirmerede), d: 'registrerede', c: SoS.green },
           { l: 'Afventer bekræftelse', v: String(pendende), d: 'pending', c: SoS.inkMuted },
           { l: 'Registrerede mennesker', v: String(Object.keys(SoS_MENNESKER || {}).length), d: 'i alt', c: SoS.sky },
         ];
+        if (canRapport) kpis.push({ l: 'SROI-estimat', v: (sroiEst/1000).toFixed(0) + 'k', d: 'kr. samfundsværdi', c: SoS.sage });
+        return kpis;
       })().map((k, i) => (
         <DSCard key={i}>
           <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
@@ -12411,6 +12420,81 @@ const DesktopDashboard = ({ viewingHq, canRapport }) => (
         </DSCard>
       ))}
     </div>
+
+    {/* Afventer match */}
+    {(() => {
+      const afventerListe = Object.values(window.SoS_MENNESKER || {})
+        .filter(m => m.status === 'afventer' || m.status === 'venter')
+        .slice(0, 10);
+      const [expanded, setExpanded] = React.useState(false);
+      const [tilknytMenneske, setTilknytMenneske] = React.useState(null);
+      if (afventerListe.length === 0) return null;
+      return (
+        <>
+          <DSCard style={{ marginBottom: 14, padding: 0, overflow: 'hidden' }}>
+            <button onClick={() => setExpanded(v => !v)} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              width: '100%', padding: '14px 18px', background: 'none',
+              border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 0,
+                background: SoS.orange + '20', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon name="match" size={15} color={SoS.orange}/>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 700, color: SoS.ink }}>
+                  {afventerListe.length} {afventerListe.length === 1 ? 'person afventer' : 'personer afventer'} match
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginTop: 1 }}>
+                  Tilknyt en brobygger direkte herfra
+                </div>
+              </div>
+              <Icon name={expanded ? 'chevronD' : 'chevron'} size={14} color={SoS.inkMuted}/>
+            </button>
+            {expanded && (
+              <div style={{ borderTop: `1px solid ${SoS.line}` }}>
+                {afventerListe.map((m, i) => (
+                  <div key={m.id} style={{
+                    padding: '12px 18px',
+                    borderBottom: i < afventerListe.length - 1 ? `1px solid ${SoS.lineSoft}` : 'none',
+                    display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 17,
+                      background: SoS.orange + '20', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      fontFamily: SoS.mono, fontSize: 11, fontWeight: 700, color: SoS.orange }}>
+                      {(m.firstName[0] || '') + (m.lastName ? m.lastName[0] : '')}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>
+                        {m.firstName} {m.lastName}
+                        <span style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 400, color: SoS.inkMuted, marginLeft: 6 }}>{m.age} år</span>
+                      </div>
+                      <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
+                        {m.hq} · {m.needs && m.needs.length > 0 ? m.needs.slice(0,2).join(', ') : 'Ingen behov angivet'}
+                      </div>
+                    </div>
+                    <button onClick={() => setTilknytMenneske(m)} style={{
+                      padding: '7px 14px', background: SoS.ink, color: '#fff',
+                      border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer',
+                      fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                      whiteSpace: 'nowrap' }}>
+                      Tilknyt
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DSCard>
+          {tilknytMenneske && (
+            <TilknytBrobyggerModal
+              menneske={tilknytMenneske}
+              onClose={() => setTilknytMenneske(null)}
+              onSaved={() => setTilknytMenneske(null)}
+            />
+          )}
+        </>
+      );
+    })()}
 
     {/* Opfølgning afventer */}
     {(() => {
@@ -16317,6 +16401,7 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
   const [kpTlf,       setKpTlf]       = React.useState('');
   const [sprog,       setSprog]       = React.useState('Dansk');
   const [behovUrgency, setBehovUrgency] = React.useState('');
+  const [hqOverride, setHqOverride] = React.useState(viewingHq || 'Aarhus');
   const canFinish = consent;
 
   const toggleBehov = (b) =>
@@ -16337,7 +16422,7 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
       needs:        selectedBehov,
       address:      '', meetPoint: '', language: sprog || 'Dansk',
       notes:        [],
-      hq:           viewingHq || 'Aarhus',
+      hq:           hqOverride || viewingHq || 'Aarhus',
       registeredAt: new Date().toISOString(),
       createdAt:    new Date().toISOString().split('T')[0],
       initials:     (form.firstName.trim()[0] || '') + (form.lastName.trim()[0] || ''),
@@ -16552,6 +16637,23 @@ const IntakeFlow = ({ onClose, viewingHq }) => {
             <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft,
               marginBottom: 20, lineHeight: 1.5 }}>
               Fornavn, alder og telefon er påkrævet. Øvrige oplysninger er frivillige.
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                color: SoS.ink, marginBottom: 8 }}>
+                Tilknyt til hovedsæde <span style={{ color: SoS.orange }}>*</span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                {SoS_HOVEDSAEDER.map(h => (
+                  <button key={h} onClick={() => setHqOverride(h)} style={{
+                    padding: '8px 14px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                    fontFamily: SoS.sans, fontSize: 13, fontWeight: hqOverride === h ? 600 : 400,
+                    background: hqOverride === h ? SoS.orange : '#fff',
+                    color: hqOverride === h ? '#fff' : SoS.ink,
+                    border: `1.5px solid ${hqOverride === h ? SoS.orange : SoS.line}`,
+                  }}>{h}</button>
+                ))}
+              </div>
             </div>
             {[
               { key: 'firstName', label: 'Fornavn',   placeholder: 'f.eks. Erik',  required: true },
