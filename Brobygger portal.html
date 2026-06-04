@@ -10771,7 +10771,7 @@ const Field = ({ label, placeholder, value, onChange, required }) => (
 );
 
 // Settings — temporary HQ switch
-const AdminSettings = ({ currentHq, ownHq, onPick, onClose, isAdmin }) => {
+const AdminSettings = ({ currentHq, ownHq, onPick, onClose, isAdmin, canRapport = false }) => {
   const [section, setSection] = React.useState(null);
   const [picked, setPicked] = React.useState(currentHq);
   const [dataAccess, setDataAccess] = React.useState({ daysBefore: 7, daysAfter: 7 });
@@ -11357,7 +11357,7 @@ const AdminSettings = ({ currentHq, ownHq, onPick, onClose, isAdmin }) => {
         </>)}
 
         {/* Effekt-parametre (admin) */}
-        {section === 'sroi' && isAdmin && (<>
+        {section === 'sroi' && canRapport && (<>
           <div style={{ padding: '10px 0 16px' }}>
             <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, lineHeight: 1.6, marginBottom: 16 }}>
               Disse værdier afspejler den sociale effekt pr. brobygningstype.
@@ -12026,9 +12026,176 @@ const DesktopBeskeder = () => {
   );
 };
 
-const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
+const DesktopBrugerstyring = () => {
+  const [staff,    setStaff]    = React.useState(window.SoS_MEDARBEJDERE || []);
+  const [invEmail, setInvEmail] = React.useState('');
+  const [invNavn,  setInvNavn]  = React.useState('');
+  const [invRole,  setInvRole]  = React.useState('raadgiver');
+  const [sent,     setSent]     = React.useState(false);
+
+  const ROLLE_LABELS = {
+    brobygger: 'Brobygger', raadgiver: 'Rådgiver',
+    leder: 'Leder', admin: 'Admin',
+  };
+  const ROLLE_COLORS = {
+    brobygger: SoS.sage, raadgiver: SoS.sky, leder: SoS.orange, admin: '#C62828',
+  };
+
+  const toggleActive = (id) => {
+    const updated = staff.map(u => u.id === id ? { ...u, active: u.active === false ? true : false } : u);
+    setStaff(updated);
+    window.SoS_MEDARBEJDERE = updated;
+    window.SoS_STORE?.save('medarbejdere', updated);
+  };
+  const changeRole = (id, role) => {
+    const updated = staff.map(u => u.id === id ? { ...u, role } : u);
+    setStaff(updated);
+    window.SoS_MEDARBEJDERE = updated;
+    window.SoS_STORE?.save('medarbejdere', updated);
+  };
+  const sendInvite = () => {
+    if (!invEmail || !invNavn) return;
+    setSent(true);
+    setTimeout(() => { setSent(false); setInvEmail(''); setInvNavn(''); }, 2500);
+  };
+
+  return (
+    <div style={{ maxWidth: 720 }}>
+
+      {/* Aktive brugere */}
+      <DSCard style={{ marginBottom: 16 }}>
+        <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+          color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase',
+          marginBottom: 14 }}>Brugere ({staff.length})</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Navn', 'Email', 'HQ', 'Rolle', 'Status', ''].map((h, i) => (
+                <th key={i} style={{ textAlign: 'left', fontFamily: SoS.sans, fontSize: 10,
+                  fontWeight: 700, color: SoS.inkMuted, letterSpacing: 0.6,
+                  textTransform: 'uppercase', padding: '0 8px 10px',
+                  borderBottom: `1px solid ${SoS.line}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {staff.map((u, i) => {
+              const isInactive = u.active === false;
+              return (
+                <tr key={u.id} style={{ opacity: isInactive ? 0.5 : 1 }}>
+                  <td style={{ padding: '10px 8px', borderBottom: `1px solid ${SoS.lineSoft}`,
+                    fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>
+                    {u.name}
+                  </td>
+                  <td style={{ padding: '10px 8px', borderBottom: `1px solid ${SoS.lineSoft}`,
+                    fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>
+                    {u.email}
+                  </td>
+                  <td style={{ padding: '10px 8px', borderBottom: `1px solid ${SoS.lineSoft}`,
+                    fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>
+                    {u.hq || '—'}
+                  </td>
+                  <td style={{ padding: '10px 8px', borderBottom: `1px solid ${SoS.lineSoft}` }}>
+                    <select value={u.role || 'raadgiver'}
+                      onChange={e => changeRole(u.id, e.target.value)}
+                      disabled={isInactive}
+                      style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                        color: ROLLE_COLORS[u.role] || SoS.inkSoft,
+                        background: (ROLLE_COLORS[u.role] || SoS.inkSoft) + '15',
+                        border: 'none', borderRadius: 999, padding: '4px 10px',
+                        cursor: isInactive ? 'default' : 'pointer' }}>
+                      {Object.entries(ROLLE_LABELS).map(([v, l]) => (
+                        <option key={v} value={v}>{l}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td style={{ padding: '10px 8px', borderBottom: `1px solid ${SoS.lineSoft}` }}>
+                    <span style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+                      color: isInactive ? SoS.inkMuted : SoS.sage }}>
+                      {isInactive ? 'Inaktiv' : 'Aktiv'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 8px', borderBottom: `1px solid ${SoS.lineSoft}` }}>
+                    <button onClick={() => toggleActive(u.id)} style={{
+                      padding: '4px 10px', borderRadius: 999, cursor: 'pointer',
+                      fontFamily: SoS.sans, fontSize: 11, fontWeight: 600, border: 'none',
+                      background: isInactive ? SoS.sageSoft : '#FFE8E0',
+                      color: isInactive ? SoS.sage : '#C0392B' }}>
+                      {isInactive ? 'Genaktiver' : 'Deaktiver'}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </DSCard>
+
+      {/* Inviter ny medarbejder */}
+      <DSCard>
+        <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+          color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase',
+          marginBottom: 14 }}>Inviter ny bruger</div>
+        {sent ? (
+          <div style={{ padding: 20, textAlign: 'center', background: SoS.sageSoft,
+            borderRadius: SoS.r.md, fontFamily: SoS.sans, fontSize: 14, color: SoS.sage }}>
+            ✓ Invitation sendt til {invEmail}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: '1 1 180px' }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginBottom: 4 }}>
+                Navn
+              </div>
+              <input value={invNavn} onChange={e => setInvNavn(e.target.value)}
+                placeholder="Fornavn Efternavn"
+                style={{ width: '100%', padding: '8px 10px', fontFamily: SoS.sans, fontSize: 13,
+                  border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm, outline: 'none',
+                  boxSizing: 'border-box' }}/>
+            </div>
+            <div style={{ flex: '1 1 220px' }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginBottom: 4 }}>
+                Email
+              </div>
+              <input value={invEmail} onChange={e => setInvEmail(e.target.value)}
+                placeholder="navn@socialsundhed.org" type="email"
+                style={{ width: '100%', padding: '8px 10px', fontFamily: SoS.sans, fontSize: 13,
+                  border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm, outline: 'none',
+                  boxSizing: 'border-box' }}/>
+            </div>
+            <div style={{ flex: '0 0 140px' }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginBottom: 4 }}>
+                Rolle
+              </div>
+              <select value={invRole} onChange={e => setInvRole(e.target.value)}
+                style={{ width: '100%', padding: '9px 10px', fontFamily: SoS.sans, fontSize: 13,
+                  border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                  background: '#fff', outline: 'none' }}>
+                {Object.entries(ROLLE_LABELS).filter(([v]) => v !== 'brobygger').map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <button onClick={sendInvite}
+              disabled={!invEmail || !invNavn}
+              style={{ padding: '9px 20px', borderRadius: SoS.r.sm, border: 'none',
+                background: invEmail && invNavn ? SoS.accent : SoS.lineSoft,
+                color: invEmail && invNavn ? '#fff' : SoS.inkMuted,
+                fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+                cursor: invEmail && invNavn ? 'pointer' : 'default', flexShrink: 0 }}>
+              Send invitation
+            </button>
+          </div>
+        )}
+      </DSCard>
+
+    </div>
+  );
+};
+
+const DesktopView = ({ user, ownHq, isAdmin, canRapport = false, canUserMgmt = false, onClose }) => {
   const [section, setSection] = React.useState('kalender');
-  const [viewingHq, setViewingHq] = React.useState(isAdmin ? 'Alle hovedsæder' : ownHq);
+  const [viewingHq, setViewingHq] = React.useState(canRapport ? 'Alle hovedsæder' : ownHq);
   const [deskExported, setDeskExported] = React.useState(false);
   const [showSearch, setShowSearch] = React.useState(false);
   const [searchTarget, setSearchTarget] = React.useState(null);
@@ -12088,7 +12255,7 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
                   Social Sundhed
                 </div>
                 <div style={{ fontFamily: SoS.mono, fontSize: 9.5, color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  {isAdmin ? 'ADMINISTRATION' : 'RÅDGIVER-PORTAL'}
+                  {canUserMgmt ? 'ADMINISTRATION' : canRapport ? 'LEDELSE' : 'RÅDGIVER-PORTAL'}
                 </div>
               </div>
             </div>
@@ -12102,7 +12269,8 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
               { k: 'brobyggere',   l: 'Brobyggere',         i: 'users'    },
               { k: 'mennesker',    l: 'Mennesker',          i: 'heart'    },
               { k: 'beskeder',    l: 'Beskeder',           i: 'chat'    },
-              ].concat(isAdmin ? [{ k: 'rapport', l: 'Rapport & eksport', i: 'note' }] : []).map(n => (
+              ].concat(canRapport ? [{ k: 'rapport', l: 'Rapport & eksport', i: 'note' }] : [])
+              .concat(canUserMgmt ? [{ k: 'brugerstyring', l: 'Brugerstyring', i: 'shield' }] : []).map(n => (
               <button key={n.k} onClick={() => setSection(n.k)} style={{
                 display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                 padding: '9px 12px 9px 10px', borderRadius: 0, marginBottom: 2,
@@ -12126,7 +12294,7 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
                 Linda Thomsen
               </div>
               <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkSoft }}>
-                {isAdmin ? 'Admin' : ownHq}
+                {canUserMgmt ? 'Admin' : canRapport ? 'Leder' : ownHq}
               </div>
             </div>
           </div>
@@ -12140,13 +12308,13 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
             <div>
               <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
                 letterSpacing: 1, color: SoS.accent, textTransform: 'uppercase' }}>
-                {isAdmin ? 'Admin' : 'Rådgiver'} · {viewingHq}
+                {canUserMgmt ? 'Admin' : canRapport ? 'Leder' : 'Rådgiver'} · {viewingHq}
               </div>
               <div style={{ fontFamily: SoS.sans, fontSize: 26, fontWeight: 700,
                 color: SoS.ink, letterSpacing: -0.5, marginTop: 2 }}>
                 {{ dashboard: 'Dashboard', brobygninger: 'Brobygninger',
                    brobyggere: 'Brobyggere', mennesker: 'Mennesker', beskeder: 'Beskeder',
-                   kalender: 'Kalender', sroi: 'Effekt & Dokumentation', rapport: 'Rapport & eksport' }[section]}
+                   kalender: 'Kalender', sroi: 'Effekt & Dokumentation', rapport: 'Rapport & eksport', brugerstyring: 'Brugerstyring' }[section]}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -12156,27 +12324,29 @@ const DesktopView = ({ user, ownHq, isAdmin, onClose }) => {
                 fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink,
                 cursor: 'pointer',
               }}>
-                {isAdmin && <option value="Alle hovedsæder">Alle hovedsæder</option>}
+                {canRapport && <option value="Alle hovedsæder">Alle hovedsæder</option>}
                 {SoS_HOVEDSAEDER.map(h => <option key={h} value={h}>{h}</option>)}
               </select>
-              <button onClick={handleDeskExport} style={{ padding: '7px 14px', borderRadius: SoS.r.sm,
-                background: deskExported ? SoS.green : SoS.ink, color: '#fff', border: 'none',
-                borderRadius: SoS.r.sm,
-                fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6, transition: 'background 0.2s' }}>
-                <Icon name={deskExported ? 'check' : 'download'} size={12} color="#fff" weight={2.3}/>
-                {deskExported ? 'Eksporteret!' : 'Eksportér'}
-              </button>
+              {canRapport && (
+                <button onClick={handleDeskExport} style={{ padding: '7px 14px', borderRadius: SoS.r.sm,
+                  background: deskExported ? SoS.green : SoS.ink, color: '#fff', border: 'none',
+                  fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6, transition: 'background 0.2s' }}>
+                  <Icon name={deskExported ? 'check' : 'download'} size={12} color="#fff" weight={2.3}/>
+                  {deskExported ? 'Eksporteret!' : 'Eksportér'}
+                </button>
+              )}
             </div>
           </div>
 
-          {section === 'dashboard' && <DesktopDashboard viewingHq={viewingHq} isAdmin={isAdmin}/>}
+          {section === 'dashboard' && <DesktopDashboard viewingHq={viewingHq} canRapport={canRapport}/>}
           {section === 'brobygninger' && <DesktopBrobygninger/>}
           {section === 'brobyggere' && <DesktopBrobyggere initialTarget={searchTarget} onTargetConsumed={() => setSearchTarget(null)}/>}
           {section === 'mennesker' && <DesktopMennesker initialTarget={searchTarget} onTargetConsumed={() => setSearchTarget(null)}/>}
           {section === 'kalender' && <DesktopKalender/>}
           {section === 'beskeder' && <DesktopBeskeder/>}
-          {section === 'rapport' && <DesktopRapport/>}
+          {section === 'rapport' && canRapport && <DesktopRapport/>}
+          {section === 'brugerstyring' && canUserMgmt && <DesktopBrugerstyring/>}
           {showSearch && (
             <DesktopGlobalSearch
               onClose={() => setShowSearch(false)}
@@ -12208,7 +12378,7 @@ const DSCard = ({ children, title, subtitle, style = {}, action }) => (
   </div>
 );
 
-const DesktopDashboard = ({ viewingHq, isAdmin }) => (
+const DesktopDashboard = ({ viewingHq, canRapport }) => (
   <>
     {/* KPI row */}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
@@ -15819,12 +15989,14 @@ const AppWithTweaks = () => {
     content = <MatchingFlow onClose={() => setTweak("flow", "none")} />;
   } else if (tweaks.flow === "intake" && activeRole !== "brobygger") {
     content = <IntakeFlow onClose={() => setTweak("flow", "none")} viewingHq={viewingHq}/>;
-  } else if (activeRole === "admin" || activeRole === "raadgiver") {
+  } else if (activeRole === "admin" || activeRole === "raadgiver" || activeRole === "leder") {
+    const _canRapport = activeRole === "admin" || activeRole === "leder";
     if (settingsOpen) {
       content = <AdminSettings
         currentHq={viewingHq}
         ownHq="Aarhus"
         isAdmin={activeRole === "admin"}
+        canRapport={_canRapport}
         onPick={(hq) => { setViewingHq(hq); setSettingsOpen(false); }}
         onClose={() => setSettingsOpen(false)} />;
     } else {
@@ -15882,11 +16054,11 @@ const AppWithTweaks = () => {
     );
   }
 
-  if (desktopMode && (tweaks.role === "admin" || tweaks.role === "raadgiver")) {
+  if (desktopMode && (tweaks.role === "admin" || tweaks.role === "raadgiver" || tweaks.role === "leder")) {
     return (
       <React.Fragment>
         <div style={{ position: "fixed", inset: 0, background: "#1A130D", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <DesktopView user={user} ownHq="Aarhus" isAdmin={tweaks.role === "admin"} onClose={() => setDesktopMode(false)} />
+          <DesktopView user={user} ownHq="Aarhus" isAdmin={tweaks.role === "admin"} canRapport={tweaks.role === "leder" || tweaks.role === "admin"} canUserMgmt={tweaks.role === "admin"} onClose={() => setDesktopMode(false)} />
         </div>
         <TweaksPanel title="Tweaks">
           <TweakSection label="Visning">
@@ -15897,7 +16069,8 @@ const AppWithTweaks = () => {
               options={[
                 { value: "brobygger", label: "Brobygger" },
                 { value: "raadgiver", label: "Raadgiver" },
-                { value: "admin", label: "Admin" },
+                { value: "leder",     label: "Leder / Landssekretariat" },
+                { value: "admin",     label: "Admin" },
               ]}
               onChange={(v) => setTweak("role", v)}/>
           </TweakSection>
@@ -15958,7 +16131,8 @@ const AppWithTweaks = () => {
             options={[
               { value: "brobygger", label: "Brobygger (frivillig)" },
               { value: "raadgiver", label: "Raadgiver (eget hq)" },
-              { value: "admin", label: "Admin (alle hq)" },
+              { value: "leder",     label: "Leder / Landssekretariat" },
+              { value: "admin",     label: "Admin (alle hq)" },
             ]}
             onChange={(v) => setTweak("role", v)}
           />
