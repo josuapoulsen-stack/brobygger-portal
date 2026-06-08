@@ -14657,7 +14657,7 @@ const DesktopMenneskeDetailPanel = ({ menneske: m, onClose, onRefresh }) => {
                     textTransform: 'uppercase', marginBottom: 8 }}>Loggede opkald</div>
                   {logs.map((l, i) => (
                     <div key={l.id} style={{ display: 'flex', gap: 10, padding: '8px 0',
-                      borderTop: i > 0 ?  : 'none' }}>
+                      borderTop: i > 0 ? `1px solid ${SoS.lineSoft}` : 'none' }}>
                       <div style={{ fontFamily: SoS.mono, fontSize: 10,
                         color: SoS.inkMuted, flexShrink: 0, width: 74 }}>{l.dato}</div>
                       <div style={{ flex: 1 }}>
