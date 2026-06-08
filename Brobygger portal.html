@@ -10201,6 +10201,13 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
     beskeder:   'Beskeder',
   };
   const title = TAB_TITLES[tab] || 'Oversigt';
+  const beskedBadge = (() => {
+    try {
+      const msgs = JSON.parse(localStorage.getItem('sos_beskeder') || '[]');
+      const myRole = isAdmin ? 'admin' : 'raadgiver';
+      return msgs.filter(m => !m.laest && m.til === myRole).length;
+    } catch { return 0; }
+  })();
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: SoS.paper, overflow: 'hidden' }}>
@@ -10393,8 +10400,8 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
               )}
             </button>
 
-            {/* Match-prompt */}
-            {pendingMatches > 0 && (
+            {/* Hurtige handlinger */}
+            {isAdmin && pendingMatches > 0 && (
               <button onClick={onOpenMatching} style={{
                 margin: '12px 22px 0', width: 'calc(100% - 44px)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -10419,6 +10426,40 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
                   <polyline points="12 5 19 12 12 19"/>
                 </svg>
               </button>
+            )}
+            {!isAdmin && (
+              <div style={{ margin: '12px 22px 0', display: 'flex', gap: 8 }}>
+                <button onClick={onOpenIntake} style={{
+                  flex: 1, padding: '13px 14px', background: SoS.ink, border: 'none',
+                  borderRadius: SoS.r.sm, cursor: 'pointer', textAlign: 'left',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  <span style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                    Registrér ny person
+                  </span>
+                </button>
+                {(() => {
+                  const afvHq = Object.values(window.SoS_MENNESKER || {})
+                    .filter(m => (m.status === 'afventer' || m.status === 'venter') && m.hq === viewingHq).length;
+                  if (afvHq === 0) return null;
+                  return (
+                    <div style={{ padding: '10px 14px', background: SoS.amber + '20',
+                      border: `1px solid ${SoS.amber}40`, borderRadius: SoS.r.sm, flexShrink: 0,
+                      display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                      textAlign: 'center', minWidth: 64 }}>
+                      <div style={{ fontFamily: SoS.mono, fontSize: 20, fontWeight: 700,
+                        color: SoS.amber, lineHeight: 1 }}>{afvHq}</div>
+                      <div style={{ fontFamily: SoS.sans, fontSize: 9, color: SoS.amber,
+                        textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 3 }}>afventer</div>
+                    </div>
+                  );
+                })()}
+              </div>
             )}
 
             {/* Ressourcer */}
@@ -10530,7 +10571,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
         )}
 
       </div>
-      <AdminMobileTabBar active={tab} onChange={setTab} isAdmin={isAdmin}/>
+      <AdminMobileTabBar active={tab} onChange={setTab} isAdmin={isAdmin} badges={{ beskeder: beskedBadge }}/>
       {selectedBb && (
         <div style={{ position: "absolute", inset: 0, overflowY: "auto", zIndex: 100, background: SoS.cream }}>
           <BrobyggerProfilePanel brobygger={selectedBb} onClose={() => setSelectedBb(null)}/>
@@ -10629,7 +10670,7 @@ const QuickLink = ({ icon, label, count, onClick }) => (
   </button>
 );
 
-const AdminMobileTabBar = ({ active, onChange, isAdmin }) => {
+const AdminMobileTabBar = ({ active, onChange, isAdmin, badges = {} }) => {
   const tabs = isAdmin ? [
     { id: 'oversigt',   label: 'Oversigt',   icon: 'home'     },
     { id: 'kalender',   label: 'Kalender',   icon: 'calendar' },
@@ -10658,7 +10699,17 @@ const AdminMobileTabBar = ({ active, onChange, isAdmin }) => {
             paddingTop: 10, position: 'relative', minWidth: 44,
           }}>
             {on && <div style={{ position: 'absolute', top: 0, width: 24, height: 2, background: SoS.accent }}/>}
-            <Icon name={t.icon} size={21} color={on ? SoS.accent : SoS.inkMuted} weight={on ? 2 : 1.7}/>
+            <div style={{ position: 'relative', display: 'inline-flex' }}>
+              <Icon name={t.icon} size={21} color={on ? SoS.accent : SoS.inkMuted} weight={on ? 2 : 1.7}/>
+              {badges[t.id] > 0 && (
+                <div style={{ position: 'absolute', top: -3, right: -6, minWidth: 14, height: 14,
+                  borderRadius: 7, background: SoS.accent, border: `1.5px solid ${SoS.paper}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: SoS.sans, fontSize: 9, fontWeight: 700, color: '#fff', padding: '0 3px' }}>
+                  {badges[t.id] > 9 ? '9+' : badges[t.id]}
+                </div>
+              )}
+            </div>
             <div style={{ fontFamily: SoS.mono, fontSize: 8, fontWeight: 600,
               color: on ? SoS.ink : SoS.inkMuted, letterSpacing: 0.3, marginTop: 4 }}>
               {t.label.toUpperCase()}
@@ -16010,6 +16061,7 @@ const AppWithTweaks = () => {
   const [detailId, setDetailId] = useState(null);
   const [showPWA, setShowPWA] = useState(true);
   const [desktopMode, setDesktopMode] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const isNew = tweaks.experience === "new";
   const isBusy = tweaks.busyLevel === "busy";
@@ -16051,6 +16103,14 @@ const AppWithTweaks = () => {
     }
   }, [activeRole]);
 
+  useEffect(() => {
+    if (activeRole === 'brobygger' && !localStorage.getItem('sos_onboarding_done')) {
+      setShowOnboarding(true);
+    } else {
+      setShowOnboarding(false);
+    }
+  }, [activeRole]);
+
   const openAppt = (id) => setDetailId(id);
   const backFromAppt = () => setDetailId(null);
   const navigate = (s) => { setDetailId(null); setScreen(s); };
@@ -16067,6 +16127,11 @@ const AppWithTweaks = () => {
     content = <ExportReport onClose={() => setTweak("flow", "none")} />;
   } else if (tweaks.flow === "onboarding") {
     content = <OnboardingWizard onClose={() => setTweak("flow", "none")} />;
+  } else if (showOnboarding) {
+    content = <OnboardingWizard onClose={() => {
+      localStorage.setItem('sos_onboarding_done', '1');
+      setShowOnboarding(false);
+    }} />;
   } else if (tweaks.flow === "register" && activeRole === "brobygger") {
     content = <RegistrerEfterAftale appt={SoS_APPOINTMENTS_BUSY[0]} onClose={() => setTweak("flow", "none")} />;
   } else if (tweaks.flow === "matching" && activeRole !== "brobygger") {
