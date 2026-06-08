@@ -2203,7 +2203,7 @@ const MonthChips = ({ data }) => (
   </div>
 );
 
-const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'busy' }) => {
+const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'busy', brobyggerId }) => {
   const [logTarget, setLogTarget] = React.useState(null);
   const [apptVersion, setApptVersion] = React.useState(0);
   const TODAY_STR = new Date().toISOString().slice(0, 10);
@@ -2249,6 +2249,34 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
 
   return (
     <>
+      {/* Rådighedsplan notifikation */}
+      {brobyggerId && (() => {
+        const raadig = JSON.parse(localStorage.getItem('sos_raadighedsplan') || '[]')
+          .filter(r => r.brobyggerId === brobyggerId);
+        const twoWeeks = new Date();
+        twoWeeks.setDate(twoWeeks.getDate() + 14);
+        const twoWeeksStr = twoWeeks.toISOString().slice(0, 10);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const harKommende = raadig.some(r => r.dato >= todayStr && r.dato <= twoWeeksStr);
+        if (harKommende) return null;
+        return (
+          <div style={{ margin: '12px 20px 0', padding: '12px 14px',
+            background: SoS.amber + '15',
+            border: `1px solid ${SoS.amber}40`,
+            borderRadius: SoS.r.md,
+            display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Icon name="bell" size={16} color={SoS.amber}/>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+                color: SoS.ink }}>Husk at melde dage ind</div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12,
+                color: SoS.inkMuted, marginTop: 2 }}>
+                Du har ingen ledige dage registreret de næste 14 dage
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       <TopBar
         subtitle={greet}
         title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
@@ -2436,7 +2464,7 @@ window.HomeScreen = HomeScreen;
 <script type="text/babel">
 // Kalender — rådighed og aftaler (brobygger)
 
-const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift }) => {
+const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift, brobyggerId }) => {
   const [month, setMonth] = React.useState(new Date('2026-04-24'));
   const prevMonth = () => setMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
   const nextMonth = () => setMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
@@ -2444,6 +2472,45 @@ const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift }) => {
   const [addShiftSheet, setAddShiftSheet] = React.useState(false);
   const [addShiftDone, setAddShiftDone] = React.useState(false);
   const [moreShift, setMoreShift] = React.useState(null);
+  const [raadigMode, setRaadigMode] = React.useState('enkelt');
+  const [gentagDage, setGentagDage] = React.useState([]);
+  const [gentagTil, setGentagTil] = React.useState('');
+  const [addedCount, setAddedCount] = React.useState(0);
+  const [raadighedsplan, setRaadighedsplan] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('sos_raadighedsplan') || '[]'); }
+    catch { return []; }
+  });
+  const saveRaadig = (newEntries) => {
+    const prev = JSON.parse(localStorage.getItem('sos_raadighedsplan') || '[]');
+    const updated = [...prev, ...newEntries];
+    localStorage.setItem('sos_raadighedsplan', JSON.stringify(updated));
+    setRaadighedsplan(updated);
+    setAddedCount(newEntries.length);
+    setAddShiftDone(true);
+  };
+  const handleBekreft = () => {
+    if (!brobyggerId) return;
+    if (raadigMode === 'enkelt' && selected) {
+      const exists = raadighedsplan.some(
+        r => r.brobyggerId === brobyggerId && r.dato === selected);
+      if (!exists) saveRaadig([{ id: 'r-' + Date.now(), brobyggerId, dato: selected }]);
+      else setAddShiftDone(true);
+    } else if (raadigMode === 'gentag' && gentagDage.length > 0 && gentagTil) {
+      const entries = [];
+      const startD = new Date();
+      const endD = new Date(gentagTil);
+      for (let d = new Date(startD); d <= endD; d.setDate(d.getDate() + 1)) {
+        const dow = (d.getDay() + 6) % 7;
+        if (gentagDage.includes(dow)) {
+          const iso = d.toISOString().slice(0, 10);
+          if (!raadighedsplan.some(r => r.brobyggerId === brobyggerId && r.dato === iso))
+            entries.push({ id: 'r-' + Date.now() + '-' + iso, brobyggerId, dato: iso });
+        }
+      }
+      if (entries.length > 0) saveRaadig(entries);
+      else setAddShiftDone(true);
+    }
+  };
 
   // Build calendar grid
   const year = month.getFullYear();
@@ -2460,6 +2527,12 @@ const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift }) => {
   appointments.forEach(a => { (apptsByDate[a.date] ||= []).push(a); });
   const shiftsByDate = {};
   shifts.forEach(s => { (shiftsByDate[s.date] ||= []).push(s); });
+  const myRaadig = raadighedsplan.filter(
+    r => !brobyggerId || r.brobyggerId === brobyggerId);
+  myRaadig.forEach(r => {
+    (shiftsByDate[r.dato] ||= []).push(
+      { id: r.id, date: r.dato, start: 'Ledig', end: '', _raadig: true });
+  });
 
   const monthName = ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'][m];
 
@@ -2634,48 +2707,143 @@ const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift }) => {
         ))}
       </div>
 
-      {/* Add-shift bottom sheet */}
+      {/* Rådighedsplan bottom sheet */}
       {addShiftSheet && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
-          onClick={() => { setAddShiftSheet(false); setAddShiftDone(false); }}>
-          <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px 40px',
-            boxShadow: '0 -4px 32px rgba(0,0,0,0.12)' }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 400,
+          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+          onClick={() => { setAddShiftSheet(false); setAddShiftDone(false);
+            setRaadigMode('enkelt'); setGentagDage([]); setGentagTil(''); }}>
+          <div style={{ background: '#fff', borderRadius: '20px 20px 0 0',
+            padding: '24px 20px 44px', boxShadow: '0 -4px 32px rgba(0,0,0,0.12)',
+            maxHeight: '80vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}>
+
             {addShiftDone ? (
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
                 <div style={{ width: 56, height: 56, borderRadius: 28, background: SoS.sage,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 16px' }}>
                   <Icon name="check" size={28} color="#fff" weight={2.5} />
                 </div>
-                <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500, color: SoS.ink, marginBottom: 8 }}>
-                  Rådighed meldt!
+                <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500,
+                  color: SoS.ink, marginBottom: 8 }}>
+                  {addedCount > 1 ? addedCount + ' dage meldt!' : 'Dag meldt!'}
                 </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 14, color: SoS.inkSoft, marginBottom: 24 }}>
-                  Koordinatoren kan nu matche dig med et menneske {selected ? 'd. ' + selected.split('-').reverse().join('/') : 'denne dag'}.
+                <div style={{ fontFamily: SoS.sans, fontSize: 14,
+                  color: SoS.inkSoft, marginBottom: 24 }}>
+                  {addedCount > 1
+                    ? `${addedCount} ledige dage er nu synlige for koordinatoren.`
+                    : `${selected ? selected.split('-').reverse().join('.') : 'Dagen'} er nu synlig for koordinatoren.`}
                 </div>
-                <Button full onClick={() => { setAddShiftSheet(false); setAddShiftDone(false); }}>Luk</Button>
+                <Button full onClick={() => {
+                  setAddShiftSheet(false); setAddShiftDone(false);
+                  setRaadigMode('enkelt'); setGentagDage([]); setGentagTil('');
+                }}>Luk</Button>
               </div>
             ) : (
               <>
-                <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500, color: SoS.ink, marginBottom: 6 }}>
-                  Meld rådighed
+                <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500,
+                  color: SoS.ink, marginBottom: 18 }}>
+                  Meld ledig dag
                 </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 14, color: SoS.inkSoft, marginBottom: 20 }}>
-                  {selected ? formatDate(selected, { long: true }) : 'Valgt dag'}
-                </div>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                  {[['08:00','12:00','Formiddag'],['12:00','16:00','Eftermiddag'],['16:00','20:00','Aften']].map(([start, end, label]) => (
-                    <div key={label} style={{ flex: 1, border: `2px solid ${SoS.line}`, borderRadius: SoS.r.md,
-                      padding: '12px 8px', textAlign: 'center', cursor: 'pointer',
-                      fontFamily: SoS.sans, fontSize: 13, color: SoS.ink }}
-                      onClick={() => setAddShiftDone(true)}>
-                      <div style={{ fontWeight: 600, marginBottom: 2 }}>{label}</div>
-                      <div style={{ fontSize: 11, color: SoS.inkSoft }}>{start}–{end}</div>
-                    </div>
+
+                {/* Enkelt / Gentag toggle */}
+                <div style={{ display: 'flex', background: SoS.surface,
+                  borderRadius: SoS.r.md, padding: 3, marginBottom: 20, gap: 2 }}>
+                  {[['enkelt','Enkelt dag'],['gentag','Gentag ugentligt']].map(([id, lbl]) => (
+                    <button key={id} onClick={() => setRaadigMode(id)} style={{
+                      flex: 1, padding: '9px 0', border: 'none', cursor: 'pointer',
+                      borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13,
+                      fontWeight: raadigMode === id ? 700 : 500,
+                      background: raadigMode === id ? '#fff' : 'transparent',
+                      color: raadigMode === id ? SoS.ink : SoS.inkMuted,
+                      boxShadow: raadigMode === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
+                      {lbl}
+                    </button>
                   ))}
                 </div>
-                <Button full onClick={() => setAddShiftDone(true)}>Bekræft rådighed</Button>
-                <button onClick={() => setAddShiftSheet(false)} style={{ width: '100%', marginTop: 10,
-                  background: 'none', border: 'none', fontFamily: SoS.sans, fontSize: 14,
+
+                {raadigMode === 'enkelt' ? (
+                  <>
+                    <div style={{ padding: '14px 16px', background: SoS.sage + '12',
+                      border: `1px solid ${SoS.sage}40`, borderRadius: SoS.r.md,
+                      marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: 4,
+                        background: SoS.sage, flexShrink: 0 }}/>
+                      <div>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600,
+                          color: SoS.ink }}>
+                          {selected
+                            ? new Date(selected).toLocaleDateString('da-DK',
+                              { weekday: 'long', day: 'numeric', month: 'long' })
+                            : 'Ingen dag valgt'}
+                        </div>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 12,
+                          color: SoS.inkMuted, marginTop: 2 }}>
+                          V\xe6lg en dag i kalenderen ovenfor
+                        </div>
+                      </div>
+                    </div>
+                    {raadighedsplan.some(r =>
+                      r.brobyggerId === brobyggerId && r.dato === selected) && (
+                      <div style={{ fontFamily: SoS.sans, fontSize: 12,
+                        color: SoS.amber, marginBottom: 12 }}>
+                        Du har allerede meldt dig ledig denne dag
+                      </div>
+                    )}
+                    <Button full onClick={handleBekreft}
+                      disabled={!selected || !brobyggerId}>
+                      Meld ledig
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                        color: SoS.inkSoft, marginBottom: 8 }}>
+                        Hvilke ugedage?
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {['M','T','O','T','F','L','S'].map((lbl, i) => {
+                          const sel = gentagDage.includes(i);
+                          return (
+                            <button key={i} onClick={() => setGentagDage(prev =>
+                              prev.includes(i)
+                                ? prev.filter(d => d !== i)
+                                : [...prev, i])} style={{
+                              width: 38, height: 38, borderRadius: 19, border: 'none',
+                              cursor: 'pointer', fontFamily: SoS.sans, fontSize: 13,
+                              fontWeight: sel ? 700 : 500,
+                              background: sel ? SoS.sage : SoS.surface,
+                              color: sel ? '#fff' : SoS.ink }}>
+                              {lbl}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                        color: SoS.inkSoft, marginBottom: 6 }}>
+                        Frem til
+                      </div>
+                      <input type="date" value={gentagTil}
+                        onChange={e => setGentagTil(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px',
+                          border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                          fontFamily: SoS.sans, fontSize: 14, color: SoS.ink,
+                          outline: 'none', boxSizing: 'border-box' }}/>
+                    </div>
+                    <Button full onClick={handleBekreft}
+                      disabled={gentagDage.length === 0 || !gentagTil || !brobyggerId}>
+                      Tilf\xf8j dage
+                    </Button>
+                  </>
+                )}
+
+                <button onClick={() => setAddShiftSheet(false)} style={{
+                  width: '100%', marginTop: 10, background: 'none', border: 'none',
+                  fontFamily: SoS.sans, fontSize: 14,
                   color: SoS.inkSoft, cursor: 'pointer', padding: 10 }}>
                   Annuller
                 </button>
@@ -8426,6 +8594,25 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
   const [sent,  setSent]  = React.useState(false);
   const visListe = mode === 'ledig' ? ledige : optaget;
 
+  // Rådighedsbaseret matching når person har fast dato
+  const dato = m.appointmentDato || null;
+  const raadigPlan = dato
+    ? JSON.parse(localStorage.getItem('sos_raadighedsplan') || '[]')
+    : [];
+  const ledigDag = dato
+    ? alle.filter(b => raadigPlan.some(r => r.brobyggerId === b.id && r.dato === dato))
+    : [];
+  const optatetDag = dato
+    ? alle.filter(b =>
+        (window.SoS_APPOINTMENTS_BUSY || []).some(
+          a => a.brobyggerId === b.id && a.date === dato))
+    : [];
+  const ikkeMeldt = dato
+    ? alle.filter(b =>
+        !ledigDag.find(x => x.id === b.id) &&
+        !optatetDag.find(x => x.id === b.id))
+    : [];
+
   const handleMatch = () => {
     if (!valgt) return;
     const updated = { ...(window.SoS_MENNESKER || {}) };
@@ -8520,17 +8707,88 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
         <div style={{ padding: 24 }}>
 
         {/* Header */}
-        <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700, color: SoS.ink, marginBottom: 4 }}>
-          Find brobygger
-        </div>
-        <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginBottom: 16 }}>
+        <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700,
+          color: SoS.ink, marginBottom: 4 }}>Find brobygger</div>
+        <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft,
+          marginBottom: dato ? 10 : 16 }}>
           {m.firstName} {m.lastName}
-          {m.behovUrgency === 'snarest' && <span style={{ marginLeft: 8, color: SoS.rose, fontWeight: 600 }}>· Haster</span>}
-          {m.behovUrgency === 'uge'     && <span style={{ marginLeft: 8, color: SoS.amber, fontWeight: 600 }}>· Inden for en uge</span>}
+          {m.behovUrgency === 'snarest' &&
+            <span style={{ marginLeft: 8, color: SoS.rose, fontWeight: 600 }}>· Haster</span>}
         </div>
+        {dato && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16,
+            padding: '8px 12px', background: SoS.sky + '15',
+            border: `1px solid ${SoS.sky}40`, borderRadius: SoS.r.sm }}>
+            <Icon name="calendar" size={14} color={SoS.sky}/>
+            <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
+              color: SoS.ink }}>
+              {new Date(dato).toLocaleDateString('da-DK',
+                { weekday: 'long', day: 'numeric', month: 'long' })}
+              {m.appointmentSted &&
+                <span style={{ fontWeight: 400, color: SoS.inkMuted }}>
+                  {' · '}{m.appointmentSted}
+                </span>}
+            </div>
+          </div>
+        )}
 
-        {/* Mode-toggle: Ledig / Forespørg */}
-        <div style={{ display: 'flex', borderRadius: SoS.r.sm, overflow: 'hidden',
+        {/* Dato-baseret liste når fast aftale */}
+        {dato && (
+          <div style={{ marginBottom: 16 }}>
+            {[
+              { label: '✅ Ledig denne dag', list: ledigDag,
+                color: SoS.green, bg: SoS.green + '10', action: 'match' },
+              { label: '⚠️ Ikke meldt ind (kan forespørges)', list: ikkeMeldt,
+                color: SoS.amber, bg: SoS.amber + '10', action: 'foresporg' },
+              { label: '❌ Optaget denne dag', list: optatetDag,
+                color: SoS.rose, bg: SoS.rose + '10', action: null },
+            ].map(gruppe => gruppe.list.length === 0 ? null : (
+              <div key={gruppe.label} style={{ marginBottom: 10 }}>
+                <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 700,
+                  color: gruppe.color, letterSpacing: 0.5,
+                  textTransform: 'uppercase', marginBottom: 6 }}>
+                  {gruppe.label}
+                </div>
+                {gruppe.list.map(b => {
+                  const myAppts = (window.SoS_APPOINTMENTS_BUSY || [])
+                    .filter(a => a.brobyggerId === b.id && a.status === 'confirmed');
+                  const sel = valgt === b.id;
+                  const canSelect = gruppe.action !== null;
+                  return (
+                    <button key={b.id}
+                      onClick={() => canSelect && setValgt(sel ? '' : b.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12,
+                        width: '100%', textAlign: 'left', padding: '10px 12px',
+                        marginBottom: 6, borderRadius: SoS.r.md, cursor: canSelect ? 'pointer' : 'default',
+                        border: `2px solid ${sel ? gruppe.color : (canSelect ? SoS.line : SoS.lineSoft)}`,
+                        background: sel ? gruppe.color + '12'
+                          : canSelect ? SoS.paper : SoS.surface,
+                        opacity: gruppe.action === null ? 0.6 : 1 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 16,
+                        background: b.bg || SoS.accent,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+                        color: '#fff', flexShrink: 0 }}>{b.avatar}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 13,
+                          fontWeight: 600, color: sel ? gruppe.color : SoS.ink }}>
+                          {b.name}
+                        </div>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 11,
+                          color: SoS.inkSoft }}>
+                          {myAppts.length} aktive aftaler
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Mode-toggle: Ledig / Forespørg — kun uden fast dato */}
+        {!dato && <div style={{ display: 'flex', borderRadius: SoS.r.sm, overflow: 'hidden',
           border: `1px solid ${SoS.line}`, marginBottom: 16 }}>
           <button onClick={() => { setMode('ledig'); setValgt(''); }}
             style={{ flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer',
@@ -8546,7 +8804,8 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
               color: mode === 'foresporg' ? '#fff' : SoS.inkSoft }}>
             Forespørg optaget ({optaget.length})
           </button>
-        </div>
+        </div>}
+        {!dato && <>
 
         {/* Info-banner for forespørg-mode */}
         {mode === 'foresporg' && (
@@ -8620,6 +8879,7 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
             );
           })}
         </div>
+        {!dato && </>}
 
         {/* Action-knapper */}
         <div style={{ display: 'flex', gap: 10 }}>
@@ -12411,6 +12671,9 @@ const NyAftaleFlow = ({ onClose, viewingHq }) => {
   const [note,           setNote]           = React.useState('');
   const [consent,        setConsent]        = React.useState(false);
   const [hqOverride,     setHqOverride]     = React.useState(viewingHq || 'Aarhus');
+  const [fastAftale,     setFastAftale]     = React.useState(null);
+  const [appointmentDato, setAppointmentDato] = React.useState('');
+  const [appointmentSted, setAppointmentSted] = React.useState('');
   const [query,          setQuery]          = React.useState('');
   const [selectedPerson, setSelectedPerson] = React.useState(null);
   const [showContact,    setShowContact]    = React.useState(false);
@@ -12444,8 +12707,11 @@ const NyAftaleFlow = ({ onClose, viewingHq }) => {
       notes:        note.trim()
         ? [{ id: 'n-' + Date.now(), tekst: note.trim(), dato: new Date().toISOString().slice(0,10) }]
         : [],
-      hq:           hqOverride || viewingHq || 'Aarhus',
-      registeredAt: new Date().toISOString(),
+      hq:              hqOverride || viewingHq || 'Aarhus',
+      appointmentDato: fastAftale && appointmentDato ? appointmentDato : null,
+      appointmentSted: fastAftale && appointmentSted ? appointmentSted.trim() : null,
+      appointmentType: type === 'sundhed' ? (fastAftale ? 'fast' : 'fleksibel') : null,
+      registeredAt:    new Date().toISOString(),
       createdAt:    new Date().toISOString().slice(0, 10),
       initials:     (form.firstName.trim()[0] || '') + (form.lastName.trim()[0] || ''),
       consentAt:    new Date().toISOString(),
@@ -12657,6 +12923,51 @@ const NyAftaleFlow = ({ onClose, viewingHq }) => {
               ))}
             </div>
           </div>
+
+          {/* Sundhed: fast aftaledato? */}
+          {type === 'sundhed' && (
+            <div style={{ marginBottom: 14, padding: '12px 14px',
+              background: SoS.sundhed + '08',
+              border: `1px solid ${SoS.sundhed}30`,
+              borderRadius: SoS.r.sm }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                color: SoS.inkSoft, marginBottom: 8 }}>
+                Har personen en fast aftaledato?
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: fastAftale ? 10 : 0 }}>
+                {[['fast', 'Ja, fast dato'], ['fleks', 'Nej, fleksibelt']].map(([id, lbl]) => (
+                  <button key={id} onClick={() => setFastAftale(id === 'fast')} style={{
+                    flex: 1, padding: '9px 0', border: `2px solid ${
+                      fastAftale === (id === 'fast') ? SoS.sundhed : SoS.line}`,
+                    borderRadius: SoS.r.sm, cursor: 'pointer',
+                    fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                    background: fastAftale === (id === 'fast') ? SoS.sundhed + '15' : '#fff',
+                    color: fastAftale === (id === 'fast') ? SoS.sundhed : SoS.inkMuted }}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+              {fastAftale === true && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
+                      color: SoS.inkSoft, marginBottom: 4 }}>Dato</div>
+                    <input type="date" value={appointmentDato}
+                      onChange={e => setAppointmentDato(e.target.value)}
+                      style={inp}/>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
+                      color: SoS.inkSoft, marginBottom: 4 }}>Sted</div>
+                    <input value={appointmentSted}
+                      onChange={e => setAppointmentSted(e.target.value)}
+                      placeholder="f.eks. AUH Aarhus"
+                      style={inp}/>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
@@ -17031,8 +17342,8 @@ const AppWithTweaks = () => {
     content = (
       <div style={{ position: "absolute", inset: 0, background: SoS.cream, overflow: "hidden" }}>
         <Screen bg={SoS.cream}>
-          {screen === "hjem" && <HomeScreen user={user} appointments={appts} onOpenAppt={openAppt} onNavigate={navigate} variant={isNew ? "new" : "busy"} />}
-          {screen === "kalender" && <CalendarScreen appointments={appts} shifts={SoS_SHIFTS} onOpenAppt={openAppt} onAddShift={() => {}} />}
+          {screen === "hjem" && <HomeScreen user={user} appointments={appts} onOpenAppt={openAppt} onNavigate={navigate} variant={isNew ? "new" : "busy"} brobyggerId={_bbId} />}
+          {screen === "kalender" && <CalendarScreen appointments={appts} shifts={SoS_SHIFTS} onOpenAppt={openAppt} onAddShift={() => {}} brobyggerId={_bbId} />}
           {/* historik-tab fjernet — info vises under aftale-detaljer */}
           {screen === "notif" && (
             msgCompose
