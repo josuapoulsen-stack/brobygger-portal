@@ -2204,8 +2204,38 @@ const MonthChips = ({ data }) => (
 );
 
 const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'busy', brobyggerId }) => {
-  const [logTarget, setLogTarget] = React.useState(null);
-  const [apptVersion, setApptVersion] = React.useState(0);
+  const [logTarget,    setLogTarget]    = React.useState(null);
+  const [apptVersion,  setApptVersion]  = React.useState(0);
+  const [matchVersion, setMatchVersion] = React.useState(0);
+
+  const acceptMatch = (person) => {
+    if (!brobyggerId) return;
+    const upd = { ...(window.SoS_MENNESKER || {}) };
+    upd[person.id] = { ...upd[person.id], brobyggerId,
+      status: 'aktiv',
+      matchedAt: new Date().toISOString().slice(0, 10),
+      matchAnmodning: null };
+    window.SoS_MENNESKER = upd;
+    window.SoS_STORE?.save('mennesker', upd);
+    const ns = JSON.parse(localStorage.getItem('sos_notifikationer') || '[]')
+      .map(n => n.brobyggerId === brobyggerId && n.type === 'match-anmodning'
+        ? { ...n, status: 'accepteret', read: true } : n);
+    localStorage.setItem('sos_notifikationer', JSON.stringify(ns));
+    window.dispatchEvent(new Event('sos-mennesker-updated'));
+    setMatchVersion(v => v + 1);
+  };
+
+  const declineMatch = (person) => {
+    const upd = { ...(window.SoS_MENNESKER || {}) };
+    upd[person.id] = { ...upd[person.id], matchAnmodning: null };
+    window.SoS_MENNESKER = upd;
+    window.SoS_STORE?.save('mennesker', upd);
+    const ns = JSON.parse(localStorage.getItem('sos_notifikationer') || '[]')
+      .map(n => n.brobyggerId === brobyggerId && n.type === 'match-anmodning'
+        ? { ...n, status: 'afvist', read: true } : n);
+    localStorage.setItem('sos_notifikationer', JSON.stringify(ns));
+    setMatchVersion(v => v + 1);
+  };
   const TODAY_STR = new Date().toISOString().slice(0, 10);
 
   // Seneste afholdte aftaler der mangler registrering (maks 3 dage tilbage)
@@ -2277,6 +2307,83 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
           </div>
         );
       })()}
+      {/* Afventende forespørgsler og nye matches */}
+      {brobyggerId && (() => {
+        const pending = Object.values(window.SoS_MENNESKER || {})
+          .filter(p => p.matchAnmodning?.brobyggerId === brobyggerId
+            && p.matchAnmodning?.status === 'afventer');
+        const nyeMatches = JSON.parse(localStorage.getItem('sos_notifikationer') || '[]')
+          .filter(n => n.brobyggerId === brobyggerId
+            && n.type === 'nyt-match' && !n.read);
+        if (pending.length === 0 && nyeMatches.length === 0) return null;
+        return (
+          <div style={{ margin: '12px 20px 0' }}>
+            {nyeMatches.map(n => {
+              const mp = (window.SoS_MENNESKER || {})[n.menneskeId];
+              return (
+                <div key={n.id} style={{ padding: '12px 14px',
+                  background: SoS.sage + '15',
+                  border: `1px solid ${SoS.sage}40`,
+                  borderRadius: SoS.r.md, marginBottom: 8,
+                  display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 4,
+                    background: SoS.sage, flexShrink: 0 }}/>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 13,
+                      fontWeight: 700, color: SoS.ink }}>Nyt match!</div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 12,
+                      color: SoS.inkMuted, marginTop: 2 }}>{n.text}</div>
+                  </div>
+                  <button onClick={() => {
+                    const ns = JSON.parse(localStorage.getItem('sos_notifikationer') || '[]')
+                      .map(x => x.id === n.id ? { ...x, read: true } : x);
+                    localStorage.setItem('sos_notifikationer', JSON.stringify(ns));
+                    setMatchVersion(v => v + 1);
+                  }} style={{ background: 'none', border: 'none',
+                    cursor: 'pointer', fontFamily: SoS.sans,
+                    fontSize: 11, color: SoS.inkMuted }}>OK</button>
+                </div>
+              );
+            })}
+            {pending.map(p => {
+              const t = SoS_TYPER[p.type] || {};
+              return (
+                <div key={p.id} style={{ padding: '14px',
+                  background: SoS.orange + '10',
+                  border: `1px solid ${SoS.orange}40`,
+                  borderRadius: SoS.r.md, marginBottom: 8 }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 13,
+                    fontWeight: 700, color: SoS.ink, marginBottom: 4 }}>
+                    Forespørgsel om brobygning
+                  </div>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 12,
+                    color: SoS.inkMuted, marginBottom: 12 }}>
+                    {p.firstName} {p.lastName}, {p.age} år
+                    {t.short ? ` · ${t.short}` : ''}
+                    {p.hq ? ` · ${p.hq}` : ''}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => acceptMatch(p)} style={{
+                      flex: 2, padding: '10px 0',
+                      background: SoS.sage, color: '#fff', border: 'none',
+                      borderRadius: SoS.r.sm, cursor: 'pointer',
+                      fontFamily: SoS.sans, fontSize: 14, fontWeight: 700 }}>
+                      Accepter
+                    </button>
+                    <button onClick={() => declineMatch(p)} style={{
+                      flex: 1, padding: '10px 0',
+                      background: 'none',
+                      border: `1px solid ${SoS.line}`,
+                      borderRadius: SoS.r.sm, cursor: 'pointer',
+                      fontFamily: SoS.sans, fontSize: 14,
+                      color: SoS.inkMuted }}>Afvis</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
       <TopBar
         subtitle={greet}
         title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
@@ -2291,8 +2398,25 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
             position: 'relative',
           }}>
             <Icon name="bell" size={22} color={SoS.ink} />
-            <div style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8,
-              borderRadius: 4, background: SoS.rose, border: '2px solid #fff' }} />
+            {(() => {
+              const pf = Object.values(window.SoS_MENNESKER || {})
+                .filter(p => p.matchAnmodning?.brobyggerId === brobyggerId
+                  && p.matchAnmodning?.status === 'afventer').length;
+              const nm = JSON.parse(localStorage.getItem('sos_notifikationer') || '[]')
+                .filter(n => n.brobyggerId === brobyggerId && !n.read).length;
+              const cnt = pf + nm;
+              if (cnt === 0) return null;
+              return (
+                <div style={{ position: 'absolute', top: 8, right: 8,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: SoS.rose, border: '2px solid #fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: SoS.sans, fontSize: 9, fontWeight: 700, color: '#fff',
+                  padding: '0 3px' }}>
+                  {cnt > 9 ? '9+' : cnt}
+                </div>
+              );
+            })()}
           </button>
         }
       />
@@ -2487,6 +2611,37 @@ const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift, brobygge
     setRaadighedsplan(updated);
     setAddedCount(newEntries.length);
     setAddShiftDone(true);
+    // Tjek venteliste
+    const vl = JSON.parse(localStorage.getItem('sos_venteliste') || '[]');
+    const newDates = newEntries.map(e => e.dato);
+    const matches = vl.filter(v => {
+      const p = (window.SoS_MENNESKER || {})[v.menneskeId];
+      return p && p.appointmentDato && newDates.includes(p.appointmentDato);
+    });
+    if (matches.length > 0 && brobyggerId) {
+      const bb = (window.SoS_BROBYGGERE || []).find(b => b.id === brobyggerId);
+      const existing = JSON.parse(
+        localStorage.getItem('sos_venteliste_matches') || '[]');
+      matches.forEach(v => {
+        const p = (window.SoS_MENNESKER || {})[v.menneskeId];
+        if (!existing.some(e =>
+            e.menneskeId === v.menneskeId && e.brobyggerId === brobyggerId)) {
+          existing.push({
+            id: 'vm-' + Date.now() + '-' + v.menneskeId,
+            brobyggerId,
+            brobyggerNavn: bb?.name || 'Ukendt brobygger',
+            menneskeId: v.menneskeId,
+            menneskeNavn: p ? p.firstName + ' ' + p.lastName : '?',
+            dato: p.appointmentDato,
+            sted: p.appointmentSted || null,
+            createdAt: new Date().toISOString(),
+            read: false,
+          });
+        }
+      });
+      localStorage.setItem(
+        'sos_venteliste_matches', JSON.stringify(existing));
+    }
   };
   const handleBekreft = () => {
     if (!brobyggerId) return;
@@ -5868,7 +6023,7 @@ const ComposeMessage = ({ role, ownHq, onClose }) => {
 };
 
 // \u2500\u2500 Thread list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate }) => {
+const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate, brobyggerId }) => {
   const [tab, setTab] = React.useState('notifikationer');
   const [dismissed, setDismissed] = React.useState(new Set());
   const [accepted,  setAccepted]  = React.useState(new Set());
@@ -5880,7 +6035,9 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate }) =>
   const sendBbBesked = () => {
     const t = bbTekst.trim();
     if (!t) return;
-    const nm = { id: 'msg-' + Date.now(), fra: 'brobygger', til: 'admin',
+    const nm = { id: 'msg-' + Date.now(),
+      fra: (role === 'brobygger' && brobyggerId) ? brobyggerId : role,
+      til: 'admin',
       tekst: t, sendt: new Date().toISOString(), laest: false };
     const updated = [...sosBesk, nm];
     setSosBesk(updated);
@@ -8620,6 +8777,13 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
       matchedAt: new Date().toISOString().slice(0, 10), matchAnmodning: null };
     window.SoS_MENNESKER = updated;
     window.SoS_STORE?.save('mennesker', updated);
+    const _nk = 'sos_notifikationer';
+    const _ns = JSON.parse(localStorage.getItem(_nk) || '[]');
+    _ns.push({ id: 'n-' + Date.now(), type: 'nyt-match', read: false,
+      createdAt: new Date().toISOString(),
+      text: `Nyt match: ${m.firstName} ${m.lastName} er tilknyttet dig`,
+      brobyggerId: valgt, menneskeId: m.id });
+    localStorage.setItem(_nk, JSON.stringify(_ns));
     onSaved?.({ brobyggerId: valgt });
     onClose();
   };
@@ -13462,9 +13626,18 @@ const DesktopDashboard = ({ viewingHq, canRapport }) => {
     setOpfVersion(v => v + 1);
   };
 
+  const venteMatches = (() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem('sos_venteliste_matches') || '[]')
+        .filter(v => !v.read);
+    } catch { return []; }
+  })();
   const urgentCount = opfPending.length
-    + afventerListe.filter(m => daysWaiting(m) >= 3).length;
-  const harDagsorden = opfPending.length > 0 || afventerListe.length > 0;
+    + afventerListe.filter(m => daysWaiting(m) >= 3).length
+    + venteMatches.length;
+  const harDagsorden = opfPending.length > 0
+    || afventerListe.length > 0 || venteMatches.length > 0;
 
   return (
     <>
@@ -13553,6 +13726,53 @@ const DesktopDashboard = ({ viewingHq, canRapport }) => {
               </div>
             );
           })}
+
+          {/* Venteliste matches */}
+          {venteMatches.map((v, i) => (
+            <div key={v.id} style={{ padding: '12px 18px',
+              borderBottom: `1px solid ${SoS.lineSoft}`,
+              display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 3, alignSelf: 'stretch',
+                background: SoS.sage, flexShrink: 0, borderRadius: 2 }}/>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 13,
+                  fontWeight: 600, color: SoS.ink }}>
+                  {v.menneskeNavn}
+                  <span style={{ fontFamily: SoS.sans, fontSize: 11,
+                    fontWeight: 400, color: SoS.inkMuted, marginLeft: 6 }}>
+                    på venteliste
+                  </span>
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 11,
+                  color: SoS.inkMuted, marginTop: 2 }}>
+                  {v.brobyggerNavn} er ledig
+                  {' '}{new Date(v.dato).toLocaleDateString('da-DK',
+                    { weekday: 'short', day: 'numeric', month: 'short' })}
+                  {v.sted ? ` · ${v.sted}` : ''}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button onClick={() => setTilknytMenneske(
+                  (window.SoS_MENNESKER || {})[v.menneskeId])} style={{
+                  padding: '6px 12px', background: SoS.sage, color: '#fff',
+                  border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer',
+                  fontFamily: SoS.sans, fontSize: 11, fontWeight: 700 }}>
+                  Match nu
+                </button>
+                <button onClick={() => {
+                  const all = JSON.parse(
+                    localStorage.getItem('sos_venteliste_matches') || '[]')
+                    .map(x => x.id === v.id ? { ...x, read: true } : x);
+                  localStorage.setItem(
+                    'sos_venteliste_matches', JSON.stringify(all));
+                  setOpfVersion(n => n + 1);
+                }} style={{ padding: '6px 10px', background: SoS.surfaceAlt,
+                  border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                  cursor: 'pointer', fontFamily: SoS.sans,
+                  fontSize: 11, color: SoS.inkMuted }}>Luk</button>
+              </div>
+            </div>
+          ))}
 
           {/* Afventer match */}
           {afventerListe.slice(0, 5).map((m, i) => {
@@ -17365,6 +17585,7 @@ const AppWithTweaks = () => {
                   onCompose={() => setMsgCompose(true)}
                   role={activeRole}
                   ownHq={viewingHq}
+                  brobyggerId={_bbId}
                   onNavigate={navigate}
                 />
           )}
