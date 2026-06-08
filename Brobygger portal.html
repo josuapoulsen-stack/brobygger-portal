@@ -8805,7 +8805,8 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
             Forespørg optaget ({optaget.length})
           </button>
         </div>}
-        {!dato && <>
+        {!dato && (
+        <>
 
         {/* Info-banner for forespørg-mode */}
         {mode === 'foresporg' && (
@@ -8879,7 +8880,8 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
             );
           })}
         </div>
-        {!dato && </>}
+        </>
+        }
 
         {/* Action-knapper */}
         <div style={{ display: 'flex', gap: 10 }}>
