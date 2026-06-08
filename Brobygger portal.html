@@ -12250,7 +12250,7 @@ const DesktopBrugerstyring = () => {
 };
 
 const DesktopView = ({ user, ownHq, isAdmin, canRapport = false, canUserMgmt = false, onClose }) => {
-  const [section, setSection] = React.useState('kalender');
+  const [section, setSection] = React.useState('oversigt');
   const [viewingHq, setViewingHq] = React.useState(canRapport ? 'Alle hovedsæder' : ownHq);
   const [deskExported, setDeskExported] = React.useState(false);
   const [showSearch, setShowSearch] = React.useState(false);
@@ -12319,12 +12319,11 @@ const DesktopView = ({ user, ownHq, isAdmin, canRapport = false, canUserMgmt = f
 
           <div style={{ padding: 10, flex: 1, overflowY: 'auto' }}>
             {[
-              { k: 'dashboard',    l: 'Dashboard',          i: 'chart'    },
-              { k: 'kalender',     l: 'Kalender',           i: 'calendar' },
-              { k: 'brobygninger', l: 'Brobygninger',       i: 'match'    },
-              { k: 'brobyggere',   l: 'Brobyggere',         i: 'users'    },
-              { k: 'mennesker',    l: 'Mennesker',          i: 'heart'    },
-              { k: 'beskeder',    l: 'Beskeder',           i: 'chat'    },
+              { k: 'oversigt',   l: 'Oversigt',    i: 'chart'    },
+              { k: 'mennesker',  l: 'Mennesker',   i: 'heart'    },
+              { k: 'brobyggere', l: 'Brobyggere',  i: 'users'    },
+              { k: 'kalender',   l: 'Kalender',    i: 'calendar' },
+              { k: 'beskeder',   l: 'Beskeder',    i: 'chat'     },
               ].concat(canRapport ? [{ k: 'rapport', l: 'Rapport & eksport', i: 'note' }] : [])
               .concat(canUserMgmt ? [{ k: 'brugerstyring', l: 'Brugerstyring', i: 'shield' }] : []).map(n => (
               <button key={n.k} onClick={() => setSection(n.k)} style={{
@@ -12368,7 +12367,7 @@ const DesktopView = ({ user, ownHq, isAdmin, canRapport = false, canUserMgmt = f
               </div>
               <div style={{ fontFamily: SoS.sans, fontSize: 26, fontWeight: 700,
                 color: SoS.ink, letterSpacing: -0.5, marginTop: 2 }}>
-                {{ dashboard: 'Dashboard', brobygninger: 'Brobygninger',
+                {{ oversigt: 'Oversigt', brobygninger: 'Brobygninger',
                    brobyggere: 'Brobyggere', mennesker: 'Mennesker', beskeder: 'Beskeder',
                    kalender: 'Kalender', sroi: 'Effekt & Dokumentation', rapport: 'Rapport & eksport', brugerstyring: 'Brugerstyring' }[section]}
               </div>
@@ -12395,7 +12394,7 @@ const DesktopView = ({ user, ownHq, isAdmin, canRapport = false, canUserMgmt = f
             </div>
           </div>
 
-          {section === 'dashboard' && <DesktopDashboard viewingHq={viewingHq} canRapport={canRapport}/>}
+          {section === 'oversigt' && <DesktopDashboard viewingHq={viewingHq} canRapport={canRapport}/>}
           {section === 'brobygninger' && <DesktopBrobygninger/>}
           {section === 'brobyggere' && <DesktopBrobyggere initialTarget={searchTarget} onTargetConsumed={() => setSearchTarget(null)}/>}
           {section === 'mennesker' && <DesktopMennesker initialTarget={searchTarget} onTargetConsumed={() => setSearchTarget(null)}/>}
@@ -12434,427 +12433,466 @@ const DSCard = ({ children, title, subtitle, style = {}, action }) => (
   </div>
 );
 
-const DesktopDashboard = ({ viewingHq, canRapport }) => (
-  <>
-    {/* KPI row */}
-    <div style={{ display: 'grid', gridTemplateColumns: canRapport ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)',
-      gap: 10, marginBottom: 14 }}>
-      {(() => {
-        const aktive = SoS_BROBYGGERE ? SoS_BROBYGGERE.filter(b => b.status === 'aktiv').length : 0;
-        const afventer = Object.values(SoS_MENNESKER || {}).filter(m => m.status === 'afventer' || m.status === 'venter').length;
-        const konfirmerede = (SoS_APPOINTMENTS_BUSY || []).filter(a => a.status === 'confirmed').length;
-        const pendende = (SoS_APPOINTMENTS_BUSY || []).filter(a => a.status === 'pending').length;
-        const afsluttede = Object.values(SoS_MENNESKER || {}).filter(m => m.status === 'afsluttet');
-        const sroiEst = afsluttede.length * 47000;
-        const kpis = [
-          { l: 'Aktive brobyggere', v: String(aktive), d: aktive > 0 ? 'aktive' : '—', c: SoS.accent },
-          { l: 'Afventer match', v: String(afventer), d: afventer > 0 ? 'ikke matchet' : 'alle matchet', c: SoS.amber },
-          { l: 'Bekræftede aftaler', v: String(konfirmerede), d: 'registrerede', c: SoS.green },
-          { l: 'Afventer bekræftelse', v: String(pendende), d: 'pending', c: SoS.inkMuted },
-          { l: 'Registrerede mennesker', v: String(Object.keys(SoS_MENNESKER || {}).length), d: 'i alt', c: SoS.sky },
-        ];
-        if (canRapport) kpis.push({ l: 'SROI-estimat', v: (sroiEst/1000).toFixed(0) + 'k', d: 'kr. samfundsværdi', c: SoS.sage });
-        return kpis;
-      })().map((k, i) => (
-        <DSCard key={i}>
-          <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
-            color: SoS.inkMuted, letterSpacing: 1, textTransform: 'uppercase' }}>{k.l}</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 6 }}>
-            <span style={{ fontFamily: SoS.mono, fontSize: 28, fontWeight: 700,
-              color: k.c || SoS.ink, letterSpacing: -1 }}>{k.v}</span>
-            <span style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
-              color: k.tc || SoS.sage }}>{k.d}</span>
-          </div>
-          <div style={{ height: 3, marginTop: 10, borderRadius: 2, background: SoS.lineSoft }}>
-            <div style={{ width: '65%', height: '100%', background: k.c, borderRadius: 2 }}/>
-          </div>
-        </DSCard>
-      ))}
-    </div>
+const DesktopDashboard = ({ viewingHq, canRapport }) => {
+  const [opfVersion,      setOpfVersion]      = React.useState(0);
+  const [tilknytMenneske, setTilknytMenneske] = React.useState(null);
 
-    {/* Afventer match */}
-    {(() => {
-      const afventerListe = Object.values(window.SoS_MENNESKER || {})
-        .filter(m => m.status === 'afventer' || m.status === 'venter')
-        .slice(0, 10);
-      const [expanded, setExpanded] = React.useState(false);
-      const [tilknytMenneske, setTilknytMenneske] = React.useState(null);
-      if (afventerListe.length === 0) return null;
-      return (
-        <>
-          <DSCard style={{ marginBottom: 14, padding: 0, overflow: 'hidden' }}>
-            <button onClick={() => setExpanded(v => !v)} style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              width: '100%', padding: '14px 18px', background: 'none',
-              border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 0,
-                background: SoS.orange + '20', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon name="match" size={15} color={SoS.orange}/>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 700, color: SoS.ink }}>
-                  {afventerListe.length} {afventerListe.length === 1 ? 'person afventer' : 'personer afventer'} match
-                </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginTop: 1 }}>
-                  Tilknyt en brobygger direkte herfra
-                </div>
-              </div>
-              <Icon name={expanded ? 'chevronD' : 'chevron'} size={14} color={SoS.inkMuted}/>
-            </button>
-            {expanded && (
-              <div style={{ borderTop: `1px solid ${SoS.line}` }}>
-                {afventerListe.map((m, i) => (
-                  <div key={m.id} style={{
-                    padding: '12px 18px',
-                    borderBottom: i < afventerListe.length - 1 ? `1px solid ${SoS.lineSoft}` : 'none',
-                    display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 17,
-                      background: SoS.orange + '20', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      fontFamily: SoS.mono, fontSize: 11, fontWeight: 700, color: SoS.orange }}>
-                      {(m.firstName[0] || '') + (m.lastName ? m.lastName[0] : '')}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>
-                        {m.firstName} {m.lastName}
-                        <span style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 400, color: SoS.inkMuted, marginLeft: 6 }}>{m.age} år</span>
-                      </div>
-                      <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
-                        {m.hq} · {m.needs && m.needs.length > 0 ? m.needs.slice(0,2).join(', ') : 'Ingen behov angivet'}
-                      </div>
-                    </div>
-                    <button onClick={() => setTilknytMenneske(m)} style={{
-                      padding: '7px 14px', background: SoS.ink, color: '#fff',
-                      border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer',
-                      fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
-                      whiteSpace: 'nowrap' }}>
-                      Tilknyt
-                    </button>
-                  </div>
-                ))}
+  const TODAY_S = new Date().toISOString().slice(0, 10);
+
+  const opfPending = (window.SoS_APPOINTMENTS_BUSY || [])
+    .filter(a => a.date < TODAY_S && a.brobyggerLog && !a.raadgiverOpfoelgning)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const afventerListe = Object.values(window.SoS_MENNESKER || {})
+    .filter(m => m.status === 'afventer' || m.status === 'venter');
+
+  const daysWaiting = m => {
+    const d = m.createdAt || m.registeredAt;
+    if (!d) return 0;
+    return Math.floor((new Date(TODAY_S) - new Date(d)) / (1000 * 60 * 60 * 24));
+  };
+
+  const setOpfoelgning = (apptId, val, trivsel) => {
+    const newList = (window.SoS_APPOINTMENTS_BUSY || []).map(a =>
+      a.id === apptId ? { ...a, raadgiverOpfoelgning: val,
+        brobyggerTrivsel: trivsel || a.brobyggerTrivsel || null } : a
+    );
+    window.SoS_APPOINTMENTS_BUSY = newList;
+    if (window.SoS_STORE) window.SoS_STORE.save('appointments', newList);
+    setOpfVersion(v => v + 1);
+  };
+
+  const urgentCount = opfPending.length
+    + afventerListe.filter(m => daysWaiting(m) >= 3).length;
+  const harDagsorden = opfPending.length > 0 || afventerListe.length > 0;
+
+  return (
+    <>
+      {/* ══ DAGSORDEN ══════════════════════════════════════════════ */}
+      {harDagsorden && (
+        <div style={{ marginBottom: 14, border: `1px solid ${SoS.line}`,
+          background: SoS.surface, overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ padding: '12px 18px', borderBottom: `1px solid ${SoS.line}`,
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: urgentCount > 0 ? SoS.ink : SoS.surface }}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 700,
+              color: urgentCount > 0 ? '#fff' : SoS.inkMuted,
+              letterSpacing: 1, textTransform: 'uppercase' }}>DAGSORDEN</div>
+            {urgentCount > 0 && (
+              <div style={{ marginLeft: 'auto', padding: '2px 9px',
+                background: 'rgba(255,255,255,0.15)', borderRadius: 2,
+                fontFamily: SoS.mono, fontSize: 9, fontWeight: 700,
+                color: '#fff', letterSpacing: 0.5 }}>
+                {urgentCount} kræver handling
               </div>
             )}
-          </DSCard>
-          {tilknytMenneske && (
-            <TilknytBrobyggerModal
-              menneske={tilknytMenneske}
-              onClose={() => setTilknytMenneske(null)}
-              onSaved={() => setTilknytMenneske(null)}
-            />
-          )}
-        </>
-      );
-    })()}
+          </div>
 
-    {/* Opfølgning afventer */}
-    {(() => {
-      const TODAY_S = new Date().toISOString().slice(0, 10);
-      const pending = (window.SoS_APPOINTMENTS_BUSY || [])
-        .filter(a => a.date < TODAY_S && a.brobyggerLog && !a.raadgiverOpfoelgning)
-        .sort((a, b) => a.date.localeCompare(b.date));
-
-      const [expanded, setExpanded] = React.useState(false);
-      const [version,  setVersion]  = React.useState(0);
-
-      const setOpfoelgning = (apptId, val, trivsel) => {
-        const newList = (window.SoS_APPOINTMENTS_BUSY || []).map(a =>
-          a.id === apptId ? { ...a, raadgiverOpfoelgning: val,
-            brobyggerTrivsel: trivsel || a.brobyggerTrivsel || null } : a
-        );
-        window.SoS_APPOINTMENTS_BUSY = newList;
-        if (window.SoS_STORE) window.SoS_STORE.save('appointments', newList);
-        setVersion(v => v + 1);
-      };
-
-      if (pending.length === 0) return null;
-
-      return (
-        <DSCard style={{ marginBottom: 14, padding: 0, overflow: 'hidden' }}>
-          {/* Header — klikbar */}
-          <button onClick={() => setExpanded(v => !v)} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            width: '100%', padding: '14px 18px', background: 'none',
-            border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-            <div style={{ width: 32, height: 32, borderRadius: 0,
-              background: SoS.amber + '20', display: 'flex',
-              alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Icon name="bell" size={15} color={SoS.amber}/>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 700,
-                color: SoS.ink }}>
-                {pending.length} {pending.length === 1 ? 'aftale afventer' : 'aftaler afventer'} din opfølgning
-              </div>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginTop: 1 }}>
-                Brobyggerne har registreret — ring og tilføj din vurdering
-              </div>
-            </div>
-            <Icon name={expanded ? 'chevronD' : 'chevron'} size={14} color={SoS.inkMuted}/>
-          </button>
-
-          {expanded && (
-            <div style={{ borderTop: `1px solid ${SoS.line}` }}>
-              {pending.map((a, i) => {
-                const m  = SoS_MENNESKER[a.menneskeId];
-                const bb = SoS_BROBYGGERE.find(b => b.id === a.brobyggerId);
-                const log = a.brobyggerLog || {};
-                const UDFALD_COLOR = {
-                  gennemfoert: SoS.green, afbud: SoS.amber, 'ikke-modt': SoS.red };
-                const UDFALD_LABEL = {
-                  gennemfoert: 'Gennemfaert', afbud: 'Afbud', 'ikke-modt': 'Mødte ikke op' };
-                return (
-                  <div key={a.id} style={{
-                    padding: '14px 18px',
-                    borderBottom: i < pending.length - 1 ? `1px solid ${SoS.lineSoft}` : 'none',
-                    display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'start' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <span style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 700,
-                          color: SoS.ink }}>
-                          {m ? m.firstName + ' ' + m.lastName : '—'}
-                        </span>
-                        <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 700,
-                          color: UDFALD_COLOR[log.udfald] || SoS.inkMuted,
-                          textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                          {UDFALD_LABEL[log.udfald] || log.udfald}
-                          {log.varighed ? ` · ${log.varighed >= 60 ? Math.round(log.varighed/60*10)/10 + 't' : log.varighed + 'm'}` : ''}
-                        </span>
-                      </div>
-                      <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
-                        {a.date} · {bb ? bb.name.split(' ')[0] : '—'}
-                        {log.note ? ` · "${log.note}"` : ''}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, alignItems: 'flex-end' }}>
-                      {/* Trivsel-signal */}
-                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                        <span style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted, marginRight: 2 }}>BB:</span>
-                        {[
-                          { id: 'engageret',   emoji: '💪', label: 'Engageret' },
-                          { id: 'neutral',     emoji: '😐', label: 'Neutral' },
-                          { id: 'overbelastet',emoji: '😔', label: 'Overbelastet' },
-                        ].map(t => (
-                          <button key={t.id}
-                            onClick={() => setOpfoelgning(a.id, 'fulgt-op', t.id)}
-                            title={`Ring & notér · Brobygger virker ${t.label}`}
-                            style={{ padding: '4px 8px', background: SoS.surface,
-                              border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
-                              cursor: 'pointer', fontSize: 14 }}>
-                            {t.emoji}
-                          </button>
-                        ))}
-                      </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => setOpfoelgning(a.id, 'fulgt-op')} style={{
-                        padding: '6px 12px', background: SoS.ink, color: '#fff',
-                        border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer',
-                        fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
-                        whiteSpace: 'nowrap' }}>
-                        Ring &amp; notér
-                      </button>
-                      <button onClick={() => setOpfoelgning(a.id, 'ikke-noedvendigt')} style={{
-                        padding: '6px 10px', background: SoS.surfaceAlt, color: SoS.inkMuted,
-                        border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
-                        cursor: 'pointer', fontFamily: SoS.sans, fontSize: 11,
-                        whiteSpace: 'nowrap' }}>
-                        Ikke nødvendigt
-                      </button>
-                      </div>
-                    </div>
+          {/* Opfølgninger — én række per aftale */}
+          {opfPending.map((a, i) => {
+            const m  = (window.SoS_MENNESKER || {})[a.menneskeId];
+            const bb = (window.SoS_BROBYGGERE || []).find(b => b.id === a.brobyggerId);
+            const log = a.brobyggerLog || {};
+            const UDFALD_LABEL = {
+              gennemfoert: 'Gennemført', afbud: 'Afbud', 'ikke-modt': 'Mødte ikke op' };
+            const UDFALD_COLOR = {
+              gennemfoert: SoS.green, afbud: SoS.amber, 'ikke-modt': SoS.rose };
+            return (
+              <div key={a.id} style={{ padding: '12px 18px',
+                borderBottom: `1px solid ${SoS.lineSoft}`,
+                display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 3, alignSelf: 'stretch',
+                  background: SoS.rose, flexShrink: 0, borderRadius: 2 }}/>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 13,
+                    fontWeight: 600, color: SoS.ink }}>
+                    {m ? m.firstName + ' ' + m.lastName : '—'}
+                    {log.udfald && (
+                      <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 700,
+                        color: UDFALD_COLOR[log.udfald] || SoS.inkMuted,
+                        textTransform: 'uppercase', letterSpacing: 0.5, marginLeft: 8 }}>
+                        {UDFALD_LABEL[log.udfald] || log.udfald}
+                      </span>
+                    )}
                   </div>
-                );
-              })}
+                  <div style={{ fontFamily: SoS.sans, fontSize: 11,
+                    color: SoS.inkMuted, marginTop: 2 }}>
+                    {a.date}{bb ? ' · ' + bb.name.split(' ')[0] : ''}
+                    {log.note ? ` · “${log.note}”` : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                  {[
+                    { id: 'engageret',    e: '💪', label: 'Engageret'    },
+                    { id: 'neutral',      e: '😐', label: 'Neutral'      },
+                    { id: 'overbelastet', e: '😔', label: 'Overbelastet' },
+                  ].map(t => (
+                    <button key={t.id}
+                      onClick={() => setOpfoelgning(a.id, 'fulgt-op', t.id)}
+                      title={`BB: ${t.label}`}
+                      style={{ padding: '5px 8px', background: SoS.surface,
+                        border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                        cursor: 'pointer', fontSize: 13 }}>
+                      {t.e}
+                    </button>
+                  ))}
+                  <button onClick={() => setOpfoelgning(a.id, 'fulgt-op')} style={{
+                    padding: '6px 12px', background: SoS.ink, color: '#fff',
+                    border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer',
+                    fontFamily: SoS.sans, fontSize: 11, fontWeight: 700 }}>
+                    Ring &amp; notér
+                  </button>
+                  <button onClick={() => setOpfoelgning(a.id, 'ikke-noedvendigt')} style={{
+                    padding: '6px 10px', background: SoS.surfaceAlt, color: SoS.inkMuted,
+                    border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                    cursor: 'pointer', fontFamily: SoS.sans, fontSize: 11 }}>
+                    Ikke nødv.
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Afventer match */}
+          {afventerListe.slice(0, 5).map((m, i) => {
+            const days = daysWaiting(m);
+            const col  = days >= 5 ? SoS.rose : days >= 3 ? SoS.amber : SoS.lineSoft;
+            return (
+              <div key={m.id} style={{ padding: '12px 18px',
+                borderBottom: i < Math.min(afventerListe.length, 5) - 1
+                  ? `1px solid ${SoS.lineSoft}` : 'none',
+                display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 3, alignSelf: 'stretch',
+                  background: col, flexShrink: 0, borderRadius: 2 }}/>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 13,
+                    fontWeight: 600, color: SoS.ink }}>
+                    {m.firstName} {m.lastName}
+                    <span style={{ fontFamily: SoS.sans, fontSize: 11,
+                      fontWeight: 400, color: SoS.inkMuted, marginLeft: 6 }}>
+                      {m.age} år
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 11,
+                    color: SoS.inkMuted, marginTop: 2 }}>
+                    {m.hq} · Venter på match
+                    {days > 0 && (
+                      <span style={{ color: days >= 3 ? SoS.amber : SoS.inkMuted }}>
+                        {' '}· {days} {days === 1 ? 'dag' : 'dage'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button onClick={() => setTilknytMenneske(m)} style={{
+                  padding: '7px 14px', background: SoS.ink, color: '#fff',
+                  border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer',
+                  fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+                  whiteSpace: 'nowrap' }}>
+                  Tilknyt
+                </button>
+              </div>
+            );
+          })}
+
+          {afventerListe.length > 5 && (
+            <div style={{ padding: '10px 18px', fontFamily: SoS.sans, fontSize: 11,
+              color: SoS.inkMuted, borderTop: `1px solid ${SoS.lineSoft}` }}>
+              + {afventerListe.length - 5} flere afventer match → Gå til Mennesker
             </div>
           )}
-        </DSCard>
-      );
-    })()}
-
-    {/* Row 2 */}
-    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr',
-      gap: 10, marginBottom: 14 }}>
-      <DSCard title="Gennemførte aftaler" subtitle="12 måneder">
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 140 }}>
-          {(() => {
-            const now = new Date();
-            const months = Array.from({ length: 12 }, (_, i) => {
-              const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-              return { y: d.getFullYear(), m: d.getMonth() + 1,
-                lbl: ['J','F','M','A','M','J','J','A','S','O','N','D'][d.getMonth()] };
-            });
-            const appts = window.SoS_APPOINTMENTS_BUSY || [];
-            const counts = months.map(({ y, m }) =>
-              appts.filter(a => {
-                const [ay, am] = a.date.split('-').map(Number);
-                return ay === y && am === m && a.brobyggerLog && a.brobyggerLog.udfald === 'gennemfoert';
-              }).length
-            );
-            const max = Math.max(...counts, 1);
-            return counts.map((v, i) => (
-              <div key={i} style={{ flex: 1, display: 'flex',
-                flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', width: '100%' }}>
-                  <div style={{ width: '100%', height: `${Math.max((v/max) * 100, 4)}%`,
-                    background: i >= 9 ? SoS.accent : SoS.accent + '40',
-                    borderRadius: '3px 3px 0 0' }}/>
-                </div>
-                <div style={{ fontFamily: SoS.sans, fontSize: 9, color: SoS.inkMuted }}>
-                  {months[i].lbl}
-                </div>
-              </div>
-            ));
-          })()}
         </div>
-      </DSCard>
+      )}
 
-      <DSCard title="Type-fordeling" subtitle="Aktive forløb">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {(() => {
-            const alle = Object.values(window.SoS_MENNESKER || {}).filter(m => m.status === 'aktiv');
-            const social   = alle.filter(m => m.type === 'social').length;
-            const forening = alle.filter(m => m.type === 'forening').length;
-            const sundhed  = alle.filter(m => m.type === 'sundhed').length;
-            return <>
-              <TypeDonut sundhed={sundhed} forening={forening} social={social} size={90}/>
-              <div style={{ flex: 1 }}>
-                {[
-                  { k: 'social', v: social },
-                  { k: 'forening', v: forening },
-                  { k: 'sundhed', v: sundhed },
-                ].map(x => {
-              const t = SoS_TYPER[x.k];
-              return (
-                <div key={x.k} style={{ display: 'flex', alignItems: 'center',
-                  gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 4, background: t.color }}/>
-                  <span style={{ flex: 1, fontFamily: SoS.sans, fontSize: 11,
-                    color: SoS.ink }}>{t.short}</span>
-                  <span style={{ fontFamily: SoS.sans, fontSize: 12,
-                    fontWeight: 600, color: SoS.ink }}>{x.v}</span>
-                </div>
-              );
-            })}
-              </div>
-            </>;
-          })()}
+      {!harDagsorden && (
+        <div style={{ marginBottom: 14, padding: '14px 18px',
+          border: `1px solid ${SoS.line}`, background: SoS.surface,
+          display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 8, height: 8, borderRadius: 4, background: SoS.green }}/>
+          <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft }}>
+            Alt er ajour — ingen afventende handlinger ✓
+          </div>
         </div>
-      </DSCard>
-    </div>
+      )}
 
-    {/* Row 3 */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr',
-      gap: 10, marginBottom: 14 }}>
-      <DSCard title="Per hovedsæde" subtitle="Aktive forløb">
-        {[
-          { hq: 'Hovedstaden', v: 142 }, { hq: 'Aarhus', v: 94 },
-          { hq: 'Fyn', v: 71 }, { hq: 'Sjælland', v: 58 },
-          { hq: 'Midt', v: 44 }, { hq: 'Nord', v: 38 },
-          { hq: 'Syd', v: 32 }, { hq: 'Kronjylland', v: 21 }, { hq: 'Sydvest', v: 18 },
-        ].map((h, i, arr) => {
-          const max = arr[0].v;
-          return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center',
-              gap: 10, marginBottom: i < arr.length-1 ? 6 : 0 }}>
-              <div style={{ width: 80, fontFamily: SoS.sans, fontSize: 11,
-                color: SoS.ink }}>{h.hq}</div>
-              <div style={{ flex: 1, height: 6, background: SoS.lineSoft,
-                borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ width: `${(h.v/max)*100}%`, height: '100%',
-                  background: SoS.hq[h.hq] || SoS.orange, borderRadius: 3 }}/>
-              </div>
-              <div style={{ width: 30, textAlign: 'right', fontFamily: SoS.sans,
-                fontSize: 11, fontWeight: 600, color: SoS.ink }}>{h.v}</div>
+      {tilknytMenneske && (
+        <TilknytBrobyggerModal
+          menneske={tilknytMenneske}
+          onClose={() => setTilknytMenneske(null)}
+          onSaved={() => setTilknytMenneske(null)}
+        />
+      )}
+
+      {/* ══ KPI ════════════════════════════════════════════════════ */}
+      <div style={{ display: 'grid',
+        gridTemplateColumns: canRapport ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)',
+        gap: 10, marginBottom: 14 }}>
+        {(() => {
+          const aktive = (window.SoS_BROBYGGERE || []).filter(b => b.status === 'aktiv').length;
+          const konfirmerede = (window.SoS_APPOINTMENTS_BUSY || [])
+            .filter(a => a.status === 'confirmed').length;
+          const total = Object.keys(window.SoS_MENNESKER || {}).length;
+          const kpis = [
+            { l: 'Aktive brobyggere', v: String(aktive),
+              d: aktive > 0 ? 'aktive' : '—', c: SoS.accent },
+            { l: 'Afventer match', v: String(afventerListe.length),
+              d: afventerListe.length > 0 ? 'ikke matchet' : 'alle matchet', c: SoS.amber },
+            { l: 'Bekræftede aftaler', v: String(konfirmerede),
+              d: 'registrerede', c: SoS.green },
+            { l: 'Registrerede', v: String(total), d: 'i alt', c: SoS.sky },
+          ];
+          if (canRapport) {
+            const afsluttede = Object.values(window.SoS_MENNESKER || {})
+              .filter(m => m.status === 'afsluttet');
+            kpis.push({ l: 'SROI-estimat',
+              v: (afsluttede.length * 47000 / 1000).toFixed(0) + 'k',
+              d: 'kr. samfundsværdi', c: SoS.sage });
+          }
+          return kpis;
+        })().map((k, i) => (
+          <DSCard key={i}>
+            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+              color: SoS.inkMuted, letterSpacing: 1,
+              textTransform: 'uppercase' }}>{k.l}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline',
+              gap: 8, marginTop: 6 }}>
+              <span style={{ fontFamily: SoS.mono, fontSize: 28, fontWeight: 700,
+                color: k.c || SoS.ink, letterSpacing: -1 }}>{k.v}</span>
+              <span style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
+                color: SoS.sage }}>{k.d}</span>
             </div>
-          );
-        })}
-      </DSCard>
+            <div style={{ height: 3, marginTop: 10, borderRadius: 2,
+              background: SoS.lineSoft }}>
+              <div style={{ width: '65%', height: '100%',
+                background: k.c, borderRadius: 2 }}/>
+            </div>
+          </DSCard>
+        ))}
+      </div>
 
-      <DSCard title="Effekt · UCLA-3" subtitle="Selv-rapporteret ensomhed">
-        <div style={{ fontFamily: SoS.mono, fontSize: 30, fontWeight: 700,
-          color: SoS.ink, letterSpacing: -1 }}>
-          −3.3 <span style={{ fontSize: 14, color: SoS.inkSoft }}>point gnsn.</span>
-        </div>
-        <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft, marginTop: 4 }}>
-          Baseret på 62 besvarelser · 3 mdr efter start
-        </div>
-        <div style={{ display: 'flex', gap: 14, marginTop: 16, alignItems: 'center' }}>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontFamily: SoS.font, fontSize: 24, color: SoS.rose }}>6.4</div>
-            <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted }}>Før start</div>
-          </div>
-          <svg width="40" height="20" viewBox="0 0 40 20">
-            <path d="M4 16 Q20 2 36 10" stroke={SoS.sage} strokeWidth="2" fill="none" strokeLinecap="round"/>
-            <path d="M32 7 L36 10 L32 13" stroke={SoS.sage} strokeWidth="2" fill="none" strokeLinecap="round"/>
-          </svg>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontFamily: SoS.font, fontSize: 24, color: SoS.sage }}>3.1</div>
-            <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted }}>Efter 3 mdr</div>
-          </div>
-        </div>
-        <div style={{ marginTop: 14, padding: 10, background: SoS.green + '10',
-          borderRadius: 0, borderLeft: `2px solid ${SoS.green}`,
-          fontFamily: SoS.sans, fontSize: 11,
-          color: SoS.green, lineHeight: 1.5 }}>
-          87% af menneskerne rapporterer mindre ensomhed efter 3 måneder.
-        </div>
-      </DSCard>
-    </div>
-
-    {/* Row 4 — recent activity */}
-    <DSCard title="Seneste registreringer">
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: `1px solid ${SoS.line}` }}>
-            {['Tidspunkt', 'Brobygger', 'Menneske', 'Type', 'Status', 'Varighed'].map(h => (
-              <th key={h} style={{ textAlign: 'left', padding: '8px 4px',
-                fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
-                color: SoS.inkMuted, letterSpacing: 0.8,
-                textTransform: 'uppercase' }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {(() => {
-            const myAppts = (window.SoS_APPOINTMENTS_BUSY || [])
-              .filter(a => a.brobyggerId === b.id)
-              .sort((x, y) => (y.date + y.start).localeCompare(x.date + x.start))
-              .slice(0, 8);
-            if (myAppts.length === 0) return (
-              <tr><td colSpan={5} style={{ padding: '20px 4px', textAlign: 'center',
-                fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted }}>
-                Ingen registrerede aftaler endnu
-              </td></tr>
-            );
-            return myAppts.map((a, i) => {
-              const mn = (window.SoS_MENNESKER || {})[a.menneskeId];
-              const mnLabel = mn ? `${mn.firstName} ${mn.lastName[0]}. (${mn.age})` : a.menneskeId;
-              const ty = mn ? SoS_TYPER[mn.type] : null;
-              const log = a.brobyggerLog;
-              const udfalds = { gennemfoert: 'Gennemført', afbud: 'Afbud', 'ikke-modt': 'Udeblev' };
-              const udfaldsColor = { gennemfoert: SoS.green, afbud: SoS.amber, 'ikke-modt': SoS.rose };
-              const udfaldsLabel = log ? (udfalds[log.udfald] || log.udfald) : (a.status === 'confirmed' ? 'Afventer' : 'Pending');
-              const udfaldsC = log ? (udfaldsColor[log.udfald] || SoS.inkMuted) : SoS.inkMuted;
-              const varLabel = log && log.varighed ? `${log.varighed >= 60 ? Math.floor(log.varighed/60)+'t' : ''} ${log.varighed % 60 ? (log.varighed%60)+'m' : ''}`.trim() : '—';
-              return (
-                <tr key={i} style={{ borderBottom: `1px solid ${SoS.lineSoft}` }}>
-                  <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{a.date} {a.start}</td>
-                  <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.ink }}>{mnLabel}</td>
-                  {ty && <td style={{ padding: '10px 4px' }}><Pill bg={ty.soft} color={ty.color}>{ty.short}</Pill></td>}
-                  {!ty && <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted }}>—</td>}
-                  <td style={{ padding: '10px 4px' }}>
-                    <Pill bg={log ? (udfaldsC + '22') : SoS.creamDeep} color={udfaldsC}>{udfaldsLabel}</Pill>
-                  </td>
-                  <td style={{ padding: '10px 4px', fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{varLabel}</td>
-                </tr>
+      {/* ══ GRAFER ═════════════════════════════════════════════════ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr',
+        gap: 10, marginBottom: 14 }}>
+        <DSCard title="Gennemførte aftaler" subtitle="12 måneder">
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 140 }}>
+            {(() => {
+              const now = new Date();
+              const months = Array.from({ length: 12 }, (_, i) => {
+                const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+                return { y: d.getFullYear(), m: d.getMonth() + 1,
+                  lbl: ['J','F','M','A','M','J','J','A','S','O','N','D'][d.getMonth()] };
+              });
+              const appts = window.SoS_APPOINTMENTS_BUSY || [];
+              const counts = months.map(({ y, m }) =>
+                appts.filter(a => {
+                  const [ay, am] = a.date.split('-').map(Number);
+                  return ay === y && am === m
+                    && a.brobyggerLog && a.brobyggerLog.udfald === 'gennemfoert';
+                }).length
               );
-            });
-          })()}
-        </tbody>
-      </table>
-    </DSCard>
-  </>
-);
+              const max = Math.max(...counts, 1);
+              return counts.map((v, i) => (
+                <div key={i} style={{ flex: 1, display: 'flex',
+                  flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <div style={{ flex: 1, display: 'flex',
+                    alignItems: 'flex-end', width: '100%' }}>
+                    <div style={{ width: '100%',
+                      height: `${Math.max((v / max) * 100, 4)}%`,
+                      background: i >= 9 ? SoS.accent : SoS.accent + '40',
+                      borderRadius: '3px 3px 0 0' }}/>
+                  </div>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 9,
+                    color: SoS.inkMuted }}>
+                    {months[i].lbl}
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        </DSCard>
+
+        <DSCard title="Type-fordeling" subtitle="Aktive forløb">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            {(() => {
+              const alle = Object.values(window.SoS_MENNESKER || {})
+                .filter(m => m.status === 'aktiv');
+              const social   = alle.filter(m => m.type === 'social').length;
+              const forening = alle.filter(m => m.type === 'forening').length;
+              const sundhed  = alle.filter(m => m.type === 'sundhed').length;
+              return (
+                <>
+                  <TypeDonut sundhed={sundhed} forening={forening} social={social} size={90}/>
+                  <div style={{ flex: 1 }}>
+                    {[
+                      { k: 'social', v: social },
+                      { k: 'forening', v: forening },
+                      { k: 'sundhed', v: sundhed },
+                    ].map(x => {
+                      const t = SoS_TYPER[x.k];
+                      return (
+                        <div key={x.k} style={{ display: 'flex', alignItems: 'center',
+                          gap: 8, marginBottom: 8 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: 4,
+                            background: t.color }}/>
+                          <span style={{ flex: 1, fontFamily: SoS.sans, fontSize: 11,
+                            color: SoS.ink }}>{t.short}</span>
+                          <span style={{ fontFamily: SoS.sans, fontSize: 12,
+                            fontWeight: 600, color: SoS.ink }}>{x.v}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </DSCard>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr',
+        gap: 10, marginBottom: 14 }}>
+        <DSCard title="Per hovedsæde" subtitle="Aktive forløb">
+          {[
+            { hq: 'Hovedstaden', v: 142 }, { hq: 'Aarhus', v: 94 },
+            { hq: 'Fyn', v: 71 }, { hq: 'Sjælland', v: 58 },
+            { hq: 'Midt', v: 44 }, { hq: 'Nord', v: 38 },
+            { hq: 'Syd', v: 32 }, { hq: 'Kronjylland', v: 21 },
+            { hq: 'Sydvest', v: 18 },
+          ].map((h, i, arr) => {
+            const max = arr[0].v;
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center',
+                gap: 10, marginBottom: i < arr.length - 1 ? 6 : 0 }}>
+                <div style={{ width: 80, fontFamily: SoS.sans, fontSize: 11,
+                  color: SoS.ink }}>{h.hq}</div>
+                <div style={{ flex: 1, height: 6, background: SoS.lineSoft,
+                  borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ width: `${(h.v / max) * 100}%`, height: '100%',
+                    background: SoS.hq[h.hq] || SoS.orange, borderRadius: 3 }}/>
+                </div>
+                <div style={{ width: 30, textAlign: 'right', fontFamily: SoS.sans,
+                  fontSize: 11, fontWeight: 600, color: SoS.ink }}>{h.v}</div>
+              </div>
+            );
+          })}
+        </DSCard>
+
+        <DSCard title="Effekt · UCLA-3" subtitle="Selv-rapporteret ensomhed">
+          <div style={{ fontFamily: SoS.mono, fontSize: 30, fontWeight: 700,
+            color: SoS.ink, letterSpacing: -1 }}>
+            −3.3{' '}
+            <span style={{ fontSize: 14, color: SoS.inkSoft }}>point gnsn.</span>
+          </div>
+          <div style={{ fontFamily: SoS.sans, fontSize: 11,
+            color: SoS.inkSoft, marginTop: 4 }}>
+            Baseret på 62 besvarelser · 3 mdr efter start
+          </div>
+          <div style={{ display: 'flex', gap: 14, marginTop: 16, alignItems: 'center' }}>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ fontFamily: SoS.font, fontSize: 24, color: SoS.rose }}>6.4</div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 10,
+                color: SoS.inkMuted }}>Før start</div>
+            </div>
+            <svg width="40" height="20" viewBox="0 0 40 20">
+              <path d="M4 16 Q20 2 36 10" stroke={SoS.sage} strokeWidth="2"
+                fill="none" strokeLinecap="round"/>
+              <path d="M32 7 L36 10 L32 13" stroke={SoS.sage} strokeWidth="2"
+                fill="none" strokeLinecap="round"/>
+            </svg>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ fontFamily: SoS.font, fontSize: 24, color: SoS.sage }}>3.1</div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 10,
+                color: SoS.inkMuted }}>Efter 3 mdr</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 14, padding: 10,
+            background: SoS.green + '10', borderLeft: `2px solid ${SoS.green}`,
+            fontFamily: SoS.sans, fontSize: 11,
+            color: SoS.green, lineHeight: 1.5 }}>
+            87% rapporterer mindre ensomhed efter 3 måneder.
+          </div>
+        </DSCard>
+      </div>
+
+      <DSCard title="Seneste aftaler">
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${SoS.line}` }}>
+              {['Dato', 'Brobygger', 'Menneske', 'Type', 'Status', 'Varighed'].map(h => (
+                <th key={h} style={{ textAlign: 'left', padding: '8px 4px',
+                  fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+                  color: SoS.inkMuted, letterSpacing: 0.8,
+                  textTransform: 'uppercase' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {(() => {
+              const allAppts = (window.SoS_APPOINTMENTS_BUSY || [])
+                .sort((x, y) =>
+                  (y.date + (y.start || '')).localeCompare(x.date + (x.start || '')))
+                .slice(0, 8);
+              if (allAppts.length === 0) return (
+                <tr><td colSpan={6} style={{ padding: '20px 4px',
+                  textAlign: 'center', fontFamily: SoS.sans,
+                  fontSize: 12, color: SoS.inkMuted }}>
+                  Ingen registrerede aftaler endnu
+                </td></tr>
+              );
+              return allAppts.map((a, i) => {
+                const mn  = (window.SoS_MENNESKER || {})[a.menneskeId];
+                const bb  = (window.SoS_BROBYGGERE || []).find(b => b.id === a.brobyggerId);
+                const mnLabel = mn
+                  ? `${mn.firstName} ${mn.lastName[0]}. (${mn.age})`
+                  : (a.menneskeId || '—');
+                const ty  = mn ? SoS_TYPER[mn.type] : null;
+                const log = a.brobyggerLog;
+                const UDFALDS = {
+                  gennemfoert: 'Gennemført', afbud: 'Afbud', 'ikke-modt': 'Udeblev' };
+                const UDFALDS_C = {
+                  gennemfoert: SoS.green, afbud: SoS.amber, 'ikke-modt': SoS.rose };
+                const udLabel = log
+                  ? (UDFALDS[log.udfald] || log.udfald)
+                  : (a.status === 'confirmed' ? 'Bekræftet' : 'Afventer');
+                const udC = log ? (UDFALDS_C[log.udfald] || SoS.inkMuted) : SoS.inkMuted;
+                const varLabel = log && log.varighed
+                  ? `${log.varighed >= 60 ? Math.floor(log.varighed / 60) + 't' : ''} ${log.varighed % 60 ? (log.varighed % 60) + 'm' : ''}`.trim()
+                  : '—';
+                return (
+                  <tr key={i} style={{ borderBottom: `1px solid ${SoS.lineSoft}` }}>
+                    <td style={{ padding: '10px 4px', fontFamily: SoS.sans,
+                      fontSize: 12, color: SoS.inkSoft }}>{a.date}</td>
+                    <td style={{ padding: '10px 4px', fontFamily: SoS.sans,
+                      fontSize: 12, color: SoS.inkSoft }}>
+                      {bb ? bb.name.split(' ')[0] : '—'}
+                    </td>
+                    <td style={{ padding: '10px 4px', fontFamily: SoS.sans,
+                      fontSize: 12, color: SoS.ink }}>{mnLabel}</td>
+                    {ty
+                      ? <td style={{ padding: '10px 4px' }}>
+                          <Pill bg={ty.soft} color={ty.color}>{ty.short}</Pill>
+                        </td>
+                      : <td style={{ padding: '10px 4px', fontFamily: SoS.sans,
+                          fontSize: 12, color: SoS.inkMuted }}>—</td>
+                    }
+                    <td style={{ padding: '10px 4px' }}>
+                      <Pill bg={log ? (udC + '22') : SoS.creamDeep} color={udC}>
+                        {udLabel}
+                      </Pill>
+                    </td>
+                    <td style={{ padding: '10px 4px', fontFamily: SoS.sans,
+                      fontSize: 12, color: SoS.inkSoft }}>{varLabel}</td>
+                  </tr>
+                );
+              });
+            })()}
+          </tbody>
+        </table>
+      </DSCard>
+    </>
+  );
+};
+
 
 const DesktopBrobyggere = ({ initialTarget, onTargetConsumed }) => {
   const [filter, setFilter] = React.useState('alle');
