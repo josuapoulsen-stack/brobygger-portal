@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json"/>
   <link rel="apple-touch-icon" href="icon-192.svg"/>
   <meta name="theme-color" content="#D8581C"/>
-  <title>Brobygger portal — SoS</title>
+  <title>Brobygger Portal — SoS v1.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -8482,8 +8482,42 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: SoS.paper, borderRadius: SoS.r.lg, width: '100%', maxWidth: 440,
-        padding: 28, boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+      <div style={{ background: SoS.paper, borderRadius: SoS.r.lg, width: '100%', maxWidth: 620,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
+        {/* Person-kontekst strip */}
+        {(() => {
+          const t = SoS_TYPER[m.type] || {};
+          const days = m.createdAt
+            ? Math.floor((new Date() - new Date(m.createdAt)) / (1000*60*60*24))
+            : 0;
+          return (
+            <div style={{ padding: '14px 20px', background: SoS.ink,
+              display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700,
+                  color: '#fff' }}>
+                  {m.firstName} {m.lastName}
+                  {m.behovUrgency === 'snarest' && (
+                    <span style={{ marginLeft: 8, color: SoS.rose, fontSize: 11 }}>Haster</span>
+                  )}
+                </div>
+                <div style={{ fontFamily: SoS.sans, fontSize: 12,
+                  color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>
+                  {m.age} år · {m.hq}
+                  {days > 0 && ` · Ventet ${days} dage`}
+                </div>
+              </div>
+              {t.color && (
+                <div style={{ padding: '4px 10px', borderRadius: SoS.r.sm,
+                  background: t.soft, color: t.color,
+                  fontFamily: SoS.sans, fontSize: 11, fontWeight: 700 }}>
+                  {t.short}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+        <div style={{ padding: 24 }}>
 
         {/* Header */}
         <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700, color: SoS.ink, marginBottom: 4 }}>
@@ -8559,8 +8593,21 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
                     color: sel ? selColor : SoS.ink }}>{b.name}</div>
                   <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft, marginTop: 1 }}>
                     {myAppts.length} aktive aftaler
-                    {mode === 'ledig' && ` · ${b.openShifts} ledig${b.openShifts !== 1 ? 'e' : ''} tid${b.openShifts !== 1 ? 'er' : ''}`}
+                    {mode === 'ledig' && ` · ${b.openShifts} ledig${b.openShifts !== 1 ? 'e' : ''}`}
                   </div>
+                  {mode === 'ledig' && b.openShifts > 0 && (
+                    <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                      {['Manâons', 'Hverdage', 'Fleksibelt'][b.openShifts > 2 ? 2 : b.openShifts - 1]
+                        .split('·').map((slot, si) => (
+                        <span key={si} style={{ padding: '2px 7px',
+                          background: SoS.green + '18', color: SoS.green,
+                          borderRadius: SoS.r.sm,
+                          fontFamily: SoS.mono, fontSize: 9, fontWeight: 700 }}>
+                          {['Manâons', 'Hverdage', 'Fleksibelt'][b.openShifts > 2 ? 2 : b.openShifts - 1]}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {mode === 'ledig' && (
                   <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
@@ -8596,6 +8643,26 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
               Send forespørgsel
             </button>
           )}
+        </div>
+        {ledige.length === 0 && (
+          <button onClick={() => {
+            const vl = JSON.parse(localStorage.getItem('sos_venteliste') || '[]');
+            const exists = vl.some(v => v.menneskeId === m.id);
+            if (!exists) {
+              vl.push({ id: 'vl-' + Date.now(), menneskeId: m.id,
+                navn: m.firstName + ' ' + m.lastName,
+                dato: new Date().toISOString().slice(0,10) });
+              localStorage.setItem('sos_venteliste', JSON.stringify(vl));
+            }
+            onClose();
+          }} style={{ width: '100%', marginTop: 8, padding: '9px 0',
+            background: 'none', border: `1px dashed ${SoS.amber}`,
+            borderRadius: SoS.r.sm, cursor: 'pointer',
+            fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+            color: SoS.amber }}>
+            Sæt på venteliste — får besked når en brobygger er ledig
+          </button>
+        )}
         </div>
       </div>
     </div>
@@ -12935,6 +13002,10 @@ const DesktopView = ({ user, ownHq, isAdmin, canRapport = false, canUserMgmt = f
                 {canUserMgmt ? 'Admin' : canRapport ? 'Leder' : ownHq}
               </div>
             </div>
+            <div style={{ padding: '6px 12px 10px', display: 'flex', justifyContent: 'flex-end' }}>
+              <span style={{ fontFamily: SoS.mono, fontSize: 8.5, color: SoS.inkMuted,
+                letterSpacing: 0.5 }}>v1.0</span>
+            </div>
           </div>
         </div>
 
@@ -14054,7 +14125,25 @@ const DesktopMenneskeDetailPanel = ({ menneske: m, onClose, onRefresh }) => {
 
   const handleSaved = () => { setLocalKey(k => k + 1); onRefresh?.(); };
   const today       = new Date().toISOString().slice(0, 10);
-  const TABS        = ['Oversigt', 'Tidslinje', 'Aftaler', 'Detaljer'];
+  const TABS        = ['Oversigt', 'Tidslinje', 'Aftaler', 'Detaljer', 'Beskeder'];
+  const [beskedTekst, setBeskedTekst] = React.useState('');
+  const [beskedAlle,  setBeskedAlle]  = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('sos_beskeder') || '[]'); }
+    catch { return []; }
+  });
+  const tilknyttetBB = (window.SoS_BROBYGGERE || []).find(b => b.id === m.brobyggerId);
+  const bbTrad = beskedAlle
+    .filter(msg => msg.fra === (m.brobyggerId || '') || msg.til === (m.brobyggerId || ''))
+    .sort((a, b) => a.sendt.localeCompare(b.sendt));
+  const sendBeskedFraForloeb = () => {
+    if (!beskedTekst.trim() || !m.brobyggerId) return;
+    const newMsg = { id: 'msg-' + Date.now(), fra: 'admin', til: m.brobyggerId,
+      tekst: beskedTekst.trim(), sendt: new Date().toISOString(), laest: false };
+    const updated = [...beskedAlle, newMsg];
+    setBeskedAlle(updated);
+    localStorage.setItem('sos_beskeder', JSON.stringify(updated));
+    setBeskedTekst('');
+  };
 
   // Sektion-overskrift — simpel hjælpefunktion (ikke komponent)
   const sh = txt => (
@@ -14109,6 +14198,14 @@ const DesktopMenneskeDetailPanel = ({ menneske: m, onClose, onRefresh }) => {
               <span style={{ marginLeft: 5, background: SoS.lineSoft, borderRadius: 8,
                 padding: '1px 5px', fontSize: 10, color: SoS.inkMuted }}>
                 {mennAppts.length}
+              </span>
+            )}
+            {tab === 'Beskeder' && bbTrad.filter(msg => !msg.laest && msg.fra !== 'admin').length > 0 && (
+              <span style={{ marginLeft: 5, minWidth: 14, height: 14, borderRadius: 7,
+                background: SoS.accent, display: 'inline-flex', alignItems: 'center',
+                justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff',
+                padding: '0 3px' }}>
+                {bbTrad.filter(msg => !msg.laest && msg.fra !== 'admin').length}
               </span>
             )}
           </button>
@@ -14233,7 +14330,38 @@ const DesktopMenneskeDetailPanel = ({ menneske: m, onClose, onRefresh }) => {
         )}
 
         {/* ── TIDSLINJE ── */}
-        {activeTab === 1 && <MenneskeTimelineInline m={m} />}
+        {activeTab === 1 && (
+          <div>
+            <MenneskeTimelineInline m={m} />
+            {(() => {
+              const logs = JSON.parse(localStorage.getItem('sos_opkald_log') || '[]')
+                .filter(l => l.navn && l.navn !== 'Ukendt' && (
+                  l.navn.toLowerCase().includes((m.firstName || '').toLowerCase()) ||
+                  l.navn.toLowerCase().includes((m.lastName || '').toLowerCase())));
+              if (logs.length === 0) return null;
+              return (
+                <div style={{ marginTop: 14, padding: '0 2px' }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
+                    color: SoS.inkMuted, letterSpacing: 0.9,
+                    textTransform: 'uppercase', marginBottom: 8 }}>Loggede opkald</div>
+                  {logs.map((l, i) => (
+                    <div key={l.id} style={{ display: 'flex', gap: 10, padding: '8px 0',
+                      borderTop: i > 0 ?  : 'none' }}>
+                      <div style={{ fontFamily: SoS.mono, fontSize: 10,
+                        color: SoS.inkMuted, flexShrink: 0, width: 74 }}>{l.dato}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 12,
+                          fontWeight: 600, color: SoS.ink }}>{l.navn}</div>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 11,
+                          color: SoS.inkSoft, marginTop: 2 }}>{l.note}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* ── AFTALER ── */}
         {activeTab === 2 && (
@@ -14373,6 +14501,84 @@ const DesktopMenneskeDetailPanel = ({ menneske: m, onClose, onRefresh }) => {
               </div>
             )}
 
+          </div>
+        )}
+
+        {/* ══ BESKEDER ══ */}
+        {activeTab === 4 && (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {!tilknyttetBB ? (
+              <div style={{ padding: '30px 0', textAlign: 'center',
+                fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
+                Ingen brobygger tilknyttet &middot; Tilknyt en brobygger for at sende beskeder
+              </div>
+            ) : (
+              <>
+                <div style={{ padding: '6px 0 10px', fontFamily: SoS.sans,
+                  fontSize: 12, color: SoS.inkMuted }}>
+                  Beskeder med {tilknyttetBB.name}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8,
+                  minHeight: 80, maxHeight: 260, overflowY: 'auto',
+                  padding: '8px 0', marginBottom: 10 }}>
+                  {bbTrad.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '20px 0',
+                      fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted }}>
+                      Ingen beskeder endnu
+                    </div>
+                  ) : bbTrad.map(msg => {
+                    const erAdmin = msg.fra === 'admin';
+                    return (
+                      <div key={msg.id} style={{ display: 'flex',
+                        justifyContent: erAdmin ? 'flex-end' : 'flex-start' }}>
+                        <div style={{ maxWidth: '78%' }}>
+                          <div style={{ padding: '8px 12px', lineHeight: 1.5,
+                            fontFamily: SoS.sans, fontSize: 12,
+                            background: erAdmin ? SoS.accent : '#fff',
+                            color: erAdmin ? '#fff' : SoS.ink,
+                            border: erAdmin ? 'none' : `1px solid ${SoS.line}`,
+                            borderRadius: SoS.r.md,
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                            {msg.tekst}
+                          </div>
+                          <div style={{ fontFamily: SoS.sans, fontSize: 9,
+                            color: SoS.inkMuted, marginTop: 3,
+                            textAlign: erAdmin ? 'right' : 'left' }}>
+                            {new Date(msg.sendt).toLocaleDateString('da-DK',
+                              { day: 'numeric', month: 'short' })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <textarea value={beskedTekst}
+                    onChange={e => setBeskedTekst(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault(); sendBeskedFraForloeb();
+                      }
+                    }}
+                    placeholder={"Skriv til " + tilknyttetBB.name.split(' ')[0] + "..."}
+                    rows={2}
+                    style={{ flex: 1, padding: '8px 12px',
+                      border: `1px solid ${SoS.line}`,
+                      borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 12,
+                      color: SoS.ink, outline: 'none', resize: 'none',
+                      lineHeight: 1.45 }}/>
+                  <button onClick={sendBeskedFraForloeb}
+                    disabled={!beskedTekst.trim()}
+                    style={{ padding: '9px 14px', borderRadius: SoS.r.sm, border: 'none',
+                      background: beskedTekst.trim() ? SoS.accent : SoS.lineSoft,
+                      color: beskedTekst.trim() ? '#fff' : SoS.inkMuted,
+                      cursor: beskedTekst.trim() ? 'pointer' : 'default',
+                      fontFamily: SoS.sans, fontSize: 12, fontWeight: 700 }}>
+                    Send
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
