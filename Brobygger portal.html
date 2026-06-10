@@ -2202,10 +2202,157 @@ const MonthChips = ({ data }) => (
     ))}
   </div>
 );
+const BrobyggerProfilSheet = ({ brobyggerId, onClose }) => {
+  const bb = (window.SoS_BROBYGGERE || []).find(b => b.id === brobyggerId);
+  if (!bb) return null;
+
+  const PRAFIX = ['Ingen', 'Hr.', 'Fru.', 'Mx.', 'Dr.'];
+  const [prafix,    setPrafix]    = React.useState(bb.prafix    || 'Ingen');
+  const [types,     setTypes]     = React.useState(bb.types     || ['social', 'forening', 'sundhed']);
+  const [transport, setTransport] = React.useState(bb.transport || 'gang');
+  const [mobil,     setMobil]     = React.useState(bb.mobil     || '');
+  const [email,     setEmail]     = React.useState(bb.email     || '');
+  const [saved,     setSaved]     = React.useState(false);
+
+  const toggleType = t => setTypes(p =>
+    p.includes(t) ? p.filter(x => x !== t) : [...p, t]);
+
+  const handleSave = () => {
+    const updated = (window.SoS_BROBYGGERE || []).map(b =>
+      b.id === brobyggerId
+        ? { ...b, prafix, types, transport,
+            mobil: mobil.trim(), email: email.trim() }
+        : b
+    );
+    window.SoS_BROBYGGERE = updated;
+    window.SoS_STORE?.save('brobyggere', updated);
+    setSaved(true);
+    setTimeout(onClose, 900);
+  };
+
+  const inpStyle = {
+    width: '100%', padding: '11px 14px',
+    border: `1px solid ${SoS.line}`, borderRadius: SoS.r.md,
+    fontFamily: SoS.sans, fontSize: 14, color: SoS.ink,
+    outline: 'none', boxSizing: 'border-box', marginBottom: 8,
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300,
+      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+      onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: '20px 20px 0 0',
+        padding: '24px 20px 44px', maxHeight: '88vh', overflowY: 'auto',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.15)' }}
+        onClick={e => e.stopPropagation()}>
+
+        <div style={{ display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', marginBottom: 22 }}>
+          <div style={{ fontFamily: SoS.font, fontSize: 22,
+            fontWeight: 500, color: SoS.ink }}>Min profil</div>
+          <button onClick={onClose} style={{ background: 'none',
+            border: 'none', cursor: 'pointer' }}>
+            <Icon name="close" size={18} color={SoS.inkMuted}/>
+          </button>
+        </div>
+
+        {/* Tiltale/præfix */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+            color: SoS.inkMuted, letterSpacing: 0.8,
+            textTransform: 'uppercase', marginBottom: 8 }}>Tiltale</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {['Ingen', 'Hr.', 'Fru.', 'Mx.', 'Dr.'].map(p => (
+              <button key={p} onClick={() => setPrafix(p)} style={{
+                padding: '7px 14px', borderRadius: SoS.r.sm,
+                cursor: 'pointer', fontFamily: SoS.sans, fontSize: 13,
+                fontWeight: prafix === p ? 700 : 400,
+                background: prafix === p ? SoS.ink : SoS.surface,
+                color: prafix === p ? '#fff' : SoS.ink,
+                border: `1px solid ${prafix === p ? SoS.ink : SoS.line}` }}>
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Brobygningstyper */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+            color: SoS.inkMuted, letterSpacing: 0.8,
+            textTransform: 'uppercase', marginBottom: 8 }}>
+            Brobygningstyper
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              { id: 'social',   l: 'Social',   c: SoS.social   },
+              { id: 'forening', l: 'Forening',  c: SoS.forening },
+              { id: 'sundhed',  l: 'Sundhed',   c: SoS.sundhed  },
+            ].map(t => (
+              <button key={t.id} onClick={() => toggleType(t.id)} style={{
+                flex: 1, padding: '10px 0',
+                border: `2px solid ${types.includes(t.id) ? t.c : SoS.line}`,
+                borderRadius: SoS.r.sm, cursor: 'pointer', textAlign: 'center',
+                background: types.includes(t.id) ? t.c + '15' : '#fff',
+                fontFamily: SoS.sans, fontSize: 13,
+                fontWeight: types.includes(t.id) ? 700 : 500,
+                color: types.includes(t.id) ? t.c : SoS.ink }}>
+                {t.l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Transport */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+            color: SoS.inkMuted, letterSpacing: 0.8,
+            textTransform: 'uppercase', marginBottom: 8 }}>Transport</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {[
+              { id: 'gang',      l: 'Til fods'          },
+              { id: 'cykel',     l: 'Cykel'             },
+              { id: 'offentlig', l: 'Offentlig'         },
+              { id: 'bil',       l: 'Bil'               },
+            ].map(t => (
+              <button key={t.id} onClick={() => setTransport(t.id)} style={{
+                padding: '8px 14px', borderRadius: SoS.r.sm,
+                cursor: 'pointer', fontFamily: SoS.sans, fontSize: 13,
+                fontWeight: transport === t.id ? 700 : 400,
+                background: transport === t.id ? SoS.ink : SoS.surface,
+                color: transport === t.id ? '#fff' : SoS.ink,
+                border: `1px solid ${transport === t.id ? SoS.ink : SoS.line}` }}>
+                {t.l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Kontakt */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+            color: SoS.inkMuted, letterSpacing: 0.8,
+            textTransform: 'uppercase', marginBottom: 8 }}>Kontakt</div>
+          <input value={mobil} onChange={e => setMobil(e.target.value)}
+            placeholder="Mobilnummer" type="tel" style={inpStyle}/>
+          <input value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="E-mail" type="email" style={{ ...inpStyle, marginBottom: 0 }}/>
+        </div>
+
+        <Button full onClick={handleSave} disabled={types.length === 0}>
+          {saved ? '✓ Gemt!' : 'Gem profil'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+
 
 const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'busy', brobyggerId }) => {
   const [logTarget,    setLogTarget]    = React.useState(null);
   const [apptVersion,  setApptVersion]  = React.useState(0);
+  const [profilOpen,   setProfilOpen]   = React.useState(false);
   const [matchVersion, setMatchVersion] = React.useState(0);
 
   const acceptMatch = (person) => {
@@ -2391,6 +2538,13 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
           <SSLogo size={34} />
         </span>}
         trailing={
+          <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={() => setProfilOpen(true)} style={{
+            width: 44, height: 44, borderRadius: 22, background: '#fff',
+            border: `1px solid ${SoS.line}`, display: 'flex',
+            alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <Icon name="shield" size={20} color={SoS.inkMuted}/>
+          </button>
           <button style={{
             width: 44, height: 44, borderRadius: 22, background: '#fff',
             border: `1px solid ${SoS.line}`, display: 'flex',
@@ -2418,6 +2572,7 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
               );
             })()}
           </button>
+          </div>
         }
       />
 
@@ -2549,6 +2704,12 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
           aftale={logTarget}
           onClose={() => setLogTarget(null)}
           onSave={() => { setApptVersion(v => v + 1); setLogTarget(null); }}
+        />
+      )}
+      {profilOpen && (
+        <BrobyggerProfilSheet
+          brobyggerId={brobyggerId}
+          onClose={() => setProfilOpen(false)}
         />
       )}
 
@@ -6779,6 +6940,22 @@ const ExportReport = ({ onClose }) => {
             <Icon name={exported ? 'check' : 'download'} size={14} color="#fff" weight={2.3}/>
             {exported ? 'Sendt!' : 'Eksportér'}
           </button>
+          <button onClick={() => window.print()} style={{
+            background: 'rgba(255,255,255,0.15)', color: '#fff',
+            border: '1px solid rgba(255,255,255,0.3)',
+            padding: '6px 14px', borderRadius: 999, cursor: 'pointer',
+            fontFamily: SoS.sans, fontSize: 12, fontWeight: 600,
+            display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Icon name='note' size={13} color='#fff'/>
+            Print
+          </button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+          <SSLogo size={32} bg='rgba(255,255,255,0.2)'/>
+          <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 700,
+            opacity: 0.7, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            Social Sundhed
+          </div>
         </div>
         <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 500,
           letterSpacing: -0.2 }}>Social Return on Investment</div>
@@ -8642,8 +8819,41 @@ const AfslutForloebModal = ({ menneske: m, onClose, onSaved }) => {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: SoS.paper, borderRadius: SoS.r.lg, width: '100%', maxWidth: 420,
-        padding: 28, boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+      <div style={{ background: SoS.paper, borderRadius: SoS.r.lg, width: '100%', maxWidth: 560,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.18)', maxHeight: '90vh',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Forløbs-opsummering */}
+        {(() => {
+          const bb = (window.SoS_BROBYGGERE || []).find(b => b.id === m.brobyggerId);
+          const appts = (window.SoS_APPOINTMENTS_BUSY || [])
+            .filter(a => a.menneskeId === m.id);
+          const gennemf = appts.filter(a => a.brobyggerLog?.udfald === 'gennemfoert').length;
+          const started = m.createdAt || m.registeredAt;
+          const days = started
+            ? Math.floor((new Date() - new Date(started)) / (1000*60*60*24))
+            : null;
+          return (
+            <div style={{ padding: '14px 24px', background: SoS.ink,
+              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }}>
+              {[
+                { l: 'Varighed', v: days != null ? `${days} dage` : '—' },
+                { l: 'Møder', v: String(gennemf) },
+                { l: 'Brobygger', v: bb ? bb.name.split(' ')[0] : '—' },
+              ].map((s, i) => (
+                <div key={i} style={{ textAlign: 'center',
+                  padding: '10px 8px',
+                  borderRight: i < 2 ? '1px solid rgba(255,255,255,0.12)' : 'none' }}>
+                  <div style={{ fontFamily: SoS.mono, fontSize: 18, fontWeight: 700,
+                    color: '#fff' }}>{s.v}</div>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 10,
+                    color: 'rgba(255,255,255,0.55)', marginTop: 2,
+                    textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+        <div style={{ overflowY: 'auto', flex: 1, padding: 24 }}>
         <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700, color: SoS.ink, marginBottom: 4 }}>
           Afslut forløb
         </div>
@@ -8724,16 +8934,21 @@ const AfslutForloebModal = ({ menneske: m, onClose, onSaved }) => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10 }}>
+        </div>
+        <div style={{ padding: '12px 24px', borderTop: `1px solid ${SoS.line}`,
+          display: 'flex', gap: 10, flexShrink: 0 }}>
           <button onClick={onClose}
-            style={{ flex: 1, padding: '11px 0', borderRadius: SoS.r.md, border: `1px solid ${SoS.line}`,
-              background: 'none', fontFamily: SoS.sans, fontSize: 14, color: SoS.inkSoft, cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '11px 0', borderRadius: SoS.r.md,
+              border: `1px solid ${SoS.line}`,
+              background: 'none', fontFamily: SoS.sans, fontSize: 14,
+              color: SoS.inkSoft, cursor: 'pointer' }}>
             Annuller
           </button>
           <button onClick={handleSave} disabled={!aarsag}
             style={{ flex: 2, padding: '11px 0', borderRadius: SoS.r.md, border: 'none',
               background: aarsag ? SoS.accent : SoS.lineSoft, fontFamily: SoS.sans, fontSize: 14,
-              fontWeight: 600, color: aarsag ? '#fff' : SoS.inkMuted, cursor: aarsag ? 'pointer' : 'default' }}>
+              fontWeight: 600, color: aarsag ? '#fff' : SoS.inkMuted,
+              cursor: aarsag ? 'pointer' : 'default' }}>
             Afslut forløb
           </button>
         </div>
@@ -8743,7 +8958,13 @@ const AfslutForloebModal = ({ menneske: m, onClose, onSaved }) => {
 };
 
 const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
-  const alle    = (window.SoS_BROBYGGERE || []).filter(b => b.status === 'aktiv');
+  const _alle   = (window.SoS_BROBYGGERE || []).filter(b => b.status === 'aktiv');
+  // HQ-prioritering: brobyggere fra personens HQ først
+  const alle = [..._alle].sort((a, b) => {
+    const aMatch = !a.hq || a.hq === m.hq;
+    const bMatch = !b.hq || b.hq === m.hq;
+    return aMatch === bMatch ? 0 : aMatch ? -1 : 1;
+  });
   const ledige  = alle.filter(b => b.openShifts > 0);
   const optaget = alle.filter(b => b.openShifts === 0);
   const [valgt, setValgt] = React.useState('');
@@ -9015,9 +9236,29 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: SoS.sans, fontSize: 14, fontWeight: 600,
                     color: sel ? selColor : SoS.ink }}>{b.name}</div>
-                  <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft, marginTop: 1 }}>
-                    {myAppts.length} aktive aftaler
-                    {mode === 'ledig' && ` · ${b.openShifts} ledig${b.openShifts !== 1 ? 'e' : ''}`}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3,
+                    flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>
+                      {myAppts.length} aktive
+                      {mode === 'ledig' && ` · ${b.openShifts} ledig`}
+                    </span>
+                    {b.hq && (
+                      <span style={{ padding: '1px 6px',
+                        background: b.hq === m.hq ? SoS.accent + '18' : SoS.surface,
+                        color: b.hq === m.hq ? SoS.accent : SoS.inkMuted,
+                        borderRadius: SoS.r.sm, fontFamily: SoS.mono,
+                        fontSize: 9, fontWeight: 700 }}>
+                        {b.hq}
+                      </span>
+                    )}
+                    {b.types && m.type && b.types.includes(m.type) && (
+                      <span style={{ padding: '1px 6px',
+                        background: SoS.green + '18', color: SoS.green,
+                        borderRadius: SoS.r.sm, fontFamily: SoS.sans,
+                        fontSize: 9, fontWeight: 700 }}>
+                        Matcher type
+                      </span>
+                    )}
                   </div>
                   {mode === 'ledig' && b.openShifts > 0 && (
                     <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
@@ -15182,6 +15423,7 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
   const [search,       setSearch]       = React.useState('');
   const [typeFilter,   setTypeFilter]   = React.useState('alle');
   const [statusFilter, setStatusFilter] = React.useState('alle');
+  const [hqFilter,     setHqFilter]     = React.useState('alle');
   const [selected,     setSelected]     = React.useState(null);
   const [showIntake,   setShowIntake]   = React.useState(false);
   const [refreshKey,   setRefreshKey]   = React.useState(0);
@@ -15210,6 +15452,7 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
     if (search && !navn.includes(search.toLowerCase())) return false;
     if (typeFilter !== 'alle' && m.type !== typeFilter) return false;
     if (statusFilter !== 'alle' && m.status !== statusFilter) return false;
+    if (hqFilter !== 'alle' && m.hq !== hqFilter) return false;
     return true;
   });
 
@@ -15252,7 +15495,7 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
       </div>
 
       {/* Filtre */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
         {['alle', 'sundhed', 'forening', 'social'].map(f => {
           const t = SoS_TYPER[f];
           const sel = typeFilter === f;
@@ -15282,6 +15525,26 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
             }}>{s === 'alle' ? 'Alle statusser' : s.charAt(0).toUpperCase() + s.slice(1)}</button>
           );
         })}
+      </div>
+
+      {/* HQ-filter */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+        <button onClick={() => setHqFilter('alle')} style={{
+          padding: '4px 10px', borderRadius: SoS.r.sm,
+          background: hqFilter === 'alle' ? SoS.ink : SoS.surface,
+          color: hqFilter === 'alle' ? '#fff' : SoS.inkSoft,
+          border: `1px solid ${hqFilter === 'alle' ? SoS.ink : SoS.line}`,
+          fontFamily: SoS.sans, fontSize: 11, fontWeight: hqFilter === 'alle' ? 700 : 400,
+          cursor: 'pointer' }}>Alle HQ</button>
+        {SoS_HOVEDSAEDER.map(hq => (
+          <button key={hq} onClick={() => setHqFilter(hq)} style={{
+            padding: '4px 10px', borderRadius: SoS.r.sm,
+            background: hqFilter === hq ? SoS.ink : SoS.surface,
+            color: hqFilter === hq ? '#fff' : SoS.inkSoft,
+            border: `1px solid ${hqFilter === hq ? SoS.ink : SoS.line}`,
+            fontFamily: SoS.sans, fontSize: 11, fontWeight: hqFilter === hq ? 700 : 400,
+            cursor: 'pointer' }}>{hq}</button>
+        ))}
       </div>
 
       {/* Tabel */}
