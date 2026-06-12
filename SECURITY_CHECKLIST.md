@@ -10,13 +10,12 @@ Status: `[ ]` = mangler · `[x]` = klaret
 
 ## 🔴 Gør nu — ægte lækkede secrets i offentligt repo
 
-- [ ] Roter VAPID-nøgleparret (privatnøglen i `.env.example:33` er kryptografisk verificeret ægte og committet)
-- [ ] Scrub `.env.example` fra git-historikken (BFG / `git filter-repo`) — sletning af filen alene fjerner ikke nøglen fra historik (commit `53418c8`)
-- [ ] Erstat alle secrets i `.env.example` med rene placeholders (`TODO_GENERATE_DO_NOT_COMMIT`)
-- [ ] Tilbagekald alle GitHub-PAT'er der har været i demo-links (`?token=`)
-- [ ] Fjern `ghp_`-tokens fra lokale `.url`-genvejsfiler; brug aldrig PAT i delbare links
-- [ ] Ret `.gitignore` — fjern inline `#`-kommentarer (understøttes ikke → reglerne matcher intet)
-- [ ] `git rm --cached infra/parameters.json` (ligger pt. offentligt trods ignore-hensigt)
+- [x] Erstat alle secrets i `.env.example` med rene placeholders — VAPID-par placeholdered + advarsel om at generere nyt ved deploy
+- [ ] **Generér nyt VAPID-par ved deploy** (`npx web-push generate-vapid-keys`) — privat nøgle KUN i Key Vault. Det gamle par er placeholdered; selve rotationen sker ved deploy.
+- [ ] **Scrub `.env.example` fra git-historikken** (BFG / `git filter-repo`) — kræver force-push + din beslutning. Det gamle nøglepar ligger stadig i historik (commit `53418c8`).
+- [x] Tilbagekald GitHub-PAT'er fra demo-links — fundne PAT er allerede tilbagekaldt (live-testet: HTTP 401); `.url`-filer var aldrig på remote
+- [x] Ret `.gitignore` — inline `#`-kommentarer fjernet (gjorde reglerne virkningsløse)
+- [x] `git rm --cached infra/parameters.json` (var tracket offentligt trods ignore-hensigt)
 
 ## 🟡 Auth-laget — fundamentet
 
@@ -32,10 +31,10 @@ Status: `[ ]` = mangler · `[x]` = klaret
 
 ## 🟢 Transport & forsyningskæde
 
-- [ ] SRI-hashes (`integrity=`) på alle CDN-scripts — eller self-host
-- [ ] Vite-produktionsbuild — drop runtime-Babel og React dev-builds
-- [ ] CSP-header der faktisk gælder på live-hosten (nuværende CSP i `staticwebapp.config.json` rammer kun den ikke-deployede Azure-host; GitHub Pages sender ingen)
-- [ ] HSTS + X-Frame-Options aktiv på den rigtige host
+- [x] SRI-hashes (`integrity=` sha384) på alle 3 CDN-scripts + `crossorigin=anonymous` — verificeret i preview
+- [~] Vite-produktionsbuild — React/ReactDOM skiftet til produktions-builds; runtime-Babel droppes først ved fuld Vite-build (FASE-2)
+- [x] CSP-backstop via `<meta>` på live-hosten (script-src låst til unpkg, connect-src til api.github.com) — verificeret ingen overtrædelser. Fuld CSP-header på Azure forbliver FASE-2
+- [ ] HSTS + X-Frame-Options aktiv på den rigtige host (kræver Azure — kan ikke sættes via `<meta>` på GitHub Pages)
 - [ ] Fjern Gist + PAT-relay helt — erstat med Azure SignalR (planlagt)
 - [ ] Verificér afsender-identitet server-side i chat (pt. fuldt client-trusted)
 
