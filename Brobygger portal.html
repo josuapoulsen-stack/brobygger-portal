@@ -2,6 +2,10 @@
 <html lang="da">
 <head>
   <meta charset="utf-8"/>
+  <!-- CSP-backstop (GitHub Pages sender ingen CSP-header; dette meta-tag begrænser
+       script-kilder til unpkg og exfiltration til api.github.com. Clickjacking-beskyttelse
+       (frame-ancestors/X-Frame-Options) kræver rigtige HTTP-headers — sættes på Azure-hosten). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com; manifest-src 'self'; base-uri 'self'; form-action 'self'"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -34,9 +38,9 @@ window.onerror = function(msg, src, line, col, err) {
     d.textContent = 'JS ERROR: ' + msg + '\n  at ' + src + ':' + line + ':' + col; }
 };
 </script>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
 <!-- tokens -->
 <script type="text/babel">
@@ -9336,7 +9340,7 @@ const TilknytBrobyggerModal = ({ menneske: m, onClose, onSaved }) => {
   );
 };
 
-MenneskeDetailPanel = ({ menneske: m, onClose }) => {
+const MenneskeDetailPanel = ({ menneske: m, onClose }) => {
   const type = SoS_TYPER[m.type];
   const [addOpen,     setAddOpen]     = React.useState(false);
   const [refreshKey,  setRefreshKey]  = React.useState(0);

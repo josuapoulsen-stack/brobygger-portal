@@ -23,10 +23,12 @@ dist/
 .env
 .env.local
 .env.*.local
-!.env.example        # .env.example MÅ godt committes
+# .env.example MÅ godt committes
+!.env.example
 
 # ── Azure / Infrastruktur ─────────────────────────────────────────────────────
-infra/parameters.json   # indeholder DB-adgangskode — aldrig commit
+# infra/parameters.json indeholder DB-adgangskode — må aldrig committes
+infra/parameters.json
 *.tfstate
 *.tfstate.backup
 
