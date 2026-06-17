@@ -388,6 +388,13 @@ const SoS_APPOINTMENTS_BUSY = (() => {
     { id: 'a-14', menneskeId: 'b-2', brobyggerId: 'bb-8', date: d(6),   start: '09:00', end: '10:30', activity: 'Lægekontakt',           location: 'Klinik Trøjborg',         status: 'pending',   kategori: 'laege', underkategori: 'almen' },
     { id: 'a-15', menneskeId: 'b-3', brobyggerId: 'bb-1', date: d(7),   start: '13:00', end: '14:00', activity: 'Kulturcafé',            location: 'Godsbanen',               status: 'confirmed' },
     { id: 'a-16', menneskeId: 'b-4', brobyggerId: 'bb-5', date: d(8),   start: '10:00', end: '11:30', activity: 'Gåtur Marselisborg',    location: 'Marselisborg Skov',       status: 'confirmed' },
+    // ── Afventer rådgiver-opfølgning (vises i dagsordenen) ──
+    { id: 'a-17', menneskeId: 'b-2', brobyggerId: 'bb-3', date: d(-6),  start: '13:00', end: '14:00', activity: 'Lægebesøg',            location: 'Klinik Trøjborg',         status: 'confirmed', kategori: 'laege',
+      brobyggerLog: { udfald: 'gennemfoert', varighed: 60, note: 'God snak — Ahmad virkede tryg', loggedAt: d(-6) } },
+    { id: 'a-18', menneskeId: 'b-4', brobyggerId: 'bb-7', date: d(-5),  start: '10:00', end: '11:00', activity: 'Biblioteksbesøg',       location: 'Dokk1',                   status: 'confirmed',
+      brobyggerLog: { udfald: 'afbud', varighed: 0, note: 'Peter meldte afbud — ny tid ønskes', loggedAt: d(-5) } },
+    { id: 'a-19', menneskeId: 'b-3', brobyggerId: 'bb-5', date: d(-12), start: '11:00', end: '12:00', activity: 'Sangeftermiddag',       location: 'Musikhuset Aarhus',       status: 'confirmed',
+      brobyggerLog: { udfald: 'ikke-modt', varighed: 0, note: 'Birthe mødte ikke op — følg op', loggedAt: d(-12) } },
   ];
 })()
 
