@@ -11517,13 +11517,9 @@ const QuickLink = ({ icon, label, count, onClick }) => (
 );
 
 const AdminMobileTabBar = ({ active, onChange, isAdmin, badges = {} }) => {
-  const tabs = isAdmin ? [
-    { id: 'oversigt',   label: 'Oversigt',   icon: 'home'     },
-    { id: 'kalender',   label: 'Kalender',   icon: 'calendar' },
-    { id: 'mennesker',  label: 'Mennesker',  icon: 'heart'    },
-    { id: 'brobyggere', label: 'Brobyggere', icon: 'users'    },
-    { id: 'matching',   label: 'Matching',   icon: 'match'    },
-  ] : [
+  // Mobil = altid kun Oversigt / Kalender / Beskeder for alle roller.
+  // Mennesker, brobyggere og matching håndteres på desktop.
+  const tabs = [
     { id: 'oversigt', label: 'Oversigt', icon: 'home'     },
     { id: 'kalender', label: 'Kalender', icon: 'calendar' },
     { id: 'beskeder', label: 'Beskeder', icon: 'chat'     },
