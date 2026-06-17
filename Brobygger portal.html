@@ -722,7 +722,23 @@ const SSLogo = ({ size = 40, color = '#E87A3E', bg = null }) => (
 );
 
 // ── Emoji/ikon-vælger til chat + inline SoS-logo via :sos: ───────────────────
-const SOS_EMOJIS = ['🙂','😊','👍','🙏','❤️','✅','📅','📍','⏰','☀️','🌿','💬','🎉','👋',':sos:'];
+const SOS_EMOJIS = ['🙂','😊','😀','😄','😁','😉','😍','🥰','😎','🤔','😅','😢','😭','👍','👏','🙌','💪','🤝','👌','🙏','👋','🤗','❤️','✅','✨','🔥','💯','🎉','📅','📍','⏰','☀️','🌿','💬',':sos:'];
+
+const SoSLogoMark = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"
+    aria-label="Social Sundhed" style={{ display: 'block', flexShrink: 0 }}>
+    <circle cx="256" cy="256" r="256" fill="#E5792E"/>
+    <circle cx="164" cy="188" r="30" fill="#fff"/>
+    <circle cx="256" cy="182" r="30" fill="#fff"/>
+    <circle cx="348" cy="188" r="30" fill="#fff"/>
+    <g fill="none" stroke="#fff" strokeWidth="20" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M92 360 C 124 270 148 256 164 256 C 196 256 200 226 214 226 C 234 226 238 256 256 256 C 274 256 278 226 298 226 C 312 226 316 256 348 256 C 364 256 388 270 420 360"/>
+      <path d="M164 256 L164 366"/>
+      <path d="M256 256 L256 374"/>
+      <path d="M348 256 L348 366"/>
+    </g>
+  </svg>
+);
 
 const renderChatText = (tekst, size) => {
   if (!tekst || String(tekst).indexOf(':sos:') === -1) return tekst;
@@ -732,7 +748,7 @@ const renderChatText = (tekst, size) => {
     if (p) out.push(p);
     if (i < parts.length - 1) out.push(
       <span key={'sos' + i} style={{ display: 'inline-flex', verticalAlign: 'middle', margin: '0 1px' }}>
-        <SSLogo size={size || 16}/>
+        <SoSLogoMark size={size || 16}/>
       </span>
     );
   });
@@ -752,7 +768,7 @@ const EmojiPicker = ({ onPick }) => {
           <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 60 }}/>
           <div style={{ position: 'absolute', bottom: 46, right: 0, zIndex: 61,
             background: '#fff', border: `1px solid ${SoS.line}`, borderRadius: SoS.r.md,
-            boxShadow: '0 8px 30px rgba(0,0,0,0.15)', padding: 8, width: 210,
+            boxShadow: '0 8px 30px rgba(0,0,0,0.15)', padding: 8, width: 210, maxHeight: 250, overflowY: 'auto',
             display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
             {SOS_EMOJIS.map(em => (
               <button key={em} type="button" title={em === ':sos:' ? 'Social Sundhed-logo' : em}
@@ -762,7 +778,7 @@ const EmojiPicker = ({ onPick }) => {
                 style={{ height: 34, border: 'none', background: 'transparent', cursor: 'pointer',
                   fontSize: 20, lineHeight: 1, borderRadius: SoS.r.sm,
                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {em === ':sos:' ? <SSLogo size={20}/> : em}
+                {em === ':sos:' ? <SoSLogoMark size={20}/> : em}
               </button>
             ))}
           </div>
