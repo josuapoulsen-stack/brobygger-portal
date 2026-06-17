@@ -721,6 +721,58 @@ const SSLogo = ({ size = 40, color = '#E87A3E', bg = null }) => (
   </svg>
 );
 
+// ── Emoji/ikon-vælger til chat + inline SoS-logo via :sos: ───────────────────
+const SOS_EMOJIS = ['🙂','😊','👍','🙏','❤️','✅','📅','📍','⏰','☀️','🌿','💬','🎉','👋',':sos:'];
+
+const renderChatText = (tekst, size) => {
+  if (!tekst || String(tekst).indexOf(':sos:') === -1) return tekst;
+  const parts = String(tekst).split(':sos:');
+  const out = [];
+  parts.forEach((p, i) => {
+    if (p) out.push(p);
+    if (i < parts.length - 1) out.push(
+      <span key={'sos' + i} style={{ display: 'inline-flex', verticalAlign: 'middle', margin: '0 1px' }}>
+        <SSLogo size={size || 16}/>
+      </span>
+    );
+  });
+  return out;
+};
+
+const EmojiPicker = ({ onPick }) => {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div style={{ position: 'relative', flexShrink: 0, alignSelf: 'flex-end' }}>
+      <button type="button" aria-label="Indsæt emoji eller ikon" onClick={() => setOpen(o => !o)}
+        style={{ width: 38, height: 38, borderRadius: SoS.r.md, border: `1px solid ${SoS.line}`,
+          background: SoS.surface, cursor: 'pointer', fontSize: 18, lineHeight: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🙂</button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 60 }}/>
+          <div style={{ position: 'absolute', bottom: 46, right: 0, zIndex: 61,
+            background: '#fff', border: `1px solid ${SoS.line}`, borderRadius: SoS.r.md,
+            boxShadow: '0 8px 30px rgba(0,0,0,0.15)', padding: 8, width: 210,
+            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
+            {SOS_EMOJIS.map(em => (
+              <button key={em} type="button" title={em === ':sos:' ? 'Social Sundhed-logo' : em}
+                onClick={() => { onPick(em); setOpen(false); }}
+                onMouseEnter={e => e.currentTarget.style.background = SoS.surface}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                style={{ height: 34, border: 'none', background: 'transparent', cursor: 'pointer',
+                  fontSize: 20, lineHeight: 1, borderRadius: SoS.r.sm,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {em === ':sos:' ? <SSLogo size={20}/> : em}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+
 // Avatar — initials in colored circle
 const Avatar = ({ initials, bg = '#E87A3E', size = 44, textColor = '#fff' }) => (
   <div style={{
@@ -6513,7 +6565,7 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate, brob
               borderRadius: SoS.r.md, padding: '8px 12px',
               fontFamily: SoS.sans, fontSize: 13, lineHeight: 1.45,
               display: 'inline-block',
-            }}>{m.tekst}</div>
+            }}>{renderChatText(m.tekst, 15)}</div>
           </div>
         </div>
       ))}
@@ -6532,6 +6584,7 @@ const MessagesList = ({ onOpen, onBack, role, ownHq, onCompose, onNavigate, brob
               background: '#fff', color: SoS.ink,
             }}
           />
+          <EmojiPicker onPick={em => setBbTekst(t => t + em)}/>
           <button
             onClick={sendBbBesked}
             disabled={!bbTekst.trim()}
@@ -12779,7 +12832,7 @@ const DesktopBeskeder = () => {
                         : `${SoS.r.md} ${SoS.r.md} ${SoS.r.md} 4px`,
                       boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                     }}>
-                      {msg.tekst}
+                      {renderChatText(msg.tekst, 16)}
                     </div>
                     <div style={{ fontFamily: SoS.sans, fontSize: 10, color: SoS.inkMuted,
                       marginTop: 4, textAlign: erAdmin ? 'right' : 'left' }}>
@@ -12809,6 +12862,7 @@ const DesktopBeskeder = () => {
                 color: SoS.ink, outline: 'none', resize: 'none', lineHeight: 1.45,
                 background: SoS.surface }}
             />
+            <EmojiPicker onPick={em => setTekst(t => t + em)}/>
             <button onClick={sendBesked} disabled={!tekst.trim()}
               style={{ padding: '10px 18px', borderRadius: SoS.r.md, border: 'none',
                 background: tekst.trim() ? SoS.accent : SoS.lineSoft,
@@ -15331,7 +15385,7 @@ const DesktopMenneskeDetailPanel = ({ menneske: m, onClose, onRefresh }) => {
                             border: erAdmin ? 'none' : `1px solid ${SoS.line}`,
                             borderRadius: SoS.r.md,
                             boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                            {msg.tekst}
+                            {renderChatText(msg.tekst, 14)}
                           </div>
                           <div style={{ fontFamily: SoS.sans, fontSize: 9,
                             color: SoS.inkMuted, marginTop: 3,
@@ -15359,6 +15413,7 @@ const DesktopMenneskeDetailPanel = ({ menneske: m, onClose, onRefresh }) => {
                       borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 12,
                       color: SoS.ink, outline: 'none', resize: 'none',
                       lineHeight: 1.45 }}/>
+                  <EmojiPicker onPick={em => setBeskedTekst(t => t + em)}/>
                   <button onClick={sendBeskedFraForloeb}
                     disabled={!beskedTekst.trim()}
                     style={{ padding: '9px 14px', borderRadius: SoS.r.sm, border: 'none',
