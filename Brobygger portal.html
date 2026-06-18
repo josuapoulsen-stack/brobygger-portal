@@ -156,10 +156,35 @@ const SoS_USER = {
   avatarBg: '#E87A3E',
 };
 
-const SoS_HOVEDSAEDER = [
-  'Sjælland', 'Hovedstaden', 'Fyn', 'Nord', 'Midt',
-  'Kronjylland', 'Aarhus', 'Syd', 'Sydvest'
-];
+// ── Reference-data (stamdata) — admin-redigerbart, localStorage-persisteret ──
+const SoS_REFS_SEED = {
+  hovedsaeder:        ['Nord', 'Midt', 'Kronjylland', 'Aarhus', 'Sydvest', 'Syd', 'Sjælland', 'Hovedstaden'],
+  afdelinger:         [],  // {navn, hovedsaede} — admin tilføjer
+  brobygningstyper:   ['Social', 'Forening', 'Sundhed'],
+  aftaletyper:        ['Fysisk følgeskab', 'Ikke-fysisk følgeskab', 'Ringeopgave', 'Supportbrobygning', 'Team'],
+  henvendere:         ['Personen selv', 'Kommune', 'Region', 'Pårørende', 'Almen praksis', 'Hospital', 'Tandlæge', 'Anden NGO', 'Andet'],
+  modtagere:          ['Region / hospital', 'Almen praksis', 'Kommune', 'Tandlæge', 'Andet'],
+  transportplaner:    ['Følges hjemmefra', 'Mødes på stedet', 'Offentlig transport', 'Kører selv'],
+  aflysningsaarsager: ['Manglende brobygger', 'Borger sygdom', 'Borger afbud', 'Borger udeblev', 'Sundhedsvæsenet aflyste', 'Transport', 'Andet'],
+  aflystAf:           ['Personen selv', 'Social Sundhed', 'Sundhedsvæsenet', 'Ekstern'],
+  samarbejdspartnere: ['Region Sjælland', 'Københavns Kommune', 'ÆHF (magistrat)'],
+  finansieringskilder: [],  // fonde/projekter/bevillinger — admin tilføjer
+};
+const SoS_REFS = (() => {
+  let stored = {};
+  try { stored = JSON.parse(localStorage.getItem('sos_refs') || '{}'); } catch (e) { stored = {}; }
+  const merged = {};
+  Object.keys(SoS_REFS_SEED).forEach(k => {
+    merged[k] = Array.isArray(stored[k]) ? stored[k] : SoS_REFS_SEED[k].slice();
+  });
+  return merged;
+})();
+const saveRefs = () => { try { localStorage.setItem('sos_refs', JSON.stringify(SoS_REFS)); } catch (e) {} };
+window.SoS_REFS = SoS_REFS;
+window.SoS_saveRefs = saveRefs;
+
+// Bagudkompatibel: mange steder bruger SoS_HOVEDSAEDER — peg på stamdata
+const SoS_HOVEDSAEDER = SoS_REFS.hovedsaeder;
 
 // Citizens (mennesker) — sensitive data
 const SoS_MENNESKER = {
