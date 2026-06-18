@@ -14389,7 +14389,7 @@ const DesktopDashboard = ({ viewingHq, canRapport }) => {
 
       {/* ══ KPI ════════════════════════════════════════════════════ */}
       <div style={{ display: 'grid',
-        gridTemplateColumns: canRapport ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         gap: 10, marginBottom: 14 }}>
         {(() => {
           const aktive = (window.SoS_BROBYGGERE || []).filter(b => b.status === 'aktiv').length;
@@ -14405,13 +14405,6 @@ const DesktopDashboard = ({ viewingHq, canRapport }) => {
               d: 'registrerede', c: SoS.green },
             { l: 'Registrerede', v: String(total), d: 'i alt', c: SoS.sky },
           ];
-          if (canRapport) {
-            const afsluttede = Object.values(window.SoS_MENNESKER || {})
-              .filter(m => m.status === 'afsluttet');
-            kpis.push({ l: 'SROI-estimat',
-              v: (afsluttede.length * 47000 / 1000).toFixed(0) + 'k',
-              d: 'kr. samfundsværdi', c: SoS.sage });
-          }
           return kpis;
         })().map((k, i) => (
           <DSCard key={i}>
