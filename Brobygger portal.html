@@ -192,8 +192,8 @@ const AFTALE_STATUS = [
   { v: 'pending',     l: 'Ikke bekræftet',  c: '#E87A3E', bg: '#FFF3E0' },
   { v: 'confirmed',   l: 'Bekræftet',       c: '#388E3C', bg: '#E8F5E9' },
   { v: 'gennemfoert', l: 'Gennemført',      c: '#4A7C59', bg: '#E8F5E9' },
-  { v: 'aflyst',      l: 'Aflyst',          c: '#C62828', bg: '#FCE4EC' },
-  { v: 'afslaaet',    l: 'Afslået',         c: '#C62828', bg: '#FCE4EC' },
+  { v: 'aflyst',      l: 'Aflyst',          c: '#A9772E', bg: '#F6EEDD' },
+  { v: 'afslaaet',    l: 'Afslået',         c: '#6F7480', bg: '#EFF0F2' },
   { v: 'brudt',       l: 'Brudt',           c: '#9E9E9E', bg: '#F5F5F5' },
 ];
 const AFTALE_STATUS_LABEL = AFTALE_STATUS.reduce((m, s) => { m[s.v] = s.l; return m; }, {});
@@ -8562,12 +8562,13 @@ const KONTAKT_TYPE_META = {
   'andet':           { label: 'Andet',                        shortLabel: 'Andet',    color: '#999'    },
 };
 
+// Trappe-model — stiger i varme mod orange i toppen (jeres mål: gennemførte brobygninger)
 const INDSATS_META = {
-  ingen:   { label: 'Ingen kontakt endnu',    color: '#999',     rank: 0 },
-  kontakt: { label: 'Kontakt etableret',      color: '#6B8CAE',  rank: 1 },
-  mode:    { label: 'Personligt møde',       color: '#7FA089',  rank: 2 },
-  folge:   { label: 'Følgeskab',             color: '#E87A3E',  rank: 3 },
-  fler:    { label: 'Fler-aftaleforløb',     color: '#D64545',  rank: 4 },
+  ingen:   { label: 'Ingen kontakt endnu',    color: '#9E9E9E',  rank: 0 },
+  kontakt: { label: 'Kontakt etableret',      color: '#CDB89A',  rank: 1 },
+  mode:    { label: 'Personligt møde',       color: '#E5A95F',  rank: 2 },
+  folge:   { label: 'Følgeskab',             color: '#E8782E',  rank: 3 },
+  fler:    { label: 'Fler-aftaleforløb',     color: '#C95B16',  rank: 4 },
 };
 
 // Beregner nøgletal fra event-log (afledt, ingen redundante felter)
