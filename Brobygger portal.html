@@ -186,6 +186,21 @@ window.SoS_saveRefs = saveRefs;
 // Bagudkompatibel: mange steder bruger SoS_HOVEDSAEDER — peg på stamdata
 const SoS_HOVEDSAEDER = SoS_REFS.hovedsaeder;
 
+// Aftale-status (livscyklus). pending/confirmed bevares for bagudkompatibilitet.
+const AFTALE_STATUS = [
+  { v: 'kladde',      l: 'Kladde',          c: '#9E9E9E', bg: '#F5F5F5' },
+  { v: 'pending',     l: 'Ikke bekræftet',  c: '#E87A3E', bg: '#FFF3E0' },
+  { v: 'confirmed',   l: 'Bekræftet',       c: '#388E3C', bg: '#E8F5E9' },
+  { v: 'gennemfoert', l: 'Gennemført',      c: '#4A7C59', bg: '#E8F5E9' },
+  { v: 'aflyst',      l: 'Aflyst',          c: '#C62828', bg: '#FCE4EC' },
+  { v: 'afslaaet',    l: 'Afslået',         c: '#C62828', bg: '#FCE4EC' },
+  { v: 'brudt',       l: 'Brudt',           c: '#9E9E9E', bg: '#F5F5F5' },
+];
+const AFTALE_STATUS_LABEL = AFTALE_STATUS.reduce((m, s) => { m[s.v] = s.l; return m; }, {});
+const AFTALE_STATUS_COLOR = AFTALE_STATUS.reduce((m, s) => { m[s.v] = s.c; return m; }, {});
+const AFTALE_STATUS_BG    = AFTALE_STATUS.reduce((m, s) => { m[s.v] = s.bg; return m; }, {});
+window.AFTALE_STATUS = AFTALE_STATUS;
+
 // Citizens (mennesker) — sensitive data
 const SoS_MENNESKER = {
   'b-1': {
@@ -14841,14 +14856,13 @@ const DesktopBrobygninger = () => {
     const m = SoS_MENNESKER[a.menneskeId];
     if (!m) return false;
     if (typeFilter !== 'alle' && m.type !== typeFilter) return false;
-    if (statusFilter === 'confirmed' && a.status !== 'confirmed') return false;
-    if (statusFilter === 'pending'   && a.status !== 'pending')   return false;
+    if (statusFilter !== 'alle' && a.status !== statusFilter) return false;
     return true;
   });
 
-  const STATUS_LABEL = { confirmed: 'Bekræftet', pending: 'Afventer' };
-  const STATUS_COLOR = { confirmed: '#388E3C', pending: '#E87A3E' };
-  const STATUS_BG    = { confirmed: '#E8F5E9', pending: '#FFF3E0' };
+  const STATUS_LABEL = AFTALE_STATUS_LABEL;
+  const STATUS_COLOR = AFTALE_STATUS_COLOR;
+  const STATUS_BG    = AFTALE_STATUS_BG;
 
   const typeCount = (tid) =>
     Object.values(SoS_MENNESKER).filter(m => m.type === tid && m.status === 'aktiv').length;
@@ -14903,7 +14917,7 @@ const DesktopBrobygninger = () => {
         <div style={{ width: 1, background: SoS.lineSoft, margin: '0 4px', height: 18 }}/>
         <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted,
           letterSpacing: 0.5, textTransform: 'uppercase', fontWeight: 700 }}>Status:</span>
-        {['alle', 'confirmed', 'pending'].map(s => {
+        {['alle', 'kladde', 'pending', 'confirmed', 'gennemfoert', 'aflyst', 'afslaaet', 'brudt'].map(s => {
           const sel = statusFilter === s;
           return (
             <button key={s} onClick={() => setStatusFilter(s)} style={{
@@ -16845,6 +16859,12 @@ const DesktopApptModal = ({ initial = {}, onClose, onSave, onDelete }) => {
           {/* Klassificering — struktureret data (fra stamdata) */}
           <div style={{ borderTop: `1px solid ${SoS.lineSoft}`, paddingTop: 14 }}>
             <div style={{ ...labelStyle, marginBottom: 10 }}>Klassificering</div>
+            <div style={{ marginBottom: 10 }}>
+              <div style={labelStyle}>Status</div>
+              <select value={form.status} onChange={upd('status')} style={inputStyle}>
+                {AFTALE_STATUS.map(s => <option key={s.v} value={s.v}>{s.l}</option>)}
+              </select>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <div>
                 <div style={labelStyle}>Aftaletype</div>
