@@ -2037,10 +2037,15 @@ const BrobyggerLogModal = ({ aftale, onClose, onSave }) => {
   const save = () => {
     const log = { udfald, varighed: udfald === 'gennemfoert' ? varighed : 0,
       note: note.trim(), loggedAt: new Date().toISOString() };
+    // Udfald driver aftale-status (gennemført / afbud→aflyst; udeblevet beholder status)
+    const nyStatus = udfald === 'gennemfoert' ? 'gennemfoert'
+                   : udfald === 'afbud' ? 'aflyst' : null;
     // Gem på aftalen
     const newList = (window.SoS_APPOINTMENTS_BUSY || []).map(a =>
       a.id === aftale.id
-        ? { ...a, brobyggerLog: log, raadgiverOpfoelgning: null }
+        ? { ...a, brobyggerLog: log, raadgiverOpfoelgning: null,
+            status: nyStatus || a.status,
+            ...(udfald === 'afbud' ? { aflysningsAarsag: a.aflysningsAarsag || 'Borger afbud' } : {}) }
         : a
     );
     window.SoS_APPOINTMENTS_BUSY = newList;
@@ -3763,7 +3768,18 @@ const AppointmentDetailScreen = ({ appt, onBack, onComplete }) => {
               <Button full variant="secondary" onClick={() => { setShowCancel(false); setAflysAarsag(null); }}>
                 Behold aftale
               </Button>
-              <Button full onClick={() => { setCancelled(true); setShowCancel(false); }}
+              <Button full onClick={() => {
+                  const aMap = { mennesket: 'Borger afbud', brobygger: 'Andet',
+                    sygdom: 'Borger sygdom', koordinator: 'Andet', andet: 'Andet' };
+                  const afMap = { mennesket: 'Personen selv', brobygger: 'Social Sundhed',
+                    sygdom: 'Personen selv', koordinator: 'Social Sundhed', andet: 'Ekstern' };
+                  const upd = (window.SoS_APPOINTMENTS_BUSY || []).map(a => a.id === appt.id
+                    ? { ...a, status: 'aflyst', aflysningsAarsag: aMap[aflysAarsag] || 'Andet',
+                        aflystAf: afMap[aflysAarsag] || '' } : a);
+                  window.SoS_APPOINTMENTS_BUSY = upd;
+                  if (window.SoS_STORE) window.SoS_STORE.save('appointments', upd);
+                  setCancelled(true); setShowCancel(false);
+                }}
                 disabled={!aflysAarsag}
                 style={{ background: aflysAarsag ? SoS.rose : SoS.lineSoft,
                   color: '#fff', opacity: aflysAarsag ? 1 : 0.6 }}>
@@ -3777,15 +3793,7 @@ const AppointmentDetailScreen = ({ appt, onBack, onComplete }) => {
         <BrobyggerLogModal
           aftale={appt}
           onClose={() => setShowLog(false)}
-          onSave={(log) => {
-            const updAppts = (window.SoS_APPOINTMENTS_BUSY || []).map(a =>
-              a.id === appt.id ? { ...a, brobyggerLog: log } : a
-            );
-            window.SoS_APPOINTMENTS_BUSY = updAppts;
-            window.SoS_STORE?.save('appointments', updAppts);
-            setShowLog(false);
-            onComplete?.();
-          }}
+          onSave={() => { setShowLog(false); onComplete?.(); }}
         />
       )}
       {cancelled && (
