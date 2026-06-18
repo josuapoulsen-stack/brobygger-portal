@@ -159,7 +159,12 @@ const SoS_USER = {
 // ── Reference-data (stamdata) — admin-redigerbart, localStorage-persisteret ──
 const SoS_REFS_SEED = {
   hovedsaeder:        ['Nord', 'Midt', 'Kronjylland', 'Aarhus', 'Sydvest', 'Syd', 'Sjælland', 'Hovedstaden'],
-  afdelinger:         [],  // {navn, hovedsaede} — admin tilføjer
+  afdelinger:         [
+    { navn: 'Aarhus C', hovedsaede: 'Aarhus' }, { navn: 'Brabrand', hovedsaede: 'Aarhus' },
+    { navn: 'Trøjborg', hovedsaede: 'Aarhus' }, { navn: 'Risskov', hovedsaede: 'Aarhus' },
+    { navn: 'Randers', hovedsaede: 'Midt' }, { navn: 'Viborg', hovedsaede: 'Midt' },
+    { navn: 'København', hovedsaede: 'Hovedstaden' }, { navn: 'Frederiksberg', hovedsaede: 'Hovedstaden' },
+  ],  // {navn, hovedsaede} — admin tilføjer flere
   brobygningstyper:   ['Social', 'Forening', 'Sundhed'],
   aftaletyper:        ['Fysisk følgeskab', 'Ikke-fysisk følgeskab', 'Ringeopgave', 'Supportbrobygning', 'Team'],
   henvendere:         ['Personen selv', 'Kommune', 'Region', 'Pårørende', 'Almen praksis', 'Hospital', 'Tandlæge', 'Anden NGO', 'Andet'],
@@ -205,6 +210,7 @@ window.AFTALE_STATUS = AFTALE_STATUS;
 const SoS_MENNESKER = {
   'b-1': {
     id: 'b-1',
+    hq: 'Aarhus', afdeling: 'Aarhus C',
     initials: 'IN',
     firstName: 'Ingrid',
     lastName: 'Nørgaard',
@@ -235,6 +241,7 @@ const SoS_MENNESKER = {
   },
   'b-2': {
     id: 'b-2',
+    hq: 'Aarhus', afdeling: 'Brabrand',
     initials: 'AK',
     firstName: 'Ahmad',
     lastName: 'Karimi',
@@ -264,6 +271,7 @@ const SoS_MENNESKER = {
   },
   'b-3': {
     id: 'b-3',
+    hq: 'Aarhus', afdeling: 'Aarhus C',
     initials: 'BS',
     firstName: 'Birthe',
     lastName: 'Sørensen',
@@ -291,6 +299,7 @@ const SoS_MENNESKER = {
   },
   'b-4': {
     id: 'b-4',
+    hq: 'Aarhus', afdeling: 'Trøjborg',
     initials: 'PJ',
     firstName: 'Peter',
     lastName: 'Jakobsen',
@@ -320,6 +329,7 @@ const SoS_MENNESKER = {
   },
   'b-5': {
     id: 'b-5',
+    hq: 'Midt', afdeling: 'Randers',
     initials: 'KL',
     firstName: 'Karen',
     lastName: 'Larsen',
@@ -346,6 +356,7 @@ const SoS_MENNESKER = {
   },
   'b-6': {
     id: 'b-6',
+    hq: 'Hovedstaden', afdeling: 'København',
     initials: 'MN',
     firstName: 'Mohammed',
     lastName: 'Nasser',
@@ -15728,6 +15739,7 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
   const [typeFilter,   setTypeFilter]   = React.useState('alle');
   const [statusFilter, setStatusFilter] = React.useState('alle');
   const [hqFilter,     setHqFilter]     = React.useState('alle');
+  const [afdFilter,    setAfdFilter]    = React.useState('alle');
   const [selected,     setSelected]     = React.useState(null);
   const [showIntake,   setShowIntake]   = React.useState(false);
   const [refreshKey,   setRefreshKey]   = React.useState(0);
@@ -15757,6 +15769,7 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
     if (typeFilter !== 'alle' && m.type !== typeFilter) return false;
     if (statusFilter !== 'alle' && m.status !== statusFilter) return false;
     if (hqFilter !== 'alle' && m.hq !== hqFilter) return false;
+    if (afdFilter !== 'alle' && m.afdeling !== afdFilter) return false;
     return true;
   });
 
@@ -15833,7 +15846,7 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
 
       {/* HQ-filter */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-        <button onClick={() => setHqFilter('alle')} style={{
+        <button onClick={() => { setHqFilter('alle'); setAfdFilter('alle'); }} style={{
           padding: '4px 10px', borderRadius: SoS.r.sm,
           background: hqFilter === 'alle' ? SoS.ink : SoS.surface,
           color: hqFilter === 'alle' ? '#fff' : SoS.inkSoft,
@@ -15841,7 +15854,7 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
           fontFamily: SoS.sans, fontSize: 11, fontWeight: hqFilter === 'alle' ? 700 : 400,
           cursor: 'pointer' }}>Alle HQ</button>
         {SoS_HOVEDSAEDER.map(hq => (
-          <button key={hq} onClick={() => setHqFilter(hq)} style={{
+          <button key={hq} onClick={() => { setHqFilter(hq); setAfdFilter('alle'); }} style={{
             padding: '4px 10px', borderRadius: SoS.r.sm,
             background: hqFilter === hq ? SoS.ink : SoS.surface,
             color: hqFilter === hq ? '#fff' : SoS.inkSoft,
@@ -15850,6 +15863,28 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed }) => {
             cursor: 'pointer' }}>{hq}</button>
         ))}
       </div>
+
+      {hqFilter !== 'alle' && SoS_REFS.afdelinger.filter(a => a.hovedsaede === hqFilter).length > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10, paddingLeft: 10,
+          borderLeft: `2px solid ${SoS.line}` }}>
+          <button onClick={() => setAfdFilter('alle')} style={{
+            padding: '4px 10px', borderRadius: SoS.r.sm,
+            background: afdFilter === 'alle' ? SoS.accent : SoS.surface,
+            color: afdFilter === 'alle' ? '#fff' : SoS.inkSoft,
+            border: `1px solid ${afdFilter === 'alle' ? SoS.accent : SoS.line}`,
+            fontFamily: SoS.sans, fontSize: 11, fontWeight: afdFilter === 'alle' ? 700 : 400,
+            cursor: 'pointer' }}>Alle afdelinger</button>
+          {SoS_REFS.afdelinger.filter(a => a.hovedsaede === hqFilter).map(a => (
+            <button key={a.navn} onClick={() => setAfdFilter(a.navn)} style={{
+              padding: '4px 10px', borderRadius: SoS.r.sm,
+              background: afdFilter === a.navn ? SoS.accent : SoS.surface,
+              color: afdFilter === a.navn ? '#fff' : SoS.inkSoft,
+              border: `1px solid ${afdFilter === a.navn ? SoS.accent : SoS.line}`,
+              fontFamily: SoS.sans, fontSize: 11, fontWeight: afdFilter === a.navn ? 700 : 400,
+              cursor: 'pointer' }}>{a.navn}</button>
+          ))}
+        </div>
+      )}
 
       {/* Tabel */}
       <DSCard style={{ padding: 0, overflow: 'hidden' }}>
