@@ -172,5 +172,17 @@ Aggregeres fra ovenstående — aldrig per-borger følsomme data i eksport:
 
 ---
 
+## Skala & ydelse (designkrav)
+
+Systemet skal kunne håndtere **+5.000 aftaler/år · +500 brobyggere · +50 medarbejdere** (akkumuleret over år → titusinder af aftaler).
+
+| Lag | Konsekvens |
+|---|---|
+| **Prototype** | In-memory filtrering er fint. Reelle grænser: lister der renderer ALLE rækker (mennesker/brobyggere/kalender) hakker ved tusinder → kræver paginering/virtualisering. localStorage (~5–10 MB) rækker ikke til års-data. |
+| **Scoping** | Rådgiver → eget hovedsæde/afdeling reducerer rendered rækker markant — også en ydelsesfordel, ikke kun UX. |
+| **Produktion** | PostgreSQL m. indekser · server-side paginering + filtrering (scoping = WHERE-clauses) · rapporter/SROI som aggregerede queries, aldrig client-side load af alle rækker. |
+
+> Passer allerede: normalisering, struktureret-først, scoping, aggregeret rapportering. Største åbne prototype-risiko: **listerne mangler paginering/virtualisering.**
+
 ## Sådan holdes kortet ajour
 Når et flow eller felt ændres: opdatér det relevante diagram + tabel her i samme commit som kodeændringen. Diagrammerne er ren tekst (Mermaid), så de er nemme at rette.
