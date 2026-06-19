@@ -17214,6 +17214,9 @@ const DesktopKalender = () => {
   const [apptModal,    setApptModal]    = React.useState(null);
   const [udfaldsModal, setUdfaldsModal] = React.useState(null);
   const [bbDetaljeId, setBbDetaljeId] = React.useState(null);
+  const [aptVis, setAptVis] = React.useState(60);
+  const [bbVis,  setBbVis]  = React.useState(40);
+  React.useEffect(() => { setAptVis(60); setBbVis(40); }, [view, weekOffset, selectedDay, bbFilter, typeFilter, statusFilter]);
 
   const saveAppt = (data) => {
     let newItems = [];
@@ -17320,7 +17323,7 @@ const DesktopKalender = () => {
     cursor: 'pointer', background: 'transparent', color: SoS.inkSoft,
   }, extra || {});
 
-  const MAX = 3;
+  const MAX = 5;
 
   const renderRow = a => {
     const m  = SoS_MENNESKER[a.menneskeId];
@@ -17457,7 +17460,7 @@ const DesktopKalender = () => {
         </div>
 
         {/* Rows per brobygger */}
-        {aktiveBb.map((bb, ri) => (
+        {aktiveBb.slice(0, bbVis).map((bb, ri) => (
           <div key={bb.id} style={{
             display: 'grid', gridTemplateColumns: '170px repeat(7, 1fr)',
             borderBottom: ri < aktiveBb.length - 1 ? `1px solid ${SoS.line}` : 'none',
@@ -17521,6 +17524,16 @@ const DesktopKalender = () => {
           </div>
         ))}
       </div>
+
+      {aktiveBb.length > bbVis && (
+        <div style={{ textAlign: 'center', marginBottom: 14 }}>
+          <button onClick={() => setBbVis(v => v + 40)} style={{ padding: '6px 14px',
+            background: SoS.surface, border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+            cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink }}>
+            Indlæs flere brobyggere ({aktiveBb.length - bbVis})
+          </button>
+        </div>
+      )}
 
       {/* Totals row */}
       <div style={{ background: SoS.surface, border: `1px solid ${SoS.line}`,
@@ -17799,7 +17812,18 @@ const DesktopKalender = () => {
           {selAppts.length === 0
             ? <div style={{ textAlign: 'center', padding: '40px 0',
                 fontFamily: SoS.sans, fontSize: 14, color: SoS.inkMuted }}>Ingen aftaler denne dag</div>
-            : selAppts.map(renderRow)
+            : (<>
+                {selAppts.slice(0, aptVis).map(renderRow)}
+                {selAppts.length > aptVis && (
+                  <div style={{ textAlign: 'center', marginTop: 8 }}>
+                    <button onClick={() => setAptVis(v => v + 60)} style={{ padding: '6px 14px',
+                      background: SoS.surface, border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+                      cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink }}>
+                      Indlæs flere ({selAppts.length - aptVis})
+                    </button>
+                  </div>
+                )}
+              </>)
           }
         </div>
       )}
