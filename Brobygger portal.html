@@ -6096,6 +6096,8 @@ const ComposeMessage = ({ role, ownHq, onClose }) => {
   const [scope, setScope] = React.useState('aktive');
   const [pickingBb, setPickingBb] = React.useState(false);
   const [selectedBb, setSelectedBb] = React.useState(null);
+  const [vis, setVis] = React.useState(50);
+  React.useEffect(() => { setVis(50); }, [filter, search, scopeHq, scopeAfd]);
 
   React.useEffect(() => {
     if (initialTarget && initialTarget.type === 'brobygger') {
@@ -14769,7 +14771,7 @@ const DesktopBrobyggere = ({ initialTarget, onTargetConsumed, scopeHq, scopeAfd 
               fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
               Ingen brobyggere matcher filteret
             </td></tr>
-          ) : rows.map(b => {
+          ) : rows.slice(0, vis).map(b => {
             const ss = SoS_STYLE[b.status] || SoS_STYLE.aktiv;
             const hasPause = b.pauseUntil && b.pauseUntil >= TODAY;
             return (
@@ -14815,9 +14817,17 @@ const DesktopBrobyggere = ({ initialTarget, onTargetConsumed, scopeHq, scopeAfd 
       </table>
 
       {/* Footer */}
-      <div style={{ marginTop: 12, fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted,
-        textAlign: 'right' }}>
-        {rows.length} af {SoS_BROBYGGERE.length} brobyggere
+      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
+          Viser {Math.min(vis, rows.length)} af {rows.length}{rows.length !== SoS_BROBYGGERE.length ? ' (' + SoS_BROBYGGERE.length + ' i alt)' : ''}
+        </span>
+        {rows.length > vis && (
+          <button onClick={() => setVis(v => v + 50)} style={{ padding: '5px 12px',
+            background: SoS.surface, border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+            cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink }}>
+            Indlæs flere ({rows.length - vis})
+          </button>
+        )}
       </div>
     </DSCard>
 
@@ -15756,6 +15766,8 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed, scopeHq, scopeAfd }
   const [statusFilter, setStatusFilter] = React.useState('alle');
   const [hqFilter,     setHqFilter]     = React.useState('alle');
   const [afdFilter,    setAfdFilter]    = React.useState('alle');
+  const [vis,          setVis]          = React.useState(50);
+  React.useEffect(() => { setVis(50); }, [search, typeFilter, statusFilter, hqFilter, afdFilter, scopeHq, scopeAfd]);
   const [selected,     setSelected]     = React.useState(null);
   const [showIntake,   setShowIntake]   = React.useState(false);
   const [refreshKey,   setRefreshKey]   = React.useState(0);
@@ -15942,7 +15954,7 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed, scopeHq, scopeAfd }
                 </td>
               </tr>
             )}
-            {filtered.map((m, i) => {
+            {filtered.slice(0, vis).map((m, i) => {
               const t = SoS_TYPER[m.type];
               const stats = calcMenneskeStats(m.id);
               const nMeta = INDSATS_META[stats.indsatsniveau];
@@ -15990,8 +16002,17 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed, scopeHq, scopeAfd }
           </tbody>
         </table>
         <div style={{ padding: '8px 14px', borderTop: `1px solid ${SoS.lineSoft}`,
-          fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, textAlign: 'right' }}>
-          {filtered.length} af {alle.length} mennesker
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>
+            Viser {Math.min(vis, filtered.length)} af {filtered.length}{filtered.length !== alle.length ? ' (' + alle.length + ' i alt)' : ''}
+          </span>
+          {filtered.length > vis && (
+            <button onClick={() => setVis(v => v + 50)} style={{ padding: '5px 12px',
+              background: SoS.surface, border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
+              cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink }}>
+              Indlæs flere ({filtered.length - vis})
+            </button>
+          )}
         </div>
       </DSCard>
     </div>
