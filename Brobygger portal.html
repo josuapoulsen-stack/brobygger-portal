@@ -2578,6 +2578,98 @@ const BrobyggerProfilSheet = ({ brobyggerId, onClose }) => {
 
 
 
+const UdlaegKort = ({ brobyggerId, user }) => {
+  const loadKonti = () => { try { return JSON.parse(localStorage.getItem('sos_udlaeg_konti') || '[]'); } catch (e) { return []; } };
+  const eksist = loadKonti().find(x => x.brobyggerId === brobyggerId) || null;
+  const [open, setOpen]       = React.useState(false);
+  const [navn, setNavn]       = React.useState((eksist && eksist.navn) || (user && user.name) || '');
+  const [email, setEmail]     = React.useState((eksist && eksist.email) || (user && user.email) || '');
+  const [regnr, setRegnr]     = React.useState((eksist && eksist.regnr) || '');
+  const [kontonr, setKontonr] = React.useState((eksist && eksist.kontonr) || '');
+  const [saved, setSaved]     = React.useState(false);
+  const [indsendt, setIndsendt] = React.useState(!!eksist);
+
+  const regOk   = /^\d{4}$/.test(regnr.trim());
+  const kontoOk = /^\d{6,10}$/.test(kontonr.replace(/\s/g, ''));
+  const canSave = !!navn.trim() && regOk && kontoOk;
+  const maskeret = kontonr ? ('•••• ' + kontonr.replace(/\s/g, '').slice(-4)) : '';
+
+  const gem = () => {
+    if (!canSave) return;
+    const list = loadKonti().filter(x => x.brobyggerId !== brobyggerId);
+    list.push({
+      brobyggerId: brobyggerId || 'bb-selv',
+      navn: navn.trim(), email: email.trim(),
+      regnr: regnr.trim(), kontonr: kontonr.replace(/\s/g, ''),
+      year: new Date().getFullYear(), submittedAt: new Date().toISOString().slice(0, 10),
+    });
+    localStorage.setItem('sos_udlaeg_konti', JSON.stringify(list));
+    setSaved(true); setIndsendt(true);
+    setTimeout(() => { setSaved(false); setOpen(false); }, 1200);
+  };
+
+  const inp = { width: '100%', padding: '9px 12px', border: `1px solid ${SoS.line}`,
+    borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, outline: 'none', boxSizing: 'border-box' };
+  const lbl = { fontFamily: SoS.sans, fontSize: 11, fontWeight: 600, color: SoS.inkSoft, marginBottom: 5 };
+
+  return (
+    <div style={{ padding: '0 20px 8px' }}>
+      <div style={{ background: '#fff', border: `1px solid ${SoS.lineSoft}`, borderRadius: SoS.r.md, overflow: 'hidden' }}>
+        <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+          padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: SoS.sageSoft,
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="chart" size={18} color={SoS.sage}/>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>Udlæg & bankoplysninger</div>
+            <div style={{ fontFamily: SoS.sans, fontSize: 11, color: indsendt ? SoS.sage : SoS.inkMuted, marginTop: 1 }}>
+              {indsendt ? ('✓ Indsendt · reg. ' + (eksist ? eksist.regnr : regnr) + ' · konto ' + maskeret) : 'Tilføj reg.nr + kontonr til udbetaling'}
+            </div>
+          </div>
+          <Icon name={open ? 'chevronU' : 'chevronD'} size={16} color={SoS.inkMuted}/>
+        </button>
+        {open && (
+          <div style={{ padding: '4px 14px 16px', borderTop: `1px solid ${SoS.lineSoft}` }}>
+            <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, lineHeight: 1.5, margin: '10px 0 14px' }}>
+              Selve udlæg og kvitteringer håndteres i <strong>Acubiz</strong>. Her registrerer du blot dine bankoplysninger, så økonomi kan oprette dig til udbetaling.
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <div style={lbl}>Navn</div>
+              <input value={navn} onChange={e => setNavn(e.target.value)} style={inp} placeholder="Dit fulde navn"/>
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <div style={lbl}>E-mail</div>
+              <input value={email} onChange={e => setEmail(e.target.value)} type="email" style={inp} placeholder="dig@mail.dk"/>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+              <div style={{ width: 110 }}>
+                <div style={lbl}>Reg.nr</div>
+                <input value={regnr} onChange={e => setRegnr(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  inputMode="numeric" style={{ ...inp, borderColor: regnr && !regOk ? SoS.rose : SoS.line }} placeholder="0000"/>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={lbl}>Kontonummer</div>
+                <input value={kontonr} onChange={e => setKontonr(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  inputMode="numeric" style={{ ...inp, borderColor: kontonr && !kontoOk ? SoS.rose : SoS.line }} placeholder="1234567890"/>
+              </div>
+            </div>
+            <button onClick={gem} disabled={!canSave} style={{ width: '100%', padding: '11px 0',
+              background: saved ? SoS.green : canSave ? SoS.ink : SoS.lineSoft,
+              color: canSave ? '#fff' : SoS.inkMuted, border: 'none', borderRadius: SoS.r.sm,
+              cursor: canSave ? 'pointer' : 'default', fontFamily: SoS.sans, fontSize: 14, fontWeight: 700 }}>
+              {saved ? '✓ Gemt og sendt til økonomi' : indsendt ? 'Opdater bankoplysninger' : 'Gem bankoplysninger'}
+            </button>
+            <div style={{ fontFamily: SoS.sans, fontSize: 10.5, color: SoS.inkMuted, marginTop: 8, lineHeight: 1.45 }}>
+              Sendes kun til økonomi til oprettelse som kreditor — vises ikke for andre brobyggere.
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'busy', brobyggerId }) => {
   const [logTarget,    setLogTarget]    = React.useState(null);
   const [apptVersion,  setApptVersion]  = React.useState(0);
@@ -2894,6 +2986,8 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
           </div>
         );
       })()}
+
+      <UdlaegKort brobyggerId={brobyggerId} user={user} />
 
       {/* Uregistrerede aftaler */}
       {uregistrerede.length > 0 && (
@@ -13631,6 +13725,74 @@ const DesktopBrugerstyring = () => {
             </button>
           </div>
         )}
+      </DSCard>
+
+      {/* Udlæg · kreditor-eksport */}
+      <DSCard style={{ marginBottom: 16 }}>
+        <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600, color: SoS.inkMuted,
+          letterSpacing: 1, textTransform: 'uppercase', marginBottom: 14 }}>Udlæg · kreditor-eksport til e-conomic</div>
+        {(() => {
+          const list = (() => { try { return JSON.parse(localStorage.getItem('sos_udlaeg_konti') || '[]'); } catch (e) { return []; } })();
+          const iaar = new Date().getFullYear();
+          const iaarGrp = iaar - 2020;
+          if (!list.length) return (
+            <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkMuted }}>
+              Ingen brobyggere har indsendt bankoplysninger endnu. Når de gør (via startsiden), kan de eksporteres her.
+            </div>
+          );
+          const download = () => {
+            const sorted = [...list].sort((a, b) => ((a.year || iaar) - (b.year || iaar)) || (a.submittedAt || '').localeCompare(b.submittedAt || ''));
+            const seq = {};
+            const rows = sorted.map(x => {
+              const year = x.year || iaar;
+              const gruppe = year - 2020;
+              seq[year] = (seq[year] || 0) + 1;
+              const kreditornr = String(gruppe) + String(seq[year]).padStart(3, '0');
+              return [kreditornr, x.navn || '', gruppe, 'DKK', 'Netto 8 dage', 'Danmark', x.email || '', x.regnr || '', x.kontonr || ''];
+            });
+            const head = ['Kreditornummer', 'Navn', 'Kreditorgruppe', 'Valuta', 'Betalingsbetingelse', 'Land', 'E-mail', 'Bankregistreringsnummer', 'Bankkontonummer'];
+            const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+            const csv = '\ufeff' + [head.map(esc).join(';')].concat(rows.map(r => r.map(esc).join(';'))).join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'kreditorer-economic-' + new Date().toISOString().slice(0, 10) + '.csv';
+            a.click();
+          };
+          return (
+            <div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, marginBottom: 12, lineHeight: 1.5 }}>
+                {list.length} brobygger{list.length === 1 ? '' : 'e'} har indsendt bankoplysninger. Eksporten tildeler automatisk <strong>kreditornummer</strong> og <strong>kreditorgruppe</strong> (i år = gruppe {iaarGrp}, så hvert års kreditorer kan slettes samlet) samt valuta, betalingsbetingelse, land og e-mail — klar til import i e-conomic.
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14 }}>
+                <thead>
+                  <tr>
+                    {['Navn', 'Reg.', 'Konto', 'E-mail', 'Gruppe'].map((h, i) => (
+                      <th key={i} style={{ textAlign: 'left', fontFamily: SoS.sans, fontSize: 10, fontWeight: 700,
+                        color: SoS.inkMuted, letterSpacing: 0.6, textTransform: 'uppercase', padding: '0 8px 8px',
+                        borderBottom: `1px solid ${SoS.line}` }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.map((x, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: '8px', borderBottom: `1px solid ${SoS.lineSoft}`, fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>{x.navn}</td>
+                      <td style={{ padding: '8px', borderBottom: `1px solid ${SoS.lineSoft}`, fontFamily: SoS.mono, fontSize: 12, color: SoS.inkSoft }}>{x.regnr}</td>
+                      <td style={{ padding: '8px', borderBottom: `1px solid ${SoS.lineSoft}`, fontFamily: SoS.mono, fontSize: 12, color: SoS.inkSoft }}>{x.kontonr}</td>
+                      <td style={{ padding: '8px', borderBottom: `1px solid ${SoS.lineSoft}`, fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>{x.email || '—'}</td>
+                      <td style={{ padding: '8px', borderBottom: `1px solid ${SoS.lineSoft}`, fontFamily: SoS.mono, fontSize: 12, color: SoS.inkSoft }}>{(x.year || iaar) - 2020}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button onClick={download} style={{ padding: '10px 18px', background: SoS.ink, color: '#fff',
+                border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer', fontFamily: SoS.sans, fontSize: 13, fontWeight: 700 }}>
+                Download CSV til e-conomic
+              </button>
+            </div>
+          );
+        })()}
       </DSCard>
 
     </div>
