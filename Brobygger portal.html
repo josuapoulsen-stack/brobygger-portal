@@ -17730,17 +17730,16 @@ const DesktopKalender = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)',
             minHeight: 240, alignItems: 'start' }}>
             {days.map((day, i) => {
-              const ds = fmt(day), all = getAppts(ds), vis = all.slice(0, MAX);
-              const more = all.length - MAX, isT = ds === TODAY;
+              const ds = fmt(day), all = getAppts(ds), isT = ds === TODAY;
               return (
-                <div key={i} style={{ padding: '8px 6px', minHeight: 120,
+                <div key={i} style={{ padding: '8px 6px', minHeight: 120, maxHeight: 420, overflowY: 'auto',
                   borderRight: i < 6 ? `1px solid ${SoS.line}` : 'none',
                   background: isT ? SoS.accent + '06' : 'transparent' }}>
                   {all.length === 0 && (
                     <div style={{ textAlign: 'center', paddingTop: 20,
                       fontFamily: SoS.sans, fontSize: 12, color: SoS.line }}>&#8212;</div>
                   )}
-                  {vis.map(a => {
+                  {all.map(a => {
                     const m  = SoS_MENNESKER[a.menneskeId];
                     const bb = SoS_BROBYGGERE.find(b => b.id === a.brobyggerId);
                     const ok = a.status === 'confirmed';
@@ -17769,14 +17768,6 @@ const DesktopKalender = () => {
                       </div>
                     );
                   })}
-                  {more > 0 && (
-                    <button onClick={() => { setSelectedDay(ds); setView('dag'); }}
-                      style={{ width: '100%', padding: '5px 4px', borderRadius: 0, border: 'none',
-                        background: SoS.accent + '10', cursor: 'pointer',
-                        fontFamily: SoS.sans, fontSize: 11, fontWeight: 700, color: SoS.accent }}>
-                      +{more} mere &#8594;
-                    </button>
-                  )}
                 </div>
               );
             })}
