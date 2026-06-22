@@ -2809,23 +2809,25 @@ const HomeScreen = ({ user, appointments, onOpenAppt, onNavigate, variant = 'bus
         twoWeeks.setDate(twoWeeks.getDate() + 14);
         const twoWeeksStr = twoWeeks.toISOString().slice(0, 10);
         const todayStr = new Date().toISOString().slice(0, 10);
-        const harKommende = raadig.some(r => r.dato >= todayStr && r.dato <= twoWeeksStr);
-        if (harKommende) return null;
+        const kommende = raadig.filter(r => r.dato >= todayStr && r.dato <= twoWeeksStr).length;
+        const harKommende = kommende > 0;
+        const farve = harKommende ? SoS.sage : SoS.amber;
         return (
-          <div style={{ margin: '12px 20px 0', padding: '12px 14px',
-            background: SoS.amber + '15',
-            border: `1px solid ${SoS.amber}40`,
-            borderRadius: SoS.r.md,
+          <div onClick={() => onNavigate && onNavigate('kalender')} style={{ margin: '12px 20px 0', padding: '12px 14px',
+            background: farve + '15',
+            border: `1px solid ${farve}40`,
+            borderRadius: SoS.r.md, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Icon name="bell" size={16} color={SoS.amber}/>
+            <Icon name={harKommende ? 'calendar' : 'bell'} size={16} color={farve}/>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: SoS.sans, fontSize: 13, fontWeight: 600,
-                color: SoS.ink }}>Husk at melde dage ind</div>
+                color: SoS.ink }}>{harKommende ? ('Du er meldt ledig ' + kommende + ' dag' + (kommende === 1 ? '' : 'e')) : 'Husk at melde dage ind'}</div>
               <div style={{ fontFamily: SoS.sans, fontSize: 12,
                 color: SoS.inkMuted, marginTop: 2 }}>
-                Du har ingen ledige dage registreret de næste 14 dage
+                {harKommende ? 'de næste 14 dage · tryk for at se kalenderen' : 'Du har ingen ledige dage registreret de næste 14 dage'}
               </div>
             </div>
+            <Icon name="chevron" size={16} color={SoS.inkMuted}/>
           </div>
         );
       })()}
