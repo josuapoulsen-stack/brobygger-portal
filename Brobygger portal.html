@@ -16489,6 +16489,8 @@ const _briefingResolve = (s, m, appt, bb) => {
     tid:               appt.start ? (appt.start + (appt.end ? '–' + appt.end : '')) : '',
     sted:              appt.location || (m && m.appointmentSted) || '',
     aktivitet:         appt.activity || '',
+    transport:         appt.transportplan || (m && m.transportplan) || '',
+    diagnose:          m ? (m.health || '') : '',
     bb_fornavn:        bb ? (bb.name || '').split(' ')[0] : '',
   };
   return String(s).replace(/\{\{(\w+)\}\}/g, (whole, k) => (k in map) ? map[k] : whole);
@@ -16498,7 +16500,7 @@ const _BRIEFING_FELTER = [
   ['Fornavn','fornavn'],['Alder','alder'],['Adresse','adresse'],['Mødested','moedested'],
   ['Telefon','telefon'],['Sprog','sprog'],['Behov','behov'],['Indsats','indsats'],
   ['Præferencer','praeferencer'],['Kontaktperson','kontaktperson'],['Kontakt-tlf','kontaktperson_tlf'],
-  ['Dato','dato'],['Tid','tid'],['Sted','sted'],['Aktivitet','aktivitet'],['Brobygger','bb_fornavn'],
+  ['Dato','dato'],['Tid','tid'],['Sted','sted'],['Afhentning/transport','transport'],['Aktivitet','aktivitet'],['Diagnose ⚠','diagnose'],['Brobygger','bb_fornavn'],
 ];
 
 const BriefingModal = ({ appt, onClose, onApply }) => {
@@ -16518,7 +16520,9 @@ const BriefingModal = ({ appt, onClose, onApply }) => {
   const [redIndsats, setRedIndsats] = React.useState('alle');
   const [redTekst, setRedTekst]     = React.useState('');
 
-  const alle = [...SoS_BRIEFING_SEEDS, ...stored];
+  const me = window.SoS_AKTIV_BRUGER || (window.SoS_USER && window.SoS_USER.name) || 'mig';
+  const mineStored = stored.filter(t => !t.ejer || t.ejer === me);
+  const alle = [...SoS_BRIEFING_SEEDS, ...mineStored];
   const mType = m ? m.type : null;
   const sorteret = [...alle].sort((a, b) => {
     const r = x => x.indsats === mType ? 0 : x.indsats === 'alle' ? 1 : 2;
@@ -16575,7 +16579,7 @@ const BriefingModal = ({ appt, onClose, onApply }) => {
   const gemSkabelon = () => {
     if (!redNavn.trim() || !redTekst.trim()) return;
     if (redId) persistStored(stored.map(s => s.id === redId ? { ...s, navn: redNavn.trim(), indsats: redIndsats, tekst: redTekst } : s));
-    else persistStored([...stored, { id: 'skab-' + Date.now(), navn: redNavn.trim(), indsats: redIndsats, tekst: redTekst, erStandard: false }]);
+    else persistStored([...stored, { id: 'skab-' + Date.now(), navn: redNavn.trim(), indsats: redIndsats, tekst: redTekst, erStandard: false, ejer: me }]);
     setView('skabeloner');
   };
   const sletSkabelon = (id) => { if (window.confirm('Slet skabelonen?')) persistStored(stored.filter(s => s.id !== id)); };
@@ -16676,7 +16680,7 @@ const BriefingModal = ({ appt, onClose, onApply }) => {
   if (view === 'skabeloner') return (
     <div style={overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={box}>
-        {header('Skabeloner', () => setView('compose'))}
+        {header('Mine skabeloner', () => setView('compose'))}
         <div style={{ overflowY: 'auto', padding: 16, flex: 1 }}>
           <button onClick={() => startRediger(null)} style={{ width: '100%', padding: '10px 0', marginBottom: 14,
             background: SoS.ink, color: '#fff', border: 'none', borderRadius: SoS.r.sm,
@@ -18962,6 +18966,8 @@ const AppWithTweaks = () => {
       ? (activeRole === 'brobygger' ? SoS.orange : SoS.sky)
       : (isNew ? SoS.sky : SoS.orange),
   };
+
+  useEffect(() => { try { window.SoS_AKTIV_BRUGER = user.name; } catch (e) {} }, [user.name]);
 
   useEffect(() => {
     setScreen("hjem");
