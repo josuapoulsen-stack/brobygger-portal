@@ -3420,7 +3420,7 @@ const InfoRow = ({ icon, label, value, action, multiline = false }) => (
   </div>
 );
 
-const AppointmentDetailScreen = ({ appt, onBack, onComplete }) => {
+const AppointmentDetailScreen = ({ appt, onBack, onComplete, onOpenBeskeder }) => {
   const [revealed, setRevealed] = React.useState(false);
   const [showCancel, setShowCancel] = React.useState(false);
   const [cancelled, setCancelled] = React.useState(false);
@@ -3506,6 +3506,19 @@ const AppointmentDetailScreen = ({ appt, onBack, onComplete }) => {
           </div>
           <div style={{ fontFamily: SoS.sans, fontSize: 14, color: SoS.ink,
             lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{appt.brobyggerNote}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12,
+            paddingTop: 12, borderTop: `1px solid ${SoS.lineSoft}` }}>
+            <span style={{ flex: 1, fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted }}>
+              Du kan ikke svare her — skriv dit svar i Beskeder.
+            </span>
+            {onOpenBeskeder && (
+              <button onClick={onOpenBeskeder} style={{ flexShrink: 0, padding: '7px 14px',
+                background: SoS.orange, color: '#fff', border: 'none', borderRadius: SoS.r.md,
+                cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12, fontWeight: 700 }}>
+                Svar i Beskeder
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -11537,7 +11550,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
       )}
       {selectedAppt && (
         <div style={{ position: "absolute", inset: 0, overflowY: "auto", zIndex: 100 }}>
-          <AppointmentDetailScreen appt={selectedAppt} onBack={() => setSelectedAppt(null)} onComplete={() => setSelectedAppt(null)}/>
+          <AppointmentDetailScreen appt={selectedAppt} onBack={() => setSelectedAppt(null)} onComplete={() => setSelectedAppt(null)} onOpenBeskeder={() => { setSelectedAppt(null); setTab('beskeder'); }}/>
         </div>
       )}
       {/* Profil slide-up */}
@@ -16635,7 +16648,7 @@ const BriefingModal = ({ appt, onClose, onApply }) => {
   const [view, setView]   = React.useState('compose');   // compose | skabeloner | rediger
   const [tekst, setTekst] = React.useState(appt.brobyggerNote || '');
   const [valgt, setValgt] = React.useState('');
-  const [sendBesked, setSendBesked] = React.useState(false);
+  const [sendBesked, setSendBesked] = React.useState(true);
   const [gemt, setGemt]   = React.useState(false);
   const [stored, setStored] = React.useState(() => {
     try { return JSON.parse(localStorage.getItem('sos_besked_skabeloner') || '[]'); } catch { return []; }
@@ -19205,7 +19218,7 @@ const AppWithTweaks = () => {
     const appt = [...SoS_APPOINTMENTS_BUSY, ...SoS_HISTORIK].find(a => a.id === detailId);
     content = appt ? (
       <div style={{ position: "absolute", inset: 0, background: SoS.cream, overflowY: "auto" }}>
-        <AppointmentDetailScreen appt={appt} onBack={backFromAppt} onComplete={backFromAppt} />
+        <AppointmentDetailScreen appt={appt} onBack={backFromAppt} onComplete={backFromAppt} onOpenBeskeder={() => { setDetailId(null); setScreen("notif"); }} />
       </div>
     ) : null;
   } else {
