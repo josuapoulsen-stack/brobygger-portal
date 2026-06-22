@@ -5753,15 +5753,15 @@ const OnboardingWizard = ({ onClose }) => {
   const set = (k, v) => setData(d => ({ ...d, [k]: v }));
   const toggle = (k, v) => setData(d => ({ ...d, [k]: d[k].includes(v) ? d[k].filter(x => x !== v) : [...d[k], v] }));
 
-  const steps = ['Velkommen', 'Om dig', 'Hovedsæde', 'Typer', 'Rådighed', 'Sprog', 'Færdig'];
+  const steps = ['Velkommen', 'Om dig', 'Hovedsæde', 'Typer', 'Sprog', 'Færdig'];
 
   return (
     <div style={{ position: 'absolute', inset: 0,
-      background: step === 0 || step === 6
+      background: step === 0 || step === 5
         ? `linear-gradient(165deg, ${SoS.orangeSoft} 0%, ${SoS.orange} 60%, ${SoS.orangeDeep} 100%)`
         : SoS.cream,
       display: 'flex', flexDirection: 'column',
-      color: step === 0 || step === 6 ? '#fff' : SoS.ink, transition: 'background 0.3s',
+      color: step === 0 || step === 5 ? '#fff' : SoS.ink, transition: 'background 0.3s',
     }}>
       {step !== 0 && step !== 6 && (
         <div style={{ padding: '54px 20px 12px', background: '#fff', borderBottom: `1px solid ${SoS.line}` }}>
@@ -5779,7 +5779,7 @@ const OnboardingWizard = ({ onClose }) => {
         </div>
       )}
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: step === 0 || step === 5 ? '60px 28px 40px' : '24px 20px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: step === 0 || step === 4 ? '60px 28px 40px' : '24px 20px' }}>
         {step === 0 && (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <SSLogo size={72} bg="rgba(255,255,255,0.2)"/>
@@ -5793,7 +5793,7 @@ const OnboardingWizard = ({ onClose }) => {
             </div>
             <div style={{ fontFamily: SoS.sans, fontSize: 15, lineHeight: 1.5,
               marginTop: 18, opacity: 0.9, maxWidth: 300 }}>
-              Seks hurtige spørgsmål — så kan vi matche dig med mennesker der passer til dig.
+              Fem hurtige spørgsmål — så kan vi matche dig med mennesker der passer til dig.
             </div>
           </div>
         )}
@@ -5918,36 +5918,6 @@ const OnboardingWizard = ({ onClose }) => {
           <>
             <div style={{ fontFamily: SoS.font, fontSize: 26, fontWeight: 500,
               color: SoS.ink, marginBottom: 8, letterSpacing: -0.3 }}>
-              Hvornår kan du typisk?
-            </div>
-            <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginBottom: 20 }}>
-              Dette er bare en vejledende idé — du melder rådighed når det passer dig.
-            </div>
-            {['Hverdage formiddag', 'Hverdage eftermiddag', 'Hverdage aften', 'Weekend formiddag', 'Weekend eftermiddag'].map(opt => {
-              const sel = data.availability.includes(opt);
-              return (
-                <button key={opt} onClick={() => toggle('availability', opt)} style={{
-                  display: 'flex', alignItems: 'center', gap: 14, width: '100%',
-                  padding: 14, marginBottom: 6, textAlign: 'left',
-                  background: sel ? SoS.orange + '15' : '#fff',
-                  border: `2px solid ${sel ? SoS.orange : SoS.lineSoft}`,
-                  borderRadius: SoS.r.md, cursor: 'pointer',
-                }}>
-                  <Icon name="clock" size={20} color={sel ? SoS.orange : SoS.inkMuted}/>
-                  <span style={{ flex: 1, fontFamily: SoS.sans, fontSize: 14, fontWeight: 500, color: SoS.ink }}>
-                    {opt}
-                  </span>
-                  {sel && <Icon name="check" size={18} color={SoS.orange} weight={2.5}/>}
-                </button>
-              );
-            })}
-          </>
-        )}
-
-        {step === 5 && (
-          <>
-            <div style={{ fontFamily: SoS.font, fontSize: 26, fontWeight: 500,
-              color: SoS.ink, marginBottom: 8, letterSpacing: -0.3 }}>
               Hvilke sprog taler du?
             </div>
             <div style={{ fontFamily: SoS.sans, fontSize: 13, color: SoS.inkSoft, marginBottom: 20 }}>
@@ -5970,7 +5940,7 @@ const OnboardingWizard = ({ onClose }) => {
           </>
         )}
 
-        {step === 6 && (
+        {step === 5 && (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center' }}>
             <div style={{ width: 88, height: 88, borderRadius: 44,
               background: 'rgba(255,255,255,0.2)', margin: '0 auto 24px',
@@ -5990,10 +5960,10 @@ const OnboardingWizard = ({ onClose }) => {
       </div>
 
       <div style={{ padding: '16px 20px 34px', display: 'flex', gap: 10,
-        background: step === 0 || step === 6 ? 'transparent' : '#fff',
-        borderTop: step === 0 || step === 6 ? 'none' : `1px solid ${SoS.line}` }}>
+        background: step === 0 || step === 5 ? 'transparent' : '#fff',
+        borderTop: step === 0 || step === 5 ? 'none' : `1px solid ${SoS.line}` }}>
         {/* Forrige-knap (ikke på trin 0, 1 og 6) */}
-        {step > 1 && step < 6 && (
+        {step > 1 && step < 5 && (
           <Button onClick={() => setStep(step - 1)} variant="secondary"
             style={{ flex: '0 0 auto', padding: '0 18px' }}>
             <Icon name="chevronL" size={18} color={SoS.ink}/>
@@ -6002,7 +5972,7 @@ const OnboardingWizard = ({ onClose }) => {
         <Button full
           disabled={step === 1 && (!data.fornavn.trim() || !data.email.trim() || !data.mobil.trim())}
           onClick={() => {
-            if (step === 6) {
+            if (step === 5) {
               // Gem til localStorage
               window.SoS_STORE?.save('profile', {
                 navn:      (data.fornavn + ' ' + data.efternavn).trim(),
@@ -6017,11 +5987,11 @@ const OnboardingWizard = ({ onClose }) => {
               setStep(step + 1);
             }
           }}
-          variant={step === 0 || step === 6 ? 'secondary' : 'primary'}
-          style={step === 0 || step === 6
+          variant={step === 0 || step === 5 ? 'secondary' : 'primary'}
+          style={step === 0 || step === 5
             ? { background: '#fff', color: SoS.orange, boxShadow: SoS.shadow.md }
             : {}}>
-          {step === 0 ? 'Kom i gang' : step === 6 ? 'Gå til appen' : 'Fortsæt'}
+          {step === 0 ? 'Kom i gang' : step === 5 ? 'Gå til appen' : 'Fortsæt'}
         </Button>
       </div>
     </div>
