@@ -13442,16 +13442,62 @@ const DesktopBrugerstyring = () => {
   );
 };
 const OpkaldLog = ({ onClose }) => {
-  const [navn, setNavn] = React.useState('');
+  const OPKALD_TYPER = [
+    { id: 'samtale_menneske',  label: 'Samtale med menneske',     kind: 'menneske',  farve: SoS.orange },
+    { id: 'samtale_brobygger', label: 'Samtale med brobygger',    kind: 'brobygger', farve: SoS.sky },
+    { id: 'ringeopgave',       label: 'Ringeopgave for menneske', kind: 'menneske',  farve: SoS.sage },
+  ];
+  const RINGE_UNDER = [
+    { id: 'bestil_tid',       label: 'Bestiller tid' },
+    { id: 'forny_recept',     label: 'Fornyer recept' },
+    { id: 'kontakt_forening', label: 'Kontakt til forening' },
+    { id: 'andet',            label: 'Andet' },
+  ];
+  const [type, setType]   = React.useState('samtale_menneske');
+  const [underType, setUnderType] = React.useState('bestil_tid');
+  const [query, setQuery] = React.useState('');
+  const [valgt, setValgt] = React.useState(null);
   const [tlf,  setTlf]  = React.useState('');
   const [note, setNote] = React.useState('');
   const [saved, setSaved] = React.useState(false);
+  const lbl = { fontFamily: SoS.sans, fontSize: 11, fontWeight: 600, color: SoS.inkSoft, marginBottom: 5 };
+
+  const typeMeta = OPKALD_TYPER.find(t => t.id === type) || OPKALD_TYPER[0];
+  const kraevetKind = typeMeta.kind;
+  const erRinge = type === 'ringeopgave';
+  const linkLabel = erRinge ? 'For hvilket menneske?' : (kraevetKind === 'brobygger' ? 'Hvilken brobygger?' : 'Hvilket menneske?');
+
+  const vaelgType = (id) => {
+    const ny = OPKALD_TYPER.find(t => t.id === id);
+    if (valgt && ny && valgt.kind !== ny.kind) { setValgt(null); setQuery(''); }
+    setType(id);
+  };
+
+  const resultater = query.trim().length >= 2 ? (() => {
+    const ql = query.toLowerCase();
+    const qd = query.replace(/\s/g, '');
+    if (kraevetKind === 'brobygger') {
+      return (window.SoS_BROBYGGERE || []).filter(b => (b.name || '').toLowerCase().includes(ql))
+        .slice(0, 8).map(b => ({ kind: 'brobygger', id: b.id, navn: b.name || '', tlf: b.mobil || b.phone || '' }));
+    }
+    return Object.values(window.SoS_MENNESKER || {}).filter(m =>
+      ((m.firstName || '') + ' ' + (m.lastName || '')).toLowerCase().includes(ql) ||
+      (m.mobil || '').replace(/\s/g, '').includes(qd)
+    ).slice(0, 8).map(m => ({ kind: 'menneske', id: m.id, navn: ((m.firstName || '') + ' ' + (m.lastName || '')).trim(), tlf: m.mobil || '' }));
+  })() : [];
+
+  const canSave = !!valgt && !!note.trim();
 
   const handleSave = () => {
-    if (!note.trim()) return;
+    if (!canSave) return;
     const entry = {
       id: 'log-' + Date.now(),
-      navn: navn.trim() || 'Ukendt',
+      type,
+      underType: erRinge ? underType : null,
+      kind: valgt.kind,
+      menneskeId:  valgt.kind === 'menneske'  ? valgt.id : null,
+      brobyggerId: valgt.kind === 'brobygger' ? valgt.id : null,
+      navn: valgt.navn,
       tlf: tlf.trim(),
       note: note.trim(),
       dato: new Date().toISOString().slice(0, 10),
@@ -13480,25 +13526,85 @@ const OpkaldLog = ({ onClose }) => {
           </button>
         </div>
         <div style={{ padding: '18px 20px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-            <div>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
-                color: SoS.inkSoft, marginBottom: 5 }}>Navn (valgfrit)</div>
-              <input value={navn} onChange={e => setNavn(e.target.value)}
-                placeholder="f.eks. Erik Hansen" autoFocus
-                style={{ width: '100%', padding: '9px 12px', border: `1px solid ${SoS.line}`,
-                  borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13,
-                  color: SoS.ink, outline: 'none', boxSizing: 'border-box' }}/>
+          <div style={{ marginBottom: 12 }}>
+            <div style={lbl}>Type opkald</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {OPKALD_TYPER.map(t => (
+                <button key={t.id} onClick={() => vaelgType(t.id)} style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', textAlign: 'left',
+                  border: `1.5px solid ${type === t.id ? t.farve : SoS.line}`, borderRadius: SoS.r.sm,
+                  background: type === t.id ? t.farve + '12' : '#fff', cursor: 'pointer',
+                  fontFamily: SoS.sans, fontSize: 13, fontWeight: type === t.id ? 700 : 500,
+                  color: type === t.id ? SoS.ink : SoS.inkSoft }}>
+                  <span style={{ width: 9, height: 9, borderRadius: 5, background: t.farve, flexShrink: 0 }}/>
+                  {t.label}
+                </button>
+              ))}
             </div>
-            <div>
-              <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
-                color: SoS.inkSoft, marginBottom: 5 }}>Telefon (valgfrit)</div>
-              <input value={tlf} onChange={e => setTlf(e.target.value)}
-                placeholder="12 34 56 78" type="tel"
-                style={{ width: '100%', padding: '9px 12px', border: `1px solid ${SoS.line}`,
-                  borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13,
-                  color: SoS.ink, outline: 'none', boxSizing: 'border-box' }}/>
+          </div>
+          {erRinge && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={lbl}>Hvad drejer ringeopgaven sig om?</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {RINGE_UNDER.map(u => (
+                  <button key={u.id} onClick={() => setUnderType(u.id)} style={{
+                    padding: '6px 11px', border: `1.5px solid ${underType === u.id ? SoS.ink : SoS.line}`,
+                    borderRadius: SoS.r.sm, background: underType === u.id ? SoS.ink : '#fff',
+                    color: underType === u.id ? '#fff' : SoS.ink, cursor: 'pointer',
+                    fontFamily: SoS.sans, fontSize: 12, fontWeight: underType === u.id ? 700 : 400 }}>{u.label}</button>
+                ))}
+              </div>
             </div>
+          )}
+          <div style={{ marginBottom: 12 }}>
+            <div style={lbl}>{linkLabel} <span style={{ color: SoS.orange }}>*</span></div>
+            {valgt ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px',
+                border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm, background: SoS.surface }}>
+                <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 3,
+                  background: valgt.kind === 'brobygger' ? SoS.sky + '22' : SoS.orange + '22',
+                  color: valgt.kind === 'brobygger' ? SoS.sky : SoS.orange }}>
+                  {valgt.kind === 'brobygger' ? 'BROBYGGER' : 'MENNESKE'}
+                </span>
+                <span style={{ flex: 1, fontFamily: SoS.sans, fontSize: 13, fontWeight: 600, color: SoS.ink }}>{valgt.navn || '—'}</span>
+                <button onClick={() => { setValgt(null); setQuery(''); }} style={{ background: 'none', border: 'none',
+                  cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted }}>Skift</button>
+              </div>
+            ) : (
+              <div style={{ position: 'relative' }}>
+                <input value={query} onChange={e => setQuery(e.target.value)} autoFocus
+                  placeholder={kraevetKind === 'brobygger' ? 'Søg brobygger…' : 'Søg menneske (navn eller telefon)…'}
+                  style={{ width: '100%', padding: '9px 12px', border: `1px solid ${SoS.line}`,
+                    borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, outline: 'none', boxSizing: 'border-box' }}/>
+                {resultater.length > 0 && (
+                  <div style={{ border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm, marginTop: 4, overflow: 'hidden' }}>
+                    {resultater.map((r, i) => (
+                      <button key={r.kind + r.id} onClick={() => { setValgt(r); setTlf(r.tlf || ''); setQuery(''); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+                          padding: '8px 12px', border: 'none', borderTop: i > 0 ? `1px solid ${SoS.lineSoft}` : 'none',
+                          background: '#fff', cursor: 'pointer', fontFamily: SoS.sans, fontSize: 13, color: SoS.ink }}>
+                        <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 3,
+                          background: r.kind === 'brobygger' ? SoS.sky + '22' : SoS.orange + '22',
+                          color: r.kind === 'brobygger' ? SoS.sky : SoS.orange }}>{r.kind === 'brobygger' ? 'BB' : 'M'}</span>
+                        <span style={{ flex: 1 }}>{r.navn}</span>
+                        {r.tlf && <span style={{ fontFamily: SoS.mono, fontSize: 10, color: SoS.inkMuted }}>{r.tlf}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {query.trim().length >= 2 && resultater.length === 0 && (
+                  <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted, marginTop: 6 }}>
+                    Ingen match. {kraevetKind === 'brobygger' ? 'Tjek brobyggerens navn.' : 'Opret mennesket via \"Ny aftale\" først.'} Et opkald skal altid kobles til en person.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={lbl}>Telefon</div>
+            <input value={tlf} onChange={e => setTlf(e.target.value)} placeholder="12 34 56 78" type="tel"
+              style={{ width: '100%', padding: '9px 12px', border: `1px solid ${SoS.line}`,
+                borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, outline: 'none', boxSizing: 'border-box' }}/>
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
@@ -13512,12 +13618,12 @@ const OpkaldLog = ({ onClose }) => {
                 color: SoS.ink, outline: 'none', resize: 'none',
                 lineHeight: 1.5, boxSizing: 'border-box' }}/>
           </div>
-          <button onClick={handleSave} disabled={!note.trim()} style={{
+          <button onClick={handleSave} disabled={!canSave} style={{
             width: '100%', padding: '11px 0',
-            background: saved ? SoS.green : note.trim() ? SoS.ink : SoS.lineSoft,
-            color: note.trim() ? '#fff' : SoS.inkMuted,
+            background: saved ? SoS.green : canSave ? SoS.ink : SoS.lineSoft,
+            color: canSave ? '#fff' : SoS.inkMuted,
             border: 'none', borderRadius: SoS.r.sm,
-            cursor: note.trim() ? 'pointer' : 'default',
+            cursor: canSave ? 'pointer' : 'default',
             fontFamily: SoS.sans, fontSize: 14, fontWeight: 700,
             transition: 'background 0.2s' }}>
             {saved ? '✓ Gemt' : 'Gem log'}
@@ -15586,10 +15692,12 @@ const DesktopMenneskeDetailPanel = ({ menneske: m, onClose, onRefresh }) => {
           <div>
             <MenneskeTimelineInline m={m} />
             {(() => {
+              const _OPKTYPE = { samtale_menneske: 'Samtale', samtale_brobygger: 'Samtale (brobygger)', ringeopgave: 'Ringeopgave' };
+              const _RINGELBL = { bestil_tid: 'bestil tid', forny_recept: 'forny recept', kontakt_forening: 'kontakt forening', andet: 'andet' };
               const logs = JSON.parse(localStorage.getItem('sos_opkald_log') || '[]')
-                .filter(l => l.navn && l.navn !== 'Ukendt' && (
+                .filter(l => l.menneskeId ? l.menneskeId === m.id : (l.navn && l.navn !== 'Ukendt' && (
                   l.navn.toLowerCase().includes((m.firstName || '').toLowerCase()) ||
-                  l.navn.toLowerCase().includes((m.lastName || '').toLowerCase())));
+                  l.navn.toLowerCase().includes((m.lastName || '').toLowerCase()))));
               if (logs.length === 0) return null;
               return (
                 <div style={{ marginTop: 14, padding: '0 2px' }}>
@@ -15603,7 +15711,7 @@ const DesktopMenneskeDetailPanel = ({ menneske: m, onClose, onRefresh }) => {
                         color: SoS.inkMuted, flexShrink: 0, width: 74 }}>{l.dato}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontFamily: SoS.sans, fontSize: 12,
-                          fontWeight: 600, color: SoS.ink }}>{l.navn}</div>
+                          fontWeight: 600, color: SoS.ink }}>{(_OPKTYPE[l.type] || 'Opkald')}{l.underType ? ' · ' + (_RINGELBL[l.underType] || l.underType) : ''}</div>
                         <div style={{ fontFamily: SoS.sans, fontSize: 11,
                           color: SoS.inkSoft, marginTop: 2 }}>{l.note}</div>
                       </div>
@@ -18372,6 +18480,18 @@ const DesktopRapport = ({ viewingHq }) => {
       const _sc0 = !!(viewingHq && viewingHq !== 'Alle hovedsæder');
       const appts    = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => !_sc0 || (_MN0[a.menneskeId] && _MN0[a.menneskeId].hq === viewingHq));
       const mns      = Object.values(_MN0).filter(m => !_sc0 || m.hq === viewingHq);
+      const opkald = (() => { try { return JSON.parse(localStorage.getItem('sos_opkald_log') || '[]'); } catch (e) { return []; } })()
+        .filter(l => {
+          if (!_sc0) return true;
+          if (l.menneskeId && _MN0[l.menneskeId]) return _MN0[l.menneskeId].hq === viewingHq;
+          if (l.brobyggerId) { const b = (window.SoS_BROBYGGERE || []).find(x => x.id === l.brobyggerId); return !!b && b.hq === viewingHq; }
+          return false;
+        });
+      const opkSamtaleM = opkald.filter(l => l.type === 'samtale_menneske' || (!l.type && l.kind === 'menneske')).length;
+      const opkSamtaleB = opkald.filter(l => l.type === 'samtale_brobygger' || (!l.type && l.kind === 'brobygger')).length;
+      const opkRinge    = opkald.filter(l => l.type === 'ringeopgave');
+      const ringeUnder  = (() => { const o = {}; opkRinge.forEach(l => { const k = l.underType || 'andet'; o[k] = (o[k] || 0) + 1; }); return o; })();
+      const RINGE_LBL   = { bestil_tid: 'Bestil tid', forny_recept: 'Forny recept', kontakt_forening: 'Kontakt forening', andet: 'Andet' };
       const logged   = appts.filter(a => a.brobyggerLog);
       const done     = logged.filter(a => a.brobyggerLog.udfald === 'gennemfoert');
       const afbud    = logged.filter(a => a.brobyggerLog.udfald === 'afbud');
@@ -18425,6 +18545,32 @@ const DesktopRapport = ({ viewingHq }) => {
 
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {opkald.length > 0 && (
+            <DSCard title="Opkaldsstatistik">
+              <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: opkRinge.length ? 12 : 0 }}>
+                {[['Samtaler med mennesker', opkSamtaleM, SoS.orange],
+                  ['Samtaler med brobyggere', opkSamtaleB, SoS.sky],
+                  ['Ringeopgaver', opkRinge.length, SoS.sage],
+                  ['Opkald i alt', opkald.length, SoS.ink]].map((k, i) => (
+                  <div key={i}>
+                    <div style={{ fontFamily: SoS.font, fontSize: 22, fontWeight: 600, color: k[2] }}>{k[1]}</div>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkSoft }}>{k[0]}</div>
+                  </div>
+                ))}
+              </div>
+              {opkRinge.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', borderTop: `1px solid ${SoS.lineSoft}`, paddingTop: 10 }}>
+                  {Object.entries(ringeUnder).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
+                    <span key={k} style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.ink,
+                      background: SoS.surface, border: `1px solid ${SoS.line}`, borderRadius: 999, padding: '4px 10px' }}>
+                      {(RINGE_LBL[k] || k)}: {v}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </DSCard>
+          )}
 
           {(() => {
             const MN = window.SoS_MENNESKER || {};
