@@ -14133,7 +14133,7 @@ const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, ca
           {section === 'mennesker' && <DesktopMennesker initialTarget={searchTarget} onTargetConsumed={() => setSearchTarget(null)} scopeHq={viewingHq} scopeAfd={onlyMine ? ownAfdeling : null}/>}
           {section === 'kalender' && <DesktopKalender/>}
           {section === 'beskeder' && <DesktopBeskeder/>}
-          {section === 'rapport' && canRapport && <DesktopRapport/>}
+          {section === 'rapport' && canRapport && <DesktopRapport viewingHq={viewingHq}/>}
           {section === 'stamdata' && canUserMgmt && <DesktopStamdata/>}
           {section === 'brugerstyring' && canUserMgmt && <DesktopBrugerstyring/>}
           {showNyAftale && (
@@ -18038,7 +18038,7 @@ const DesktopKalender = () => {
   );
 };
 
-const DesktopRapport = () => {
+const DesktopRapport = ({ viewingHq }) => {
   const [showExport, setShowExport] = React.useState(false);
   const [downloading, setDownloading] = React.useState(null);
   const [rapTab, setRapTab] = React.useState('rapporter');
@@ -18141,8 +18141,10 @@ const DesktopRapport = () => {
 
     {/* ── STATISTIK-FANE ── */}
     {rapTab === 'statistik' && (() => {
-      const appts    = window.SoS_APPOINTMENTS_BUSY || [];
-      const mns      = Object.values(window.SoS_MENNESKER || {});
+      const _MN0 = window.SoS_MENNESKER || {};
+      const _sc0 = !!(viewingHq && viewingHq !== 'Alle hovedsæder');
+      const appts    = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => !_sc0 || (_MN0[a.menneskeId] && _MN0[a.menneskeId].hq === viewingHq));
+      const mns      = Object.values(_MN0).filter(m => !_sc0 || m.hq === viewingHq);
       const logged   = appts.filter(a => a.brobyggerLog);
       const done     = logged.filter(a => a.brobyggerLog.udfald === 'gennemfoert');
       const afbud    = logged.filter(a => a.brobyggerLog.udfald === 'afbud');
@@ -18198,8 +18200,9 @@ const DesktopRapport = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {(() => {
-            const A = window.SoS_APPOINTMENTS_BUSY || [];
             const MN = window.SoS_MENNESKER || {};
+            const _sc = !!(viewingHq && viewingHq !== 'Alle hovedsæder');
+            const A = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => !_sc || (MN[a.menneskeId] && MN[a.menneskeId].hq === viewingHq));
             const cancelled = A.filter(a => ['aflyst','afslaaet','brudt'].indexOf(a.status) >= 0 || (a.brobyggerLog && a.brobyggerLog.udfald === 'afbud'));
             const completed = A.filter(a => a.status === 'gennemfoert' || (a.brobyggerLog && a.brobyggerLog.udfald === 'gennemfoert'));
             const beslut = cancelled.length + completed.length;
@@ -18381,8 +18384,9 @@ const DesktopRapport = () => {
 
     {/* ── DEFINITIONER-FANE ── */}
     {rapTab === 'aktivitet' && (() => {
-      const A = window.SoS_APPOINTMENTS_BUSY || [];
       const MN = window.SoS_MENNESKER || {};
+      const _sc = !!(viewingHq && viewingHq !== 'Alle hovedsæder');
+      const A = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => !_sc || (MN[a.menneskeId] && MN[a.menneskeId].hq === viewingHq));
       const pad = n => String(n).padStart(2, '0');
       const year = new Date().getFullYear();
       const dayCount = {};
@@ -18414,7 +18418,7 @@ const DesktopRapport = () => {
       return (
         <div>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, flexWrap:'wrap', gap:8 }}>
-            <div style={{ fontFamily:SoS.sans, fontSize:13, color:SoS.inkSoft }}>Organisationens aktivitet i {year} — til download/print for ledelse og fonde.</div>
+            <div style={{ fontFamily:SoS.sans, fontSize:13, color:SoS.inkSoft }}>{_sc ? viewingHq : 'Hele organisationen'} · {year} — til download/print for ledelse og fonde.</div>
             <div style={{ display:'flex', gap:8 }}>
               <button onClick={downloadAktivitet} style={{ padding:'7px 14px', background:SoS.ink, color:'#fff', border:'none', borderRadius:SoS.r.sm, cursor:'pointer', fontFamily:SoS.sans, fontSize:12, fontWeight:600 }}>Download PNG</button>
               <button onClick={() => window.print()} style={{ padding:'7px 14px', background:SoS.surface, color:SoS.ink, border:`1px solid ${SoS.line}`, borderRadius:SoS.r.sm, cursor:'pointer', fontFamily:SoS.sans, fontSize:12, fontWeight:600 }}>Print</button>
@@ -18422,8 +18426,8 @@ const DesktopRapport = () => {
           </div>
           <DSCard style={{ padding:0, overflow:'hidden' }}>
             <svg id="sos-akt-svg" viewBox="0 0 720 440" style={{ width:'100%', display:'block', background:'#fff' }} xmlns="http://www.w3.org/2000/svg">
-              <text x="24" y="34" style={{ fontFamily:SoS.sans, fontSize:18, fontWeight:700, fill:SoS.ink }}>Aktivitetsoverblik · {year}</text>
-              {[['Aftaler i alt', total], ['Gennemførte', done], ['Aflyste', cancelled], ['Mennesker', Object.keys(MN).length]].map((k, i) => (
+              <text x="24" y="34" style={{ fontFamily:SoS.sans, fontSize:18, fontWeight:700, fill:SoS.ink }}>Aktivitetsoverblik · {_sc ? viewingHq : 'Alle hovedsæder'} · {year}</text>
+              {[['Aftaler i alt', total], ['Gennemførte', done], ['Aflyste', cancelled], ['Mennesker', Object.values(MN).filter(m => !_sc || m.hq === viewingHq).length]].map((k, i) => (
                 <g key={i}>
                   <text x={24 + i*172} y="64" style={{ fontFamily:SoS.sans, fontSize:11, fill:SoS.inkMuted }}>{k[0]}</text>
                   <text x={24 + i*172} y="90" style={{ fontFamily:SoS.sans, fontSize:22, fontWeight:700, fill:SoS.ink }}>{k[1]}</text>
