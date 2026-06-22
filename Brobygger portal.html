@@ -13058,6 +13058,7 @@ const DesktopStamdata = () => {
   const [, force]       = React.useReducer(x => x + 1, 0);
   const [editIdx, setEditIdx] = React.useState(-1);
   const [editVal, setEditVal] = React.useState('');
+  const [sletIdx, setSletIdx] = React.useState(-1);
   const meta  = STAMDATA_KATEGORIER.find(k => k.key === kat);
   const liste = SoS_REFS[kat] || [];
   const gem   = () => { if (window.SoS_saveRefs) window.SoS_saveRefs(); force(); };
@@ -13067,7 +13068,8 @@ const DesktopStamdata = () => {
     else { if (liste.indexOf(v) >= 0) return; liste.push(v); }
     setNy(''); gem();
   };
-  const slet = (i) => { liste.splice(i, 1); gem(); };
+  const slet = (i) => { liste.splice(i, 1); setSletIdx(-1); gem(); };
+  const bedSlet = (i, brug) => { if (brug > 0) setSletIdx(i); else slet(i); };
 
   const brugFelter = {
     brobygningstyper: ['brobygningstype'], aftaletyper: ['aftaletype'], henvendere: ['henvender'],
@@ -13235,7 +13237,7 @@ const DesktopStamdata = () => {
                       <button onClick={() => startEdit(i, navn)} style={{ padding: '5px 10px', background: 'none',
                         border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm, cursor: 'pointer',
                         fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>Rediger</button>
-                      <button onClick={() => slet(i)} style={{ padding: '5px 10px', background: 'none',
+                      <button onClick={() => bedSlet(i, brug)} style={{ padding: '5px 10px', background: 'none',
                         border: `1px solid ${SoS.rose}55`, borderRadius: SoS.r.sm, cursor: 'pointer',
                         fontFamily: SoS.sans, fontSize: 12, color: SoS.rose }}>Slet</button>
                     </React.Fragment>
@@ -13246,6 +13248,22 @@ const DesktopStamdata = () => {
                     background: SoS.orange + '14', border: `1px solid ${SoS.orange}44`,
                     borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 11.5, color: '#9A4A12', lineHeight: 1.45 }}>
                     ⚠ Ændrer {brug} allerede noteret{brug === 1 ? '' : 'e'} registrering{brug === 1 ? '' : 'er'}. Gør det kun, hvis posten stadig giver mening bagefter — ellers mister de gamle data deres betydning.
+                  </div>
+                )}
+                {sletIdx === i && (
+                  <div style={{ marginTop: 8, marginLeft: 32, padding: '10px 12px',
+                    background: SoS.rose + '12', border: `1px solid ${SoS.rose}55`, borderRadius: SoS.r.sm }}>
+                    <div style={{ fontFamily: SoS.sans, fontSize: 11.5, color: '#9A2A2A', lineHeight: 1.45, marginBottom: 8 }}>
+                      ⚠ "{navn}" bruges i {brug} registrering{brug === 1 ? '' : 'er'}. Sletter du, beholder de gamle registreringer værdien, men den kan ikke længere vælges fremover — gør det kun, hvis det stadig giver mening.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => slet(i)} style={{ padding: '5px 12px', background: SoS.rose,
+                        color: '#fff', border: 'none', borderRadius: SoS.r.sm, cursor: 'pointer',
+                        fontFamily: SoS.sans, fontSize: 12, fontWeight: 700 }}>Slet alligevel</button>
+                      <button onClick={() => setSletIdx(-1)} style={{ padding: '5px 12px', background: 'none',
+                        border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm, cursor: 'pointer',
+                        fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>Behold</button>
+                    </div>
                   </div>
                 )}
               </div>
