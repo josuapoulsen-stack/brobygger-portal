@@ -13932,7 +13932,7 @@ const NyAftaleFlow = ({ onClose, viewingHq }) => {
 
 const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, canUserMgmt = false, onClose }) => {
   const [section, setSection] = React.useState('oversigt');
-  const [viewingHq, setViewingHq] = React.useState(canRapport ? 'Alle hovedsæder' : ownHq);
+  const [viewingHq, setViewingHq] = React.useState(canUserMgmt ? 'Alle hovedsæder' : ownHq);
   const [onlyMine, setOnlyMine] = React.useState(false);
   const [deskExported, setDeskExported] = React.useState(false);
   const [showSearch, setShowSearch] = React.useState(false);
@@ -14099,7 +14099,7 @@ const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, ca
                 fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink,
                 cursor: 'pointer',
               }}>
-                {canRapport && <option value="Alle hovedsæder">Alle hovedsæder</option>}
+                {canUserMgmt && <option value="Alle hovedsæder">Alle hovedsæder</option>}
                 {SoS_HOVEDSAEDER.map(h => <option key={h} value={h}>{h}</option>)}
               </select>
               {!canRapport && ownAfdeling && (
@@ -18885,7 +18885,7 @@ const AppWithTweaks = () => {
               options={[
                 { value: "brobygger", label: "Brobygger" },
                 { value: "raadgiver", label: "Raadgiver" },
-                { value: "leder",     label: "Leder / Landssekretariat" },
+                { value: "leder",     label: "Daglig leder (eget hq)" },
                 { value: "admin",     label: "Admin" },
               ]}
               onChange={(v) => setTweak("role", v)}/>
@@ -18947,7 +18947,7 @@ const AppWithTweaks = () => {
             options={[
               { value: "brobygger", label: "Brobygger (frivillig)" },
               { value: "raadgiver", label: "Raadgiver (eget hq)" },
-              { value: "leder",     label: "Leder / Landssekretariat" },
+              { value: "leder",     label: "Daglig leder (eget hq)" },
               { value: "admin",     label: "Admin (alle hq)" },
             ]}
             onChange={(v) => setTweak("role", v)}
