@@ -3178,6 +3178,15 @@ const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift, brobygge
     (shiftsByDate[r.dato] ||= []).push(
       { id: r.id, date: r.dato, start: 'Ledig', end: '', _raadig: true });
   });
+  const raadigSet = new Set(myRaadig.map(r => r.dato));
+  const _todayIso = new Date().toISOString().slice(0, 10);
+  const mineLedigeDatoer = Array.from(raadigSet).filter(dd => dd >= _todayIso).sort();
+  const fmtRaadigChip = (iso) => {
+    const dt = new Date(iso);
+    const dag = ['søn', 'man', 'tir', 'ons', 'tor', 'fre', 'lør'][dt.getDay()];
+    const mnd = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][dt.getMonth()];
+    return dag + '. ' + dt.getDate() + '. ' + mnd;
+  };
 
   const monthName = ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'][m];
 
@@ -3244,7 +3253,7 @@ const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift, brobygge
           return (
             <button key={i} onClick={() => setSelected(iso)} style={{
               aspectRatio: '1', border: 'none', cursor: 'pointer',
-              background: isSel ? SoS.orange : 'transparent',
+              background: isSel ? SoS.orange : (raadigSet.has(iso) ? SoS.sageSoft + '66' : 'transparent'),
               borderRadius: 12, padding: 0, position: 'relative',
               display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center',
@@ -3279,6 +3288,24 @@ const CalendarScreen = ({ appointments, shifts, onOpenAppt, onAddShift, brobygge
           <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft }}>Rådighed</div>
         </div>
       </div>
+
+      {/* Mine ledige dage — hurtigt overblik */}
+      {mineLedigeDatoer.length > 0 && (
+        <div style={{ padding: '0 20px 16px' }}>
+          <SectionHead title={'Mine ledige dage · ' + mineLedigeDatoer.length} />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {mineLedigeDatoer.map(dd => (
+              <button key={dd} onClick={() => { setSelected(dd); setMonth(new Date(dd.slice(0, 7) + '-01')); }} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px',
+                background: SoS.sageSoft + '66', border: `1px solid ${SoS.sage}55`, borderRadius: 999,
+                cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12.5, fontWeight: 600, color: SoS.ink }}>
+                <span style={{ width: 7, height: 7, borderRadius: 4, background: SoS.sage, flexShrink: 0 }}/>
+                {fmtRaadigChip(dd)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Selected day details */}
       <div style={{ padding: '0 20px 20px' }}>
