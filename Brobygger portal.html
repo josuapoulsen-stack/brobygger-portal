@@ -14808,6 +14808,8 @@ const DesktopBrobyggere = ({ initialTarget, onTargetConsumed, scopeHq, scopeAfd 
   const [filter, setFilter] = React.useState('alle');
   const [search,  setSearch]  = React.useState('');
   const [selectedBb, setSelectedBb] = React.useState(null);
+  const [vis, setVis] = React.useState(50);
+  React.useEffect(() => { setVis(50); }, [filter, search, scopeHq, scopeAfd]);
 
   const TODAY = new Date().toISOString().slice(0, 10);
   const fmtLast = (d) => {
