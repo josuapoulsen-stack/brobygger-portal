@@ -13578,10 +13578,10 @@ const DesktopBrugerstyring = () => {
 
   const ROLLE_LABELS = {
     brobygger: 'Brobygger', raadgiver: 'Rådgiver',
-    leder: 'Leder', admin: 'Admin',
+    leder: 'Leder', landssekretariat: 'Landssekretariat', admin: 'Admin',
   };
   const ROLLE_COLORS = {
-    brobygger: SoS.sage, raadgiver: SoS.sky, leder: SoS.orange, admin: '#C62828',
+    brobygger: SoS.sage, raadgiver: SoS.sky, leder: SoS.orange, landssekretariat: '#6D4FC2', admin: '#C62828',
   };
 
   const toggleActive = (id) => {
@@ -14534,9 +14534,9 @@ const NyAftaleFlow = ({ onClose, viewingHq }) => {
 
 
 
-const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, canUserMgmt = false, onClose }) => {
+const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, canAllHq = false, canUserMgmt = false, onClose }) => {
   const [section, setSection] = React.useState('oversigt');
-  const [viewingHq, setViewingHq] = React.useState(canUserMgmt ? 'Alle hovedsæder' : ownHq);
+  const [viewingHq, setViewingHq] = React.useState(canAllHq ? 'Alle hovedsæder' : ownHq);
   const [onlyMine, setOnlyMine] = React.useState(false);
   const [deskExported, setDeskExported] = React.useState(false);
   const [showSearch, setShowSearch] = React.useState(false);
@@ -14607,7 +14607,7 @@ const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, ca
                   Social Sundhed
                 </div>
                 <div style={{ fontFamily: SoS.mono, fontSize: 9.5, color: SoS.inkMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  {canUserMgmt ? 'ADMINISTRATION' : canRapport ? 'LEDELSE' : 'RÅDGIVER-PORTAL'}
+                  {canUserMgmt ? 'ADMINISTRATION' : canAllHq ? 'LANDSSEKRETARIAT' : canRapport ? 'LEDELSE' : 'RÅDGIVER-PORTAL'}
                 </div>
               </div>
             </div>
@@ -14703,7 +14703,7 @@ const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, ca
                 fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink,
                 cursor: 'pointer',
               }}>
-                {canUserMgmt && <option value="Alle hovedsæder">Alle hovedsæder</option>}
+                {canAllHq && <option value="Alle hovedsæder">Alle hovedsæder</option>}
                 {SoS_HOVEDSAEDER.map(h => <option key={h} value={h}>{h}</option>)}
               </select>
               {!canRapport && ownAfdeling && (
@@ -19530,9 +19530,11 @@ const AppWithTweaks = () => {
   const _demoAvatar = _demoNavn ? _demoNavn.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : null;
   const _defaultNavn = activeRole === 'raadgiver' ? 'Linda Thomsen'
                       : activeRole === 'admin'    ? 'Admin Bruger'
+                      : activeRole === 'landssekretariat' ? 'Henrik Dahl'
                       : isNew ? 'Sofie Lindahl' : 'Maja Holmberg';
   const _defaultAvatar = activeRole === 'raadgiver' ? 'LT'
                         : activeRole === 'admin'    ? 'AB'
+                        : activeRole === 'landssekretariat' ? 'HD'
                         : isNew ? 'SL' : 'MH';
   const user = { ...SoS_USER,
     name:      _demoNavn   || _defaultNavn,
@@ -19591,8 +19593,8 @@ const AppWithTweaks = () => {
     content = <MatchingFlow onClose={() => setTweak("flow", "none")} />;
   } else if (tweaks.flow === "intake" && activeRole !== "brobygger") {
     content = <IntakeFlow onClose={() => setTweak("flow", "none")} viewingHq={viewingHq}/>;
-  } else if (activeRole === "admin" || activeRole === "raadgiver" || activeRole === "leder") {
-    const _canRapport = activeRole === "admin" || activeRole === "leder";
+  } else if (activeRole === "admin" || activeRole === "raadgiver" || activeRole === "leder" || activeRole === "landssekretariat") {
+    const _canRapport = activeRole === "admin" || activeRole === "leder" || activeRole === "landssekretariat";
     if (settingsOpen) {
       content = <AdminSettings
         currentHq={viewingHq}
@@ -19657,11 +19659,11 @@ const AppWithTweaks = () => {
     );
   }
 
-  if (desktopMode && (tweaks.role === "admin" || tweaks.role === "raadgiver" || tweaks.role === "leder")) {
+  if (desktopMode && (tweaks.role === "admin" || tweaks.role === "raadgiver" || tweaks.role === "leder" || tweaks.role === "landssekretariat")) {
     return (
       <React.Fragment>
         <div style={{ position: "fixed", inset: 0, background: "#1A130D", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <DesktopView user={user} ownHq="Aarhus" ownAfdeling="Aarhus C" isAdmin={tweaks.role === "admin"} canRapport={tweaks.role === "leder" || tweaks.role === "admin"} canUserMgmt={tweaks.role === "admin"} onClose={() => setDesktopMode(false)} />
+          <DesktopView user={user} ownHq="Aarhus" ownAfdeling="Aarhus C" isAdmin={tweaks.role === "admin"} canRapport={tweaks.role === "leder" || tweaks.role === "landssekretariat" || tweaks.role === "admin"} canAllHq={tweaks.role === "landssekretariat" || tweaks.role === "admin"} canUserMgmt={tweaks.role === "admin"} onClose={() => setDesktopMode(false)} />
         </div>
         <TweaksPanel title="Tweaks">
           <TweakSection label="Visning">
@@ -19673,6 +19675,7 @@ const AppWithTweaks = () => {
                 { value: "brobygger", label: "Brobygger" },
                 { value: "raadgiver", label: "Raadgiver" },
                 { value: "leder",     label: "Daglig leder (eget hq)" },
+                { value: "landssekretariat", label: "Landssekretariat (alle hq)" },
                 { value: "admin",     label: "Admin" },
               ]}
               onChange={(v) => setTweak("role", v)}/>
@@ -19735,6 +19738,7 @@ const AppWithTweaks = () => {
               { value: "brobygger", label: "Brobygger (frivillig)" },
               { value: "raadgiver", label: "Raadgiver (eget hq)" },
               { value: "leder",     label: "Daglig leder (eget hq)" },
+              { value: "landssekretariat", label: "Landssekretariat (alle hq)" },
               { value: "admin",     label: "Admin (alle hq)" },
             ]}
             onChange={(v) => setTweak("role", v)}
