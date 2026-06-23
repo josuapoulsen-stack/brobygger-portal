@@ -183,6 +183,10 @@ const SoS_REFS = (() => {
     merged[k] = Array.isArray(stored[k]) ? stored[k] : SoS_REFS_SEED[k].slice();
   });
   merged.farver = (stored.farver && typeof stored.farver === 'object') ? stored.farver : {};
+  merged.zoner = (stored.zoner && typeof stored.zoner === 'object') ? stored.zoner : {
+    'Vest for Storebælt': ['Nord', 'Midt', 'Kronjylland', 'Aarhus', 'Sydvest', 'Syd'],
+    'Øst for Storebælt': ['Sjælland', 'Hovedstaden'],
+  };
   [['Social', 'social'], ['Forening', 'forening'], ['Sundhed', 'sundhed']].forEach(([n, key]) => {
     const fk = 'brobygningstyper|' + n;
     if (!merged.farver[fk] && SoS_TYPER[key]) merged.farver[fk] = SoS_TYPER[key].color;
@@ -192,6 +196,14 @@ const SoS_REFS = (() => {
 const saveRefs = () => { try { localStorage.setItem('sos_refs', JSON.stringify(SoS_REFS)); } catch (e) {} };
 window.SoS_REFS = SoS_REFS;
 window.SoS_saveRefs = saveRefs;
+// Telefonvagt: matcher et hovedsæde mod et scope (enkelt hq, 'Alle hovedsæder', eller en zone)
+window.SoS_hqMatch = function (hq, scope) {
+  if (!scope || scope === 'Alle hovedsæder') return true;
+  if (hq === scope) return true;
+  var z = (SoS_REFS.zoner || {})[scope];
+  return !!(z && z.indexOf(hq) >= 0);
+};
+window.SoS_isZone = function (scope) { return !!(SoS_REFS.zoner && SoS_REFS.zoner[scope]); };
 // Anvend gemte indsatstype-farver på SoS_TYPER, så de slår igennem i hele systemet
 try {
   [['Social', 'social'], ['Forening', 'forening'], ['Sundhed', 'sundhed']].forEach(([n, key]) => {
@@ -560,7 +572,7 @@ const UCLA3_SVAR = [
 ];
 window.SoS_ucla3Stats = function (viewingHq) {
   const sc = !!(viewingHq && viewingHq !== 'Alle hovedsæder');
-  const mns = Object.values(window.SoS_MENNESKER || {}).filter(m => !sc || m.hq === viewingHq);
+  const mns = Object.values(window.SoS_MENNESKER || {}).filter(m => window.SoS_hqMatch(m.hq, viewingHq));
   const avg = arr => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0;
   const latest = u => (u && u.opfoelgninger && u.opfoelgninger.length) ? u.opfoelgninger[u.opfoelgninger.length - 1] : null;
   const withBaseline = mns.filter(m => m.ucla3 && m.ucla3.baseline);
@@ -11697,7 +11709,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, canAllHq = false, onOpen
                 </button>
                 {(() => {
                   const afvHq = Object.values(window.SoS_MENNESKER || {})
-                    .filter(m => (m.status === 'afventer' || m.status === 'venter') && (viewingHq === 'Alle hovedsæder' || m.hq === viewingHq)).length;
+                    .filter(m => (m.status === 'afventer' || m.status === 'venter') && window.SoS_hqMatch(m.hq, viewingHq)).length;
                   if (afvHq === 0) return null;
                   return (
                     <div style={{ padding: '10px 14px', background: SoS.amber + '20',
@@ -12240,6 +12252,24 @@ const AdminSettings = ({ currentHq, ownHq, onPick, onClose, isAdmin, canRapport 
               </button>
             );
           })()}
+          {Object.keys(SoS_REFS.zoner || {}).map(z => {
+            const sel = picked === z;
+            return (
+              <button key={z} onClick={() => setPicked(z)} style={{
+                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                padding: 14, marginBottom: 6, textAlign: 'left', background: '#fff',
+                border: `2px solid ${sel ? SoS.orange : SoS.lineSoft}`,
+                borderRadius: SoS.r.md, cursor: 'pointer',
+              }}>
+                <span style={{ fontSize: 16 }}>📞</span>
+                <span style={{ flex: 1 }}>
+                  <span style={{ display: 'block', fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>{z}</span>
+                  <span style={{ display: 'block', fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>Telefonvagt · {(SoS_REFS.zoner[z] || []).length} hovedsæder</span>
+                </span>
+                {sel && <Icon name="check" size={16} color={SoS.orange}/>}
+              </button>
+            );
+          })}
           {SoS_HOVEDSAEDER.filter(h => h !== ownHq).map(h => {
             const sel = picked === h;
             return (
@@ -14719,6 +14749,7 @@ const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, ca
                 cursor: 'pointer',
               }}>
                 {canAllHq && <option value="Alle hovedsæder">Alle hovedsæder</option>}
+                {Object.keys(SoS_REFS.zoner || {}).map(z => <option key={z} value={z}>📞 {z}</option>)}
                 {SoS_HOVEDSAEDER.map(h => <option key={h} value={h}>{h}</option>)}
               </select>
               {!canRapport && ownAfdeling && (
@@ -15346,7 +15377,7 @@ const DesktopBrobyggere = ({ initialTarget, onTargetConsumed, scopeHq, scopeAfd 
 
   const rows = SoS_BROBYGGERE
     .filter(b => filter === 'alle' || b.status === filter)
-    .filter(b => !scopeHq || scopeHq === 'Alle hovedsæder' || b.hq === scopeHq)
+    .filter(b => !scopeHq || window.SoS_hqMatch(b.hq, scopeHq))
     .filter(b => !scopeAfd || b.afdeling === scopeAfd)
     .filter(b => !search || b.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -16455,7 +16486,7 @@ const DesktopMennesker = ({ initialTarget, onTargetConsumed, scopeHq, scopeAfd }
     if (search && !navn.includes(search.toLowerCase())) return false;
     if (typeFilter !== 'alle' && m.type !== typeFilter) return false;
     if (statusFilter !== 'alle' && m.status !== statusFilter) return false;
-    if (scopeHq && scopeHq !== 'Alle hovedsæder' && m.hq !== scopeHq) return false;
+    if (scopeHq && !window.SoS_hqMatch(m.hq, scopeHq)) return false;
     if (scopeAfd && m.afdeling !== scopeAfd) return false;
     if (hqFilter !== 'alle' && m.hq !== hqFilter) return false;
     if (afdFilter !== 'alle' && m.afdeling !== afdFilter) return false;
@@ -18905,13 +18936,13 @@ const DesktopRapport = ({ viewingHq }) => {
     {rapTab === 'statistik' && (() => {
       const _MN0 = window.SoS_MENNESKER || {};
       const _sc0 = !!(viewingHq && viewingHq !== 'Alle hovedsæder');
-      const appts    = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => !_sc0 || (_MN0[a.menneskeId] && _MN0[a.menneskeId].hq === viewingHq));
-      const mns      = Object.values(_MN0).filter(m => !_sc0 || m.hq === viewingHq);
+      const appts    = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => window.SoS_hqMatch((_MN0[a.menneskeId] || {}).hq, viewingHq));
+      const mns      = Object.values(_MN0).filter(m => window.SoS_hqMatch(m.hq, viewingHq));
       const opkald = (() => { try { return JSON.parse(localStorage.getItem('sos_opkald_log') || '[]'); } catch (e) { return []; } })()
         .filter(l => {
           if (!_sc0) return true;
-          if (l.menneskeId && _MN0[l.menneskeId]) return _MN0[l.menneskeId].hq === viewingHq;
-          if (l.brobyggerId) { const b = (window.SoS_BROBYGGERE || []).find(x => x.id === l.brobyggerId); return !!b && b.hq === viewingHq; }
+          if (l.menneskeId && _MN0[l.menneskeId]) return window.SoS_hqMatch(_MN0[l.menneskeId].hq, viewingHq);
+          if (l.brobyggerId) { const b = (window.SoS_BROBYGGERE || []).find(x => x.id === l.brobyggerId); return !!b && window.SoS_hqMatch(b.hq, viewingHq); }
           return false;
         });
       const opkSamtaleM = opkald.filter(l => l.type === 'samtale_menneske' || (!l.type && l.kind === 'menneske')).length;
@@ -19002,7 +19033,7 @@ const DesktopRapport = ({ viewingHq }) => {
           {(() => {
             const MN = window.SoS_MENNESKER || {};
             const _sc = !!(viewingHq && viewingHq !== 'Alle hovedsæder');
-            const A = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => !_sc || (MN[a.menneskeId] && MN[a.menneskeId].hq === viewingHq));
+            const A = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => window.SoS_hqMatch((MN[a.menneskeId] || {}).hq, viewingHq));
             const cancelled = A.filter(a => ['aflyst','afslaaet','brudt'].indexOf(a.status) >= 0 || (a.brobyggerLog && a.brobyggerLog.udfald === 'afbud'));
             const completed = A.filter(a => a.status === 'gennemfoert' || (a.brobyggerLog && a.brobyggerLog.udfald === 'gennemfoert'));
             const beslut = cancelled.length + completed.length;
@@ -19186,7 +19217,7 @@ const DesktopRapport = ({ viewingHq }) => {
     {rapTab === 'aktivitet' && (() => {
       const MN = window.SoS_MENNESKER || {};
       const _sc = !!(viewingHq && viewingHq !== 'Alle hovedsæder');
-      const A = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => !_sc || (MN[a.menneskeId] && MN[a.menneskeId].hq === viewingHq));
+      const A = (window.SoS_APPOINTMENTS_BUSY || []).filter(a => window.SoS_hqMatch((MN[a.menneskeId] || {}).hq, viewingHq));
       const pad = n => String(n).padStart(2, '0');
       const year = new Date().getFullYear();
       const dayCount = {};
@@ -19227,7 +19258,7 @@ const DesktopRapport = ({ viewingHq }) => {
           <DSCard style={{ padding:0, overflow:'hidden' }}>
             <svg id="sos-akt-svg" viewBox="0 0 720 440" style={{ width:'100%', display:'block', background:'#fff' }} xmlns="http://www.w3.org/2000/svg">
               <text x="24" y="34" style={{ fontFamily:SoS.sans, fontSize:18, fontWeight:700, fill:SoS.ink }}>Aktivitetsoverblik · {_sc ? viewingHq : 'Alle hovedsæder'} · {year}</text>
-              {[['Aftaler i alt', total], ['Gennemførte', done], ['Aflyste', cancelled], ['Mennesker', Object.values(MN).filter(m => !_sc || m.hq === viewingHq).length]].map((k, i) => (
+              {[['Aftaler i alt', total], ['Gennemførte', done], ['Aflyste', cancelled], ['Mennesker', Object.values(MN).filter(m => window.SoS_hqMatch(m.hq, viewingHq)).length]].map((k, i) => (
                 <g key={i}>
                   <text x={24 + i*172} y="64" style={{ fontFamily:SoS.sans, fontSize:11, fill:SoS.inkMuted }}>{k[0]}</text>
                   <text x={24 + i*172} y="90" style={{ fontFamily:SoS.sans, fontSize:22, fontWeight:700, fill:SoS.ink }}>{k[1]}</text>
