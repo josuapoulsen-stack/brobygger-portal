@@ -11380,7 +11380,7 @@ const MatchModal = ({ menneske, onClose, onMatch }) => {
   );
 };
 
-const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIntake, onOpenMatching, onOpenMessages, onOpenDesktop }) => {
+const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, canAllHq = false, onOpenSettings, onOpenIntake, onOpenMatching, onOpenMessages, onOpenDesktop }) => {
   const [tab, setTab] = React.useState('oversigt');
   const [selectedBb, setSelectedBb] = React.useState(null);
   const [selectedAppt, setSelectedAppt] = React.useState(null);
@@ -11455,7 +11455,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
               color: SoS.accent, textTransform: 'uppercase', letterSpacing: 1 }}>
-              {isAdmin ? 'ADMIN — SOCIAL SUNDHED' : `RAADGIVER — ${viewingHq.toUpperCase()}`}
+              {isAdmin ? 'ADMIN — SOCIAL SUNDHED' : canAllHq ? `LANDSSEKRETARIAT — ${viewingHq.toUpperCase()}` : `RAADGIVER — ${viewingHq.toUpperCase()}`}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button style={{ width: 34, height: 34, borderRadius: SoS.r.sm,
@@ -11697,7 +11697,7 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, onOpenSettings, onOpenIn
                 </button>
                 {(() => {
                   const afvHq = Object.values(window.SoS_MENNESKER || {})
-                    .filter(m => (m.status === 'afventer' || m.status === 'venter') && m.hq === viewingHq).length;
+                    .filter(m => (m.status === 'afventer' || m.status === 'venter') && (viewingHq === 'Alle hovedsæder' || m.hq === viewingHq)).length;
                   if (afvHq === 0) return null;
                   return (
                     <div style={{ padding: '10px 14px', background: SoS.amber + '20',
@@ -12075,7 +12075,7 @@ const Field = ({ label, placeholder, value, onChange, required }) => (
 );
 
 // Settings — temporary HQ switch
-const AdminSettings = ({ currentHq, ownHq, onPick, onClose, isAdmin, canRapport = false }) => {
+const AdminSettings = ({ currentHq, ownHq, onPick, onClose, isAdmin, canRapport = false, canAllHq = false }) => {
   const [section, setSection] = React.useState(null);
   const [picked, setPicked] = React.useState(currentHq);
   const [dataAccess, setDataAccess] = React.useState({ daysBefore: 7, daysAfter: 7 });
@@ -12225,6 +12225,21 @@ const AdminSettings = ({ currentHq, ownHq, onPick, onClose, isAdmin, canRapport 
               Nulstilles ved logout. Handlinger logges i revisionsspor.
             </div>
           </div>
+          {canAllHq && (() => {
+            const sel = picked === 'Alle hovedsæder';
+            return (
+              <button onClick={() => setPicked('Alle hovedsæder')} style={{
+                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                padding: 14, marginBottom: 6, textAlign: 'left', background: '#fff',
+                border: `2px solid ${sel ? SoS.accent : SoS.lineSoft}`,
+                borderRadius: SoS.r.md, cursor: 'pointer',
+              }}>
+                <div style={{ width: 12, height: 12, borderRadius: 6, background: SoS.accent }}/>
+                <span style={{ flex: 1, fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>Alle hovedsæder</span>
+                {sel && <Icon name="check" size={16} color={SoS.accent}/>}
+              </button>
+            );
+          })()}
           {SoS_HOVEDSAEDER.filter(h => h !== ownHq).map(h => {
             const sel = picked === h;
             return (
@@ -19507,7 +19522,7 @@ const AppWithTweaks = () => {
   const [msgOpenId,   setMsgOpenId]   = useState(null);
   const [msgCompose,  setMsgCompose]  = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [viewingHq, setViewingHq] = useState("Aarhus");
+  const [viewingHq, setViewingHq] = useState(activeRole === "admin" || activeRole === "landssekretariat" ? "Alle hovedsæder" : "Aarhus");
   const [screen, setScreen] = useState("hjem");
   const [detailId, setDetailId] = useState(null);
   const [showPWA, setShowPWA] = useState(true);
@@ -19601,6 +19616,7 @@ const AppWithTweaks = () => {
         ownHq="Aarhus"
         isAdmin={activeRole === "admin"}
         canRapport={_canRapport}
+        canAllHq={activeRole === "admin" || activeRole === "landssekretariat"}
         onPick={(hq) => { setViewingHq(hq); setSettingsOpen(false); }}
         onClose={() => setSettingsOpen(false)} />;
     } else {
@@ -19609,6 +19625,7 @@ const AppWithTweaks = () => {
         viewingHq={viewingHq}
         ownHq="Aarhus"
         isAdmin={activeRole === "admin"}
+        canAllHq={activeRole === "admin" || activeRole === "landssekretariat"}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenIntake={() => setTweak("flow", "intake")}
         onOpenMatching={() => setTweak("flow", "matching")}
