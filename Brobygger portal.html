@@ -183,10 +183,7 @@ const SoS_REFS = (() => {
     merged[k] = Array.isArray(stored[k]) ? stored[k] : SoS_REFS_SEED[k].slice();
   });
   merged.farver = (stored.farver && typeof stored.farver === 'object') ? stored.farver : {};
-  merged.zoner = (stored.zoner && typeof stored.zoner === 'object') ? stored.zoner : {
-    'Vest for Storebælt': ['Nord', 'Midt', 'Kronjylland', 'Aarhus', 'Sydvest', 'Syd'],
-    'Øst for Storebælt': ['Sjælland', 'Hovedstaden'],
-  };
+  merged.zoner = (stored.zoner && typeof stored.zoner === 'object') ? stored.zoner : {};
   [['Social', 'social'], ['Forening', 'forening'], ['Sundhed', 'sundhed']].forEach(([n, key]) => {
     const fk = 'brobygningstyper|' + n;
     if (!merged.farver[fk] && SoS_TYPER[key]) merged.farver[fk] = SoS_TYPER[key].color;
@@ -200,6 +197,7 @@ window.SoS_saveRefs = saveRefs;
 window.SoS_hqMatch = function (hq, scope) {
   if (!scope || scope === 'Alle hovedsæder') return true;
   if (hq === scope) return true;
+  if (typeof scope === 'string' && scope.indexOf(',') >= 0) return scope.split(',').map(function (s) { return s.trim(); }).indexOf(hq) >= 0;
   var z = (SoS_REFS.zoner || {})[scope];
   return !!(z && z.indexOf(hq) >= 0);
 };
@@ -11392,7 +11390,7 @@ const MatchModal = ({ menneske, onClose, onMatch }) => {
   );
 };
 
-const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, canAllHq = false, onOpenSettings, onOpenIntake, onOpenMatching, onOpenMessages, onOpenDesktop }) => {
+const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, canAllHq = false, onPickHq, onOpenSettings, onOpenIntake, onOpenMatching, onOpenMessages, onOpenDesktop }) => {
   const [tab, setTab] = React.useState('oversigt');
   const [selectedBb, setSelectedBb] = React.useState(null);
   const [selectedAppt, setSelectedAppt] = React.useState(null);
@@ -11415,6 +11413,8 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, canAllHq = false, onOpen
     setOpfVersion(v => v + 1);
   };
   const isTemporary = viewingHq !== ownHq;
+  const [hqSwitchOpen, setHqSwitchOpen] = React.useState(false);
+  const _hqRow = (sel, col) => ({ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: 14, marginBottom: 6, textAlign: 'left', background: '#fff', border: '2px solid ' + (sel ? col : SoS.lineSoft), borderRadius: SoS.r.md, cursor: 'pointer' });
 
   const byDay = Array.from({length: 7}, () => []);
   SoS_APPOINTMENTS_BUSY.forEach(a => {
@@ -11465,10 +11465,43 @@ const AdminMobile = ({ user, viewingHq, ownHq, isAdmin, canAllHq = false, onOpen
         }}>
           {/* top row: eyebrow + icons */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div style={{ fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
+            <button onClick={() => { if (onPickHq) setHqSwitchOpen(true); }} style={{
+              background: 'none', border: 'none', padding: 0, cursor: onPickHq ? 'pointer' : 'default',
+              display: 'flex', alignItems: 'center', gap: 4,
+              fontFamily: SoS.mono, fontSize: 9.5, fontWeight: 600,
               color: SoS.accent, textTransform: 'uppercase', letterSpacing: 1 }}>
               {isAdmin ? 'ADMIN — SOCIAL SUNDHED' : canAllHq ? `LANDSSEKRETARIAT — ${viewingHq.toUpperCase()}` : `RAADGIVER — ${viewingHq.toUpperCase()}`}
-            </div>
+              {onPickHq && <Icon name="chevronD" size={12} color={SoS.accent}/>}
+            </button>
+            {hqSwitchOpen && (
+              <div onClick={() => setHqSwitchOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 500,
+                background: 'rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '20px 20px 0 0',
+                  padding: '20px 18px 36px', maxHeight: '75vh', overflowY: 'auto' }}>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 16, fontWeight: 700, color: SoS.ink, marginBottom: 4 }}>Skift hovedsæde</div>
+                  <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkMuted, marginBottom: 14 }}>
+                    Dæk og lav aftaler for et andet hovedsæde. Nulstilles ved logout.
+                  </div>
+                  {canAllHq && (
+                    <button onClick={() => { onPickHq('Alle hovedsæder'); setHqSwitchOpen(false); }} style={_hqRow(viewingHq === 'Alle hovedsæder', SoS.accent)}>
+                      <div style={{ width: 12, height: 12, borderRadius: 6, background: SoS.accent }}/>
+                      <span style={{ flex: 1, fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>Alle hovedsæder</span>
+                      {viewingHq === 'Alle hovedsæder' && <Icon name="check" size={16} color={SoS.accent}/>}
+                    </button>
+                  )}
+                  {SoS_HOVEDSAEDER.map(h => {
+                    const sel = viewingHq === h; const col = (SoS.hq && SoS.hq[h]) || SoS.orange;
+                    return (
+                      <button key={h} onClick={() => { onPickHq(h); setHqSwitchOpen(false); }} style={_hqRow(sel, col)}>
+                        <div style={{ width: 12, height: 12, borderRadius: 6, background: col }}/>
+                        <span style={{ flex: 1, fontFamily: SoS.sans, fontSize: 14, color: SoS.ink }}>{h}{h === ownHq ? ' · dit' : ''}</span>
+                        {sel && <Icon name="check" size={16} color={col}/>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button style={{ width: 34, height: 34, borderRadius: SoS.r.sm,
                 background: SoS.surface, border: `1px solid ${SoS.line}`,
@@ -12252,24 +12285,6 @@ const AdminSettings = ({ currentHq, ownHq, onPick, onClose, isAdmin, canRapport 
               </button>
             );
           })()}
-          {Object.keys(SoS_REFS.zoner || {}).map(z => {
-            const sel = picked === z;
-            return (
-              <button key={z} onClick={() => setPicked(z)} style={{
-                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-                padding: 14, marginBottom: 6, textAlign: 'left', background: '#fff',
-                border: `2px solid ${sel ? SoS.orange : SoS.lineSoft}`,
-                borderRadius: SoS.r.md, cursor: 'pointer',
-              }}>
-                <span style={{ fontSize: 16 }}>📞</span>
-                <span style={{ flex: 1 }}>
-                  <span style={{ display: 'block', fontFamily: SoS.sans, fontSize: 14, fontWeight: 600, color: SoS.ink }}>{z}</span>
-                  <span style={{ display: 'block', fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted }}>Telefonvagt · {(SoS_REFS.zoner[z] || []).length} hovedsæder</span>
-                </span>
-                {sel && <Icon name="check" size={16} color={SoS.orange}/>}
-              </button>
-            );
-          })}
           {SoS_HOVEDSAEDER.filter(h => h !== ownHq).map(h => {
             const sel = picked === h;
             return (
@@ -14582,6 +14597,9 @@ const NyAftaleFlow = ({ onClose, viewingHq }) => {
 const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, canAllHq = false, canUserMgmt = false, onClose }) => {
   const [section, setSection] = React.useState('oversigt');
   const [viewingHq, setViewingHq] = React.useState(canAllHq ? 'Alle hovedsæder' : ownHq);
+  const [coverHqs, setCoverHqs] = React.useState([]);
+  const [coverPickerOpen, setCoverPickerOpen] = React.useState(false);
+  const [coverPick, setCoverPick] = React.useState([]);
   const [onlyMine, setOnlyMine] = React.useState(false);
   const [deskExported, setDeskExported] = React.useState(false);
   const [showSearch, setShowSearch] = React.useState(false);
@@ -14742,16 +14760,78 @@ const DesktopView = ({ user, ownHq, ownAfdeling, isAdmin, canRapport = false, ca
                 <span style={{ fontFamily: SoS.mono, fontSize: 9,
                   opacity: 0.4, marginLeft: 1 }}>L</span>
               </button>
-              <select value={viewingHq} onChange={e => setViewingHq(e.target.value)} style={{
-                padding: '7px 12px', borderRadius: SoS.r.sm,
-                background: SoS.surface, border: `1px solid ${SoS.line}`,
-                fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink,
-                cursor: 'pointer',
-              }}>
-                {canAllHq && <option value="Alle hovedsæder">Alle hovedsæder</option>}
-                {Object.keys(SoS_REFS.zoner || {}).map(z => <option key={z} value={z}>📞 {z}</option>)}
-                {SoS_HOVEDSAEDER.map(h => <option key={h} value={h}>{h}</option>)}
-              </select>
+              {coverHqs.length > 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: SoS.mono, fontSize: 9, fontWeight: 700, color: '#fff',
+                    background: SoS.accent, padding: '3px 7px', borderRadius: 4, letterSpacing: 0.5 }}>AFLØSER</span>
+                  {[{ k: '__alle__', l: 'Alle valgte (' + coverHqs.length + ')', v: coverHqs.join(', ') }].concat(coverHqs.map(h => ({ k: h, l: h, v: h }))).map(t => {
+                    const on = viewingHq === t.v;
+                    return (
+                      <button key={t.k} onClick={() => setViewingHq(t.v)} style={{
+                        padding: '6px 11px', borderRadius: SoS.r.sm, cursor: 'pointer',
+                        border: `1px solid ${on ? SoS.accent : SoS.line}`,
+                        background: on ? SoS.accent : SoS.surface, color: on ? '#fff' : SoS.inkSoft,
+                        fontFamily: SoS.sans, fontSize: 12, fontWeight: on ? 700 : 500 }}>{t.l}</button>
+                    );
+                  })}
+                  <button onClick={() => { setCoverHqs([]); setViewingHq(canAllHq ? 'Alle hovedsæder' : ownHq); }} style={{
+                    padding: '6px 10px', borderRadius: SoS.r.sm, cursor: 'pointer', border: `1px solid ${SoS.line}`,
+                    background: 'none', color: SoS.inkMuted, fontFamily: SoS.sans, fontSize: 12 }}>Afslut</button>
+                </div>
+              ) : (
+                <React.Fragment>
+                  <select value={viewingHq} onChange={e => setViewingHq(e.target.value)} style={{
+                    padding: '7px 12px', borderRadius: SoS.r.sm,
+                    background: SoS.surface, border: `1px solid ${SoS.line}`,
+                    fontFamily: SoS.sans, fontSize: 12, fontWeight: 600, color: SoS.ink,
+                    cursor: 'pointer',
+                  }}>
+                    {canAllHq && <option value="Alle hovedsæder">Alle hovedsæder</option>}
+                    {SoS_HOVEDSAEDER.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                  <div style={{ position: 'relative' }}>
+                    <button onClick={() => { setCoverPick(SoS_HOVEDSAEDER.indexOf(viewingHq) >= 0 ? [viewingHq] : []); setCoverPickerOpen(o => !o); }} style={{
+                      padding: '7px 12px', borderRadius: SoS.r.sm, background: SoS.surface,
+                      border: `1px solid ${SoS.line}`, cursor: 'pointer', fontFamily: SoS.sans,
+                      fontSize: 12, fontWeight: 600, color: SoS.ink, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      Afløser
+                    </button>
+                    {coverPickerOpen && (
+                      <div style={{ position: 'absolute', top: '112%', right: 0, zIndex: 50,
+                        background: '#fff', border: `1px solid ${SoS.line}`, borderRadius: SoS.r.md,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.15)', padding: 12, width: 244 }}>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 12, fontWeight: 700, color: SoS.ink, marginBottom: 2 }}>Afløser — vælg hovedsæder</div>
+                        <div style={{ fontFamily: SoS.sans, fontSize: 11, color: SoS.inkMuted, marginBottom: 10 }}>Dæk flere hovedsæder og skift mellem dem med faner. Nulstilles når du afslutter.</div>
+                        <div style={{ maxHeight: 220, overflowY: 'auto', marginBottom: 10 }}>
+                          {SoS_HOVEDSAEDER.map(h => {
+                            const on = coverPick.indexOf(h) >= 0;
+                            return (
+                              <button key={h} onClick={() => setCoverPick(p => on ? p.filter(x => x !== h) : [...p, h])} style={{
+                                display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+                                padding: '7px 8px', border: 'none', background: on ? SoS.accent + '12' : 'none',
+                                borderRadius: SoS.r.sm, cursor: 'pointer', fontFamily: SoS.sans, fontSize: 13, color: SoS.ink }}>
+                                <span style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0,
+                                  border: `1.5px solid ${on ? SoS.accent : SoS.line}`, background: on ? SoS.accent : '#fff',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  {on && <Icon name="check" size={11} color="#fff" weight={3}/>}
+                                </span>
+                                {h}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button onClick={() => { if (coverPick.length) { setCoverHqs(coverPick); setViewingHq(coverPick.join(', ')); } setCoverPickerOpen(false); }}
+                          disabled={!coverPick.length} style={{ width: '100%', padding: '9px 0',
+                          background: coverPick.length ? SoS.ink : SoS.lineSoft, color: coverPick.length ? '#fff' : SoS.inkMuted,
+                          border: 'none', borderRadius: SoS.r.sm, cursor: coverPick.length ? 'pointer' : 'default',
+                          fontFamily: SoS.sans, fontSize: 13, fontWeight: 700 }}>
+                          Aktivér afløser ({coverPick.length})
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </React.Fragment>
+              )}
               {!canRapport && ownAfdeling && (
                 <button onClick={() => setOnlyMine(v => !v)} title={'Vis kun ' + ownAfdeling}
                   style={{ padding: '7px 12px', borderRadius: SoS.r.sm,
@@ -19657,6 +19737,7 @@ const AppWithTweaks = () => {
         ownHq="Aarhus"
         isAdmin={activeRole === "admin"}
         canAllHq={activeRole === "admin" || activeRole === "landssekretariat"}
+        onPickHq={(hq) => setViewingHq(hq)}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenIntake={() => setTweak("flow", "intake")}
         onOpenMatching={() => setTweak("flow", "matching")}
