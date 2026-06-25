@@ -172,7 +172,7 @@ const SoS_REFS_SEED = {
   transportplaner:    ['Følges hjemmefra', 'Mødes på stedet', 'Offentlig transport', 'Kører selv'],
   aflysningsaarsager: ['Manglende brobygger', 'Borger sygdom', 'Borger afbud', 'Borger udeblev', 'Sundhedsvæsenet aflyste', 'Transport', 'Andet'],
   aflystAf:           ['Personen selv', 'Social Sundhed', 'Sundhedsvæsenet', 'Ekstern'],
-  samarbejdspartnere: ['Region Sjælland', 'Københavns Kommune', 'ÆHF (magistrat)'],
+  samarbejdspartnere: [{ navn: 'Region Sjælland', hovedsaede: 'Sjælland' }, { navn: 'Københavns Kommune', hovedsaede: 'Hovedstaden' }, { navn: 'ÆHF (magistrat)', hovedsaede: 'Aarhus' }],
   finansieringskilder: ['Velux Fonden', 'Trygfonden', 'Nordea-fonden'],  // fonde/projekter — admin tilføjer flere
 };
 const SoS_REFS = (() => {
@@ -183,6 +183,7 @@ const SoS_REFS = (() => {
     merged[k] = Array.isArray(stored[k]) ? stored[k] : SoS_REFS_SEED[k].slice();
   });
   merged.farver = (stored.farver && typeof stored.farver === 'object') ? stored.farver : {};
+  merged.samarbejdspartnere = (merged.samarbejdspartnere || []).map(function (x) { return typeof x === 'string' ? { navn: x, hovedsaede: 'Alle hovedsæder' } : x; });
   merged.zoner = (stored.zoner && typeof stored.zoner === 'object') ? stored.zoner : {};
   [['Social', 'social'], ['Forening', 'forening'], ['Sundhed', 'sundhed']].forEach(([n, key]) => {
     const fk = 'brobygningstyper|' + n;
@@ -13519,7 +13520,7 @@ const STAMDATA_KATEGORIER = [
   { key: 'transportplaner',     label: 'Transportplaner' },
   { key: 'aflysningsaarsager',  label: 'Aflysningsårsager' },
   { key: 'aflystAf',            label: 'Aflyst af' },
-  { key: 'samarbejdspartnere',  label: 'Samarbejdspartnere / henvisere' },
+  { key: 'samarbejdspartnere',  label: 'Samarbejdspartnere / henvisere', obj: true },
   { key: 'finansieringskilder', label: 'Finansiering / projekter' },
 ];
 
@@ -13639,14 +13640,14 @@ const DesktopStamdata = () => {
           display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <input value={ny} onChange={e => setNy(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') tilfoej(); }}
-            placeholder={meta.obj ? 'Afdelingens navn…' : 'Ny post…'}
+            placeholder={meta.obj ? (kat === 'samarbejdspartnere' ? 'Navn på partner / henviser…' : 'Afdelingens navn…') : 'Ny post…'}
             style={{ flex: 1, minWidth: 180, padding: '9px 12px', border: `1px solid ${SoS.line}`,
               borderRadius: SoS.r.sm, fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, outline: 'none' }}/>
           {meta.obj && (
             <select value={nyHs} onChange={e => setNyHs(e.target.value)}
               style={{ padding: '9px 12px', border: `1px solid ${SoS.line}`, borderRadius: SoS.r.sm,
                 fontFamily: SoS.sans, fontSize: 13, color: SoS.ink, background: '#fff' }}>
-              {SoS_REFS.hovedsaeder.map(h => <option key={h} value={h}>{h}</option>)}
+              {(kat === 'samarbejdspartnere' ? ['Alle hovedsæder'].concat(SoS_REFS.hovedsaeder) : SoS_REFS.hovedsaeder).map(h => <option key={h} value={h}>{h}</option>)}
             </select>
           )}
           <button onClick={tilfoej} disabled={!ny.trim()} style={{
@@ -17883,7 +17884,12 @@ const DesktopApptModal = ({ initial = {}, onClose, onSave, onDelete }) => {
                 <div style={labelStyle}>Samarbejdspartner</div>
                 <select value={form.samarbejdspartner} onChange={upd('samarbejdspartner')} style={inputStyle}>
                   <option value="">Ingen</option>
-                  {(SoS_REFS.samarbejdspartnere || []).map(x => <option key={x} value={x}>{x}</option>)}
+                  {(SoS_REFS.samarbejdspartnere || []).filter(x => {
+                    const phq = (typeof x === 'object' && x) ? x.hovedsaede : null;
+                    const m = (window.SoS_MENNESKER || {})[form.menneskeId];
+                    const mhq = m ? m.hq : null;
+                    return !phq || phq === 'Alle hovedsæder' || !mhq || phq === mhq;
+                  }).map(x => { const navn = (typeof x === 'object' && x) ? x.navn : x; return <option key={navn} value={navn}>{navn}</option>; })}
                 </select>
               </div>
               <div>
