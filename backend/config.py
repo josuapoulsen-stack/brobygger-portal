@@ -6,6 +6,7 @@ Pydantic-Settings validerer og giver defaults ved opstart.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import model_validator
 from functools import lru_cache
 
 
@@ -41,6 +42,27 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "TODO_CHANGE_IN_PROD_min32chars_secret_key"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    # ── Produktions-vagt: fail closed på usikker konfiguration ─────────────────
+    # Backend NÆGTER at starte i produktion med dev-secrets/stub-config.
+    @model_validator(mode="after")
+    def _guard_production_secrets(self):
+        if self.ENVIRONMENT == "production":
+            problemer = []
+            if "TODO" in self.JWT_SECRET or len(self.JWT_SECRET) < 32:
+                problemer.append("JWT_SECRET (default/for kort)")
+            if self.JWT_ALGORITHM == "HS256":
+                problemer.append("JWT_ALGORITHM=HS256 - brug RS256 + Entra ID JWKS i prod")
+            if self.AZURE_TENANT_ID.startswith("TODO") or self.AZURE_CLIENT_ID.startswith("TODO"):
+                problemer.append("AZURE_TENANT_ID/AZURE_CLIENT_ID (ikke sat)")
+            if "password@localhost" in self.DATABASE_URL:
+                problemer.append("DATABASE_URL (default dev-vaerdi)")
+            if problemer:
+                raise ValueError(
+                    "Usikker produktions-konfiguration - backend naegter at starte. "
+                    "Ret foer deploy: " + "; ".join(problemer)
+                )
+        return self
 
 
 @lru_cache

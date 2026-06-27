@@ -814,6 +814,17 @@ window.SoS_USER        = SoS_USER;
   const gistId = p.get('gist');    // GitHub Gist ID (valgfri)
   const token  = p.get('token');   // GitHub PAT (valgfri, kræves for Gist-skrivning)
   window.SoS_DEMO = { rolle, navn, gistId, token, active: !!rolle };
+  // SIKKERHED (kun demo): en PAT i URL'en lækker via historik, logs og referrer.
+  // Afbødning: fjern token fra adresselinjen straks efter læsning + advar.
+  // FASE 2: Gist/PAT-chatten fjernes helt og erstattes af Azure SignalR.
+  if (token) {
+    try {
+      console.warn('[SoS sikkerhed] GitHub-PAT læst fra URL — KUN demo og usikkert. Fjern Gist/PAT-chatten før produktion (erstattes af Azure SignalR).');
+      p.delete('token');
+      const _clean = window.location.pathname + (p.toString() ? '?' + p.toString() : '') + window.location.hash;
+      window.history.replaceState(null, '', _clean);
+    } catch (e) {}
+  }
   // Anmod om notifikations-tilladelse når der er en URL-rolle
   if (rolle && 'Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
