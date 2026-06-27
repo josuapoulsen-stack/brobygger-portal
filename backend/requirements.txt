@@ -20,8 +20,10 @@ httpx==0.27.0             # til JWKS-hentning fra Microsoft
 # ── Magic link (brobygger-login) ─────────────────────────────────────────────
 itsdangerous==2.2.0       # signerede tokens til magic links
 
-# ── Email (magic links + notifikationer via Exchange Online) ─────────────────
-aiosmtplib==3.0.1
+# ── Email (magic links + notifikationer) ─────────────────────────────────────
+# UDGÅET: vi sender via Microsoft Graph (Mail.Send) — se backend/services/email.py
+# (genbruger Entra ID-app, ingen mailboks-password; Microsoft udfaser SMTP basic-auth).
+# aiosmtplib==3.0.1
 
 # ── Real-time ──────────────────────────────────────────────────────────────────
 # UDGÅET: Azure SignalR erstattet af SSE i egen FastAPI-backend (se IMPLEMENTERINGSPLAN.md 3.2)

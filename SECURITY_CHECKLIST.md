@@ -33,10 +33,11 @@ Status: `[ ]` = mangler · `[x]` = klaret
 ## 🟢 Transport & forsyningskæde
 
 - [x] SRI-hashes (`integrity=` sha384) på alle 3 CDN-scripts + `crossorigin=anonymous` — verificeret i preview
+- [x] Self-hostede fonts — Google Fonts CDN fjernet (9 woff2 i `fonts/`); CSP strammet (Google-domæner ude). GDPR: ingen bruger-IP til Google (juni 2026)
 - [~] Vite-produktionsbuild — React/ReactDOM skiftet til produktions-builds; runtime-Babel droppes først ved fuld Vite-build (FASE-2)
 - [x] CSP-backstop via `<meta>` på live-hosten (script-src låst til unpkg, connect-src til api.github.com) — verificeret ingen overtrædelser. Fuld CSP-header på Azure forbliver FASE-2
 - [ ] HSTS + X-Frame-Options aktiv på den rigtige host (kræver Azure — kan ikke sættes via `<meta>` på GitHub Pages)
-- [ ] Fjern Gist + PAT-relay helt — erstat med Azure SignalR (planlagt)
+- [ ] Fjern Gist + PAT-relay helt — erstat med SSE i egen backend (se IMPLEMENTERINGSPLAN 3.2)
   - [~] Midlertidig afbødning på plads: PAT fjernes fra URL'en straks efter læsning (`history.replaceState`) + konsol-advarsel i `Brobygger portal.html`. Fuld fjernelse afventer SignalR.
 - [ ] Verificér afsender-identitet server-side i chat (pt. fuldt client-trusted)
 

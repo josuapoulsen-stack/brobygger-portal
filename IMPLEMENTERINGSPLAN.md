@@ -134,14 +134,15 @@ Brobyggere modtager push-notifikationer når:
 - **Mønster:** beskeder gemmes i PostgreSQL (kilde) → SSE pusher "ny besked"-event til åbne klienter → klienten henter siden-sidst ved (gen)forbindelse. Afsendelse via almindelig autentificeret POST.
 - **Web Push** (3.1) håndterer notifikationer når appen er lukket — SSE betyder kun noget mens appen er åben.
 - **Begrundelse:** ved vores skala (~50 medarbejdere samtidigt, 50–500 beskeder/dag) giver SignalR ingen mærkbar UX-gevinst for slutbrugeren, men koster ~$580/år og tilføjer en ekstra komponent der behandler beskeddata. SSE er $0 oveni App Service, holder data i egen backend (GDPR-rent), er ren HTTPS, og browserens `EventSource` genforbinder automatisk.
-- **Forbehold:** valider Entra ID-token ved forbindelse + autorisér hvilke tråde brugeren må følge; send keepalive ~hvert 30. sek. (Azure idle-timeout ~230 sek.); kører vi nogensinde på **flere App Service-instanser**, tilføj **Postgres `LISTEN/NOTIFY`** (eller Redis) som backplane.
+- **Forbehold:** valider Entra ID-token ved forbindelse + autorisér hvilke tråde brugeren må følge; send keepalive ~hvert 30. sek. (Azure idle-timeout ~230 sek.); kører vi nogensinde på **flere App Service-instanser**, tilføj **Postgres `LISTEN/NOTIFY`** (eller Redis) som backplane; aktivér **HTTP/2** på den host der serverer SSE (App Service-indstilling) — fjerner browserens "6 forbindelser pr. host"-grænse.
 - **Oprydning ved FASE 2-build:** fjern `azure-signalr` (requirements), `Microsoft.SignalRService/signalR` (`infra/main.bicep`) og `SIGNALR_CONNECTION_STRING` (`backend/config.py`).
 
 ### 3.3 Magic link emails
 Via Microsoft Graph `Mail.Send`:
 - Brobygger-invitation med login-link
 - Aftaleberkræftelse til borger (via koordinator)
-- Kræver Graph API-tilladelse i Entra-app-registreringen
+- Kræver Graph API-tilladelse (`Mail.Send`) i Entra-app-registreringen
+- **`aiosmtplib`/SMTP udgår:** vi sender via Graph (mere sikkert — ingen mailboks-password; Microsoft udfaser SMTP basic-auth). Allerede påbegyndt i `backend/services/email.py`.
 
 ---
 
