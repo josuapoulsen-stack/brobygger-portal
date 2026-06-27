@@ -3,6 +3,9 @@
 > Sammenligning juni 2026: prototypens datamodel (`Brobygger portal.html` + localStorage) vs. backend-schemaet (`db/schema.sql` + `backend/alembic/versions/`).
 > **Konklusion:** backend-schemaet er fra et tidligere designtrin og **mangler stort set alle features tilføjet i prototypen siden**. Skal lukkes før FASE 2-API'erne bygges, ellers kan data ikke flyttes fra prototypen 1:1.
 
+> **STATUS (juni 2026):** Lukket i **migration `006_prototype_alignment.py`** + `backend/orm_models.py` + `api/openapi.yaml` (nye component-skemaer). Verificeret: migration + ORM kompilerer, openapi er gyldig YAML.
+> **Resterende FASE-2-follow-up:** (1) felt-tilføjelserne på de *eksisterende* `Menneske`/`Aftale` **API-request/response-skemaer** i openapi (selve DB-felterne findes), (2) faktiske endpoints/routers for de nye ressourcer, (3) kryptering af `konto_nr_enc` i service-laget, (4) seed/migrér `SoS_REFS` → `stamdata`-tabellen.
+
 Status: `[ ]` mangler i backend · `[~]` delvist · `[x]` dækket
 
 ---
