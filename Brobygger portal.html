@@ -203,6 +203,8 @@ window.SoS_hqMatch = function (hq, scope) {
   return !!(z && z.indexOf(hq) >= 0);
 };
 window.SoS_isZone = function (scope) { return !!(SoS_REFS.zoner && SoS_REFS.zoner[scope]); };
+// Telefon-normalisering: kanonisk form til genkendelse på tværs af forløb (DK = sidste 8 cifre, fjerner +45/0045/0)
+window.SoS_normPhone = function (s) { var d = String(s == null ? '' : s).replace(/\D/g, ''); return d.length > 8 ? d.slice(-8) : d; };
 // Anvend gemte indsatstype-farver på SoS_TYPER, så de slår igennem i hele systemet
 try {
   [['Social', 'social'], ['Forening', 'forening'], ['Sundhed', 'sundhed']].forEach(([n, key]) => {
@@ -14209,6 +14211,12 @@ const NyAftaleFlow = ({ onClose, viewingHq }) => {
   const canSaveNy = form.firstName.trim() && form.age.trim()
     && phoneDigits.length === 8 && type && kilde && consent;
 
+  // Telefon-dedup: telefonnummer er den sikreste genkendelse (navne varierer)
+  const _normPhone = (s) => window.SoS_normPhone ? window.SoS_normPhone(s) : String(s || '').replace(/\D/g, '').slice(-8);
+  const phoneMatches = phoneDigits.length >= 8
+    ? Object.values(window.SoS_MENNESKER || {}).filter(m => m.mobil && _normPhone(m.mobil) === _normPhone(form.phone))
+    : [];
+
   const searchResults = query.length >= 2
     ? Object.values(window.SoS_MENNESKER || {}).filter(m => {
         const q = query.toLowerCase();
@@ -14404,6 +14412,32 @@ const NyAftaleFlow = ({ onClose, viewingHq }) => {
                   ? SoS.rose : SoS.line }}/>
             </div>
           </div>
+
+          {phoneMatches.length > 0 && (
+            <div style={{ marginBottom: 14, padding: '10px 12px', background: SoS.orange + '14',
+              border: `1px solid ${SoS.orange}55`, borderRadius: SoS.r.sm }}>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12.5, fontWeight: 700, color: '#9A4A12', marginBottom: 4 }}>
+                ⚠ Findes måske allerede — samme telefonnummer
+              </div>
+              <div style={{ fontFamily: SoS.sans, fontSize: 12, color: SoS.inkSoft, marginBottom: 8, lineHeight: 1.45 }}>
+                Nummeret matcher {phoneMatches.length === 1 ? 'et eksisterende menneske' : phoneMatches.length + ' eksisterende mennesker'}. Telefonnummer er vores sikreste genkendelse — tjek om det er samme person (de kan have brugt et andet navn).
+              </div>
+              {phoneMatches.slice(0, 3).map(m => (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0',
+                  borderTop: `1px solid ${SoS.orange}22` }}>
+                  <div style={{ flex: 1, fontFamily: SoS.sans, fontSize: 13, color: SoS.ink }}>
+                    {((m.firstName || '') + ' ' + (m.lastName || '')).trim() || 'Uden navn'}
+                    <span style={{ color: SoS.inkMuted }}> · {m.age || '?'} år · {m.hq || '?'}{m.status ? ' · ' + m.status : ''}</span>
+                  </div>
+                  <button onClick={() => { setSelectedPerson(m); setQuery(((m.firstName || '') + ' ' + (m.lastName || '')).trim()); setMode('eksisterende'); }}
+                    style={{ padding: '5px 12px', background: SoS.ink, color: '#fff', border: 'none',
+                      borderRadius: SoS.r.sm, cursor: 'pointer', fontFamily: SoS.sans, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                    Samme person
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontFamily: SoS.sans, fontSize: 11, fontWeight: 600,
