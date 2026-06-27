@@ -48,7 +48,7 @@ Opretter automatisk:
 - ✅ PostgreSQL Flexible Server Burstable B1ms (~$25/md)
 - ✅ Azure Key Vault (~$1/md)
 - ✅ Application Insights (**gratis** op til 5 GB/md)
-- ✅ Azure SignalR Free tier (**gratis** op til 20 enheder)
+- ~~Azure SignalR~~ → **udgår**: SSE i egen backend (se 3.2) — $0, ingen ekstra tjeneste
 
 **Total infrastruktur: ~$39/md = ~$470/år**
 **Dækket af nonprofit-kreditterne i ~4 år**
@@ -106,7 +106,7 @@ Aktiverer alle FastAPI-endpoints (returnerer nu 503-stubs → rigtig logik):
 - `/brobyggere` — profil + vagter
 - `/aftaler` — booking + status
 - `/matching/suggest` — scoringsalgoritme (0–100)
-- `/beskeder` — tråde + SignalR-broadcast
+- `/beskeder` — tråde + SSE-broadcast (egen backend)
 - `/statistik/sroi` — SROI-beregning
 
 ### 2.3 CI/CD genaktiveres
@@ -128,10 +128,14 @@ Brobyggere modtager push-notifikationer når:
 - Koordinator sender besked
 - Påmindelse 24 timer før aftale
 
-### 3.2 SignalR (realtids-beskeder)
-- FASE 1 brugte `BroadcastChannel` (samme browser)
-- FASE 2: Azure SignalR → beskeder synkroniseres på tværs af enheder i realtid
-- Hent connection string fra Azure Portal → gem i Key Vault
+### 3.2 Realtids-beskeder — SSE i egen backend (Azure SignalR UDGÅR)
+**Beslutning (juni 2026):** Vi bruger **Server-Sent Events (SSE) i vores egen FastAPI-backend** i stedet for Azure SignalR.
+
+- **Mønster:** beskeder gemmes i PostgreSQL (kilde) → SSE pusher "ny besked"-event til åbne klienter → klienten henter siden-sidst ved (gen)forbindelse. Afsendelse via almindelig autentificeret POST.
+- **Web Push** (3.1) håndterer notifikationer når appen er lukket — SSE betyder kun noget mens appen er åben.
+- **Begrundelse:** ved vores skala (~50 medarbejdere samtidigt, 50–500 beskeder/dag) giver SignalR ingen mærkbar UX-gevinst for slutbrugeren, men koster ~$580/år og tilføjer en ekstra komponent der behandler beskeddata. SSE er $0 oveni App Service, holder data i egen backend (GDPR-rent), er ren HTTPS, og browserens `EventSource` genforbinder automatisk.
+- **Forbehold:** valider Entra ID-token ved forbindelse + autorisér hvilke tråde brugeren må følge; send keepalive ~hvert 30. sek. (Azure idle-timeout ~230 sek.); kører vi nogensinde på **flere App Service-instanser**, tilføj **Postgres `LISTEN/NOTIFY`** (eller Redis) som backplane.
+- **Oprydning ved FASE 2-build:** fjern `azure-signalr` (requirements), `Microsoft.SignalRService/signalR` (`infra/main.bicep`) og `SIGNALR_CONNECTION_STRING` (`backend/config.py`).
 
 ### 3.3 Magic link emails
 Via Microsoft Graph `Mail.Send`:
@@ -220,7 +224,7 @@ Manuel JSON-eksport er alternativet indtil direkte integration er bygget.
 | App Service B1 × 2 (Brobygger + Bifrost) | ~$26 |
 | PostgreSQL Flexible Server | ~$25 |
 | Key Vault | ~$1 |
-| SignalR Free tier | Gratis |
+| Realtid (SSE i egen backend) | Gratis — SignalR udgår |
 | Application Insights | Gratis |
 | Entra ID External Identities (50 MAU) | ~$2 |
 | **Subtotal Azure** | **~$54/md** |
@@ -241,7 +245,7 @@ Manuel JSON-eksport er alternativet indtil direkte integration er bygget.
 Uge 1     Nonprofit-registrering · Sikkerhedstjek bookes · Azure infrastruktur · Defender aktiveres
 Uge 1–2   Entra ID login · MFA · AccountGuard
 Uge 2–4   Database live · Backend aktiveres · CI/CD genaktiveres
-Uge 4–5   Push-notifikationer · SignalR realtid · Magic link emails
+Uge 4–5   Push-notifikationer · SSE realtid (egen backend) · Magic link emails
 Uge 5–8   Bifrost på Azure · APScheduler · JWT production
 Uge 8–10  GDPR-afslutning · Sikkerhedstjek-handlingsplan · Go-live
 Uge 10–13 Fejlretning · Monitorering · Bifrost–Brobygger integration (valgfrit)

@@ -23,8 +23,10 @@ itsdangerous==2.2.0       # signerede tokens til magic links
 # ── Email (magic links + notifikationer via Exchange Online) ─────────────────
 aiosmtplib==3.0.1
 
-# ── Real-time (SignalR) ────────────────────────────────────────────────────────
-azure-signalr==1.1.0
+# ── Real-time ──────────────────────────────────────────────────────────────────
+# UDGÅET: Azure SignalR erstattet af SSE i egen FastAPI-backend (se IMPLEMENTERINGSPLAN.md 3.2)
+# azure-signalr==1.1.0
+# SSE kræver ingen ekstra pakke (FastAPI StreamingResponse / sse-starlette hvis ønsket).
 
 # ── Web Push / VAPID ──────────────────────────────────────────────────────────
 pywebpush==2.0.0

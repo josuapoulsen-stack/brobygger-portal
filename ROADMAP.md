@@ -94,7 +94,7 @@ Den bruges til at afklare flows, UI og logik — ikke til produktion.
 - [ ] **Rolle-switcher (TweaksPanel)** — "Vis prototypen som Brobygger / Rådgiver / Admin"-panelet er udelukkende til demo og præsentation. Det må **ikke** eksistere i produktionsappen — roller tildeles via Entra ID og er aldrig brugervalgte. Hele `TweaksPanel`-komponenten og `AppWithTweaks`-wrapperen skal erstattes af rigtig auth-routing.
 - [ ] **Fiktive data** — alle `SoS_MENNESKER`, `SoS_BROBYGGERE`, `SoS_APPOINTMENTS_BUSY` osv. erstattes af rigtige API-kald mod databasen.
 - [ ] **Hardkodet HQ** — `ownHq="Aarhus"` og `viewingHq` er hardkodet; skal komme fra brugerens token/profil.
-- [ ] **Mock-beskeder og notifikationer** — `SoS_NOTIFICATIONS`, `SoS_MESSAGES` er statiske; erstattes af WebSocket eller polling.
+- [ ] **Mock-beskeder og notifikationer** — `SoS_NOTIFICATIONS`, `SoS_MESSAGES` er statiske; erstattes af **SSE i egen backend + DB-bakkede beskeder** (Azure SignalR udgår; se IMPLEMENTERINGSPLAN 3.2).
 - [ ] **localStorage-persistence** — bruges udelukkende til prototype-brugertest. Skal fjernes og erstattes af rigtige API-kald når produktionsbackend er klar. Nøgler at slette: `sos_mennesker`, `sos_brobyggere`, `sos_brobygninger`, `sos_settings`.
 
 ---
