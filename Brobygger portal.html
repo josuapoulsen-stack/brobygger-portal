@@ -334,6 +334,19 @@ window.SoS_gdprRapport = function (menneskeId) {
     + '<footer>Genereret automatisk fra Brobygger-portalen. Indeholder data fra menneskets profil, aftaler, henvendelser, kontakter og opkald. Kontakt din koordinator for berigtigelse eller sletning (GDPR art. 16 & 17).</footer>'
     + '</body></html>';
 
+  // Revisionsspor (GDPR art. 30): log hvem der trak indsigtsrapporten, om hvem og hvornår
+  try {
+    var _audit = JSON.parse(localStorage.getItem('sos_audit_log') || '[]');
+    _audit.unshift({
+      id: 'audit-' + nu.getTime(),
+      handling: 'gdpr_indsigtsrapport',
+      menneske_id: menneskeId,
+      menneske_navn: navn,
+      udfoert_af: window.SoS_AKTIV_BRUGER || 'ukendt',
+      tidspunkt: nu.toISOString(),
+    });
+    localStorage.setItem('sos_audit_log', JSON.stringify(_audit.slice(0, 1000)));
+  } catch (e) {}
   var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
