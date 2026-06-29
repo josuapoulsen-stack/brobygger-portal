@@ -46,7 +46,12 @@ Status: `[ ]` = mangler · `[x]` = klaret
 - [ ] Ingen PII i klartekst i localStorage — borgerdata hentes per-request bag auth
 - [ ] Bankoplysninger (`sos_udlaeg_konti`: reg./kontonr.) + kreditor-CSV-eksport: server-side opbevaring og rolle-tjek på eksport — ingen ægte bankdata i prototypen
 - [ ] Privat endpoint på PostgreSQL (kun nået fra API'et, aldrig fra internet)
-- [ ] Audit-trail / logning af al adgang til Art. 9-helbredsdata
+- [ ] **Revisionsspor (server-side, append-only)** — den endelige version (prototypens `sos_audit_log` i localStorage er kun demo af intentionen):
+  - [ ] Mutationer logges via DB-trigger (`audit_changes`, migration 003) på borger-tabeller
+  - [ ] **Følsomme læsninger + udtræk logges eksplicit i API'et** (helbredsvisning, GDPR-indsigtsrapport, kreditor-eksport) — aktør + handling + mål-id + tid/IP, ALDRIG selve indholdet
+  - [ ] `audit_log` gøres append-only (ingen UPDATE/DELETE — heller ikke admin)
+  - [ ] Retention-/sletningspolitik for audit-loggen (den er også persondata) — med i art. 30
+  - [ ] Per-person adgangshistorik i admin-UI ("hvem har set mine data")
 - [ ] Ret-til-sletning-værktøj (granulær sletning per borger, ikke kun "ryd alt")
 - [ ] Dataopbevarings-/sletningspolitik defineret og implementeret
 - [ ] Databehandleraftaler på plads for alle processorer

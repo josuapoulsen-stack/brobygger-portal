@@ -194,7 +194,10 @@ Manuel JSON-eksport er alternativet indtil direkte integration er bygget.
 | AccountGuard tilmeldt | ⬜ |
 | HTTPS enforced på alle endpoints | ⬜ |
 | Key Vault indeholder alle secrets (ingen i kode) | ⬜ |
-| Audit-log verificeret (INSERT/UPDATE/DELETE logges) | ⬜ |
+| Audit-log: mutationer logges (INSERT/UPDATE/DELETE via DB-trigger) | ⬜ |
+| Audit-log: følsomme LÆSNINGER + udtræk logges eksplicit i API'et (helbredsvisning, GDPR-indsigtsrapport, kreditor-eksport) — kun aktør/handling/mål-id/tid, ALDRIG indhold | ⬜ |
+| audit_log er append-only (ingen UPDATE/DELETE — heller ikke for admin) | ⬜ |
+| Retention-/sletningspolitik for audit_log (er selv persondata) defineret + i art. 30 | ⬜ |
 | RLS testet (brobygger kan ikke se andres data) | ⬜ |
 | Anonymiserings-trigger testet | ⬜ |
 | Backup konfigureret (PostgreSQL geo-redundant) | ⬜ |
@@ -206,6 +209,7 @@ Manuel JSON-eksport er alternativet indtil direkte integration er bygget.
 | Databehandleraftale (DPA) underskrevet med Microsoft | ⬜ |
 | Samtykke-flow testet (IntakeFlow trin 4) | ⬜ |
 | Ret til indsigt-endpoint implementeret (`GET /mig/data`) | ⬜ |
+| Per-person adgangshistorik ("hvem har set mine data") kan udtrækkes fra audit-loggen | ⬜ |
 | Ret til sletning testet (soft-delete + 30-dages anonymisering) | ⬜ |
 | DPIA gennemgået og godkendt internt | ⬜ |
 
