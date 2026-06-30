@@ -508,6 +508,15 @@ components:
           type: string
           format: uuid
           nullable: true
+        afdeling: { type: string, nullable: true }
+        kilde: { type: string, nullable: true, description: "Henvisningskilde" }
+        meetpoint: { type: string, nullable: true }
+        sroi_maalgruppe: { type: string, nullable: true }
+        helbreds_kategorier: { type: array, items: { type: string } }
+        praeferencer: { type: object, nullable: true, additionalProperties: true }
+        afslut_trivsel: { type: integer, nullable: true }
+        afslut_aarsag: { type: string, nullable: true }
+        ucla_fravalgt: { type: boolean, default: false }
 
     MenneskUpdate:
       type: object
@@ -543,6 +552,15 @@ components:
           nullable: true
         status:
           $ref: "#/components/schemas/MenneskStatus"
+        afdeling: { type: string, nullable: true }
+        kilde: { type: string, nullable: true, description: "Henvisningskilde" }
+        meetpoint: { type: string, nullable: true }
+        sroi_maalgruppe: { type: string, nullable: true }
+        helbreds_kategorier: { type: array, items: { type: string } }
+        praeferencer: { type: object, nullable: true, additionalProperties: true }
+        afslut_trivsel: { type: integer, nullable: true }
+        afslut_aarsag: { type: string, nullable: true }
+        ucla_fravalgt: { type: boolean, default: false }
 
     MenneskStatusTransition:
       type: object
@@ -616,6 +634,16 @@ components:
         har_samtykke_helbredsdata:
           type: boolean
           description: Om der foreligger aktivt Art. 9-samtykke
+        afdeling: { type: string, nullable: true }
+        kilde: { type: string, nullable: true, description: "Henvisningskilde" }
+        meetpoint: { type: string, nullable: true }
+        sroi_maalgruppe: { type: string, nullable: true }
+        helbreds_kategorier: { type: array, items: { type: string } }
+        praeferencer: { type: object, nullable: true, additionalProperties: true }
+        afslut_trivsel: { type: integer, nullable: true }
+        afslut_aarsag: { type: string, nullable: true }
+        ucla_fravalgt: { type: boolean, default: false }
+        telefon_norm: { type: string, nullable: true, description: "Kanonisk telefon til genkendelse (read-only)" }
         created_at:
           type: string
           format: date-time
@@ -706,6 +734,26 @@ components:
         beskrivelse:
           type: string
           nullable: true
+        aftaletype: { type: string, nullable: true }
+        brobygningstype: { type: string, nullable: true, description: "Social | Forening | Sundhed" }
+        henvender: { type: string, nullable: true }
+        modtager: { type: string, nullable: true }
+        finansiering: { type: string, nullable: true }
+        samarbejdspartner: { type: string, nullable: true }
+        afdeling: { type: string, nullable: true }
+        aflyst_af: { type: string, nullable: true }
+        aflysnings_aarsag: { type: string, nullable: true }
+        transportplan: { type: string, nullable: true }
+        aktivitets_tid: { type: string, nullable: true }
+        fremmoede_type: { type: string, nullable: true }
+        gentagelse: { type: string, nullable: true }
+        aftale_form: { type: string, nullable: true }
+        brobygger_note: { type: string, nullable: true, description: "Briefing til brobygger" }
+        raadgiver_opfoelgning: { type: string, nullable: true }
+        udfald: { type: string, nullable: true, description: "gennemfoert | afbud | ikke-modt" }
+        varighed_min: { type: integer, nullable: true }
+        log_note: { type: string, nullable: true }
+        logged_at: { type: string, format: date-time, nullable: true }
 
     AftaleUpdate:
       type: object
@@ -728,6 +776,26 @@ components:
           $ref: "#/components/schemas/AftaleStatus"
         notes:
           type: string
+        aftaletype: { type: string, nullable: true }
+        brobygningstype: { type: string, nullable: true, description: "Social | Forening | Sundhed" }
+        henvender: { type: string, nullable: true }
+        modtager: { type: string, nullable: true }
+        finansiering: { type: string, nullable: true }
+        samarbejdspartner: { type: string, nullable: true }
+        afdeling: { type: string, nullable: true }
+        aflyst_af: { type: string, nullable: true }
+        aflysnings_aarsag: { type: string, nullable: true }
+        transportplan: { type: string, nullable: true }
+        aktivitets_tid: { type: string, nullable: true }
+        fremmoede_type: { type: string, nullable: true }
+        gentagelse: { type: string, nullable: true }
+        aftale_form: { type: string, nullable: true }
+        brobygger_note: { type: string, nullable: true, description: "Briefing til brobygger" }
+        raadgiver_opfoelgning: { type: string, nullable: true }
+        udfald: { type: string, nullable: true, description: "gennemfoert | afbud | ikke-modt" }
+        varighed_min: { type: integer, nullable: true }
+        log_note: { type: string, nullable: true }
+        logged_at: { type: string, format: date-time, nullable: true }
 
     Aftale:
       type: object
@@ -767,6 +835,26 @@ components:
         notes:
           type: string
           default: ""
+        aftaletype: { type: string, nullable: true }
+        brobygningstype: { type: string, nullable: true, description: "Social | Forening | Sundhed" }
+        henvender: { type: string, nullable: true }
+        modtager: { type: string, nullable: true }
+        finansiering: { type: string, nullable: true }
+        samarbejdspartner: { type: string, nullable: true }
+        afdeling: { type: string, nullable: true }
+        aflyst_af: { type: string, nullable: true }
+        aflysnings_aarsag: { type: string, nullable: true }
+        transportplan: { type: string, nullable: true }
+        aktivitets_tid: { type: string, nullable: true }
+        fremmoede_type: { type: string, nullable: true }
+        gentagelse: { type: string, nullable: true }
+        aftale_form: { type: string, nullable: true }
+        brobygger_note: { type: string, nullable: true, description: "Briefing til brobygger" }
+        raadgiver_opfoelgning: { type: string, nullable: true }
+        udfald: { type: string, nullable: true, description: "gennemfoert | afbud | ikke-modt" }
+        varighed_min: { type: integer, nullable: true }
+        log_note: { type: string, nullable: true }
+        logged_at: { type: string, format: date-time, nullable: true }
         created_at:
           type: string
           format: date-time
@@ -2933,3 +3021,227 @@ paths:
                   tidspunkt:
                     type: string
                     format: date-time
+
+  # ───────── FASE-2 ressourcer (prototype-alignment) ─────────
+  /v1/mennesker/{id}/henvendelser:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      tags: [Henvendelser]
+      summary: "Hent alle henvendelser for et menneske (tidligste = førstegangshenvender)"
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Henvendelse" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Henvendelser]
+      summary: "Tilføj en henvendelse"
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/Henvendelse" } } }
+      responses:
+        "201": { description: Oprettet, content: { application/json: { schema: { $ref: "#/components/schemas/Henvendelse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/henvendelser/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    patch:
+      tags: [Henvendelser]
+      summary: Ret
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content: { application/json: { schema: { $ref: "#/components/schemas/Henvendelse" } } }
+      responses:
+        "200": { description: Opdateret, content: { application/json: { schema: { $ref: "#/components/schemas/Henvendelse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Henvendelser]
+      summary: Slet
+      security: [{ BearerAuth: [] }]
+      responses:
+        "204": { description: Slettet }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/mennesker/{id}/ucla:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      tags: [UCLA-3]
+      summary: "Hent UCLA-3-målinger (baseline + opfølgninger)"
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/UclaMaaling" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [UCLA-3]
+      summary: "Registrér en UCLA-3-måling"
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/UclaMaaling" } } }
+      responses:
+        "201": { description: Oprettet, content: { application/json: { schema: { $ref: "#/components/schemas/UclaMaaling" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/mennesker/{id}/kontaktpersoner:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      tags: [Kontaktpersoner]
+      summary: "Hent kontaktpersoner (pårørende/instans)"
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Kontaktperson" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Kontaktpersoner]
+      summary: "Tilføj en kontaktperson"
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/Kontaktperson" } } }
+      responses:
+        "201": { description: Oprettet, content: { application/json: { schema: { $ref: "#/components/schemas/Kontaktperson" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/mennesker/{id}/gdpr-rapport:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      tags: [GDPR]
+      summary: "Indsigtsrapport (art. 15) — alt registreret om personen. Logges i revisionsspor. Kun Admin."
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: Samlet indsigtsrapport (struktureret + downloadbar), content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /v1/opkald:
+    get:
+      tags: [Opkald]
+      summary: "Hent opkaldslog (filtre: menneske_id, brobygger_id, type)"
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Opkald" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Opkald]
+      summary: "Log et opkald (skal kobles til menneske el. brobygger)"
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/Opkald" } } }
+      responses:
+        "201": { description: Oprettet, content: { application/json: { schema: { $ref: "#/components/schemas/Opkald" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/stamdata:
+    get:
+      tags: [Stamdata]
+      summary: "Hent reference-data (filter: kategori, hovedsaede)"
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Stamdata" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Stamdata]
+      summary: "Opret stamdata-post (Admin)"
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/Stamdata" } } }
+      responses:
+        "201": { description: Oprettet, content: { application/json: { schema: { $ref: "#/components/schemas/Stamdata" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/stamdata/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    patch:
+      tags: [Stamdata]
+      summary: Ret
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content: { application/json: { schema: { $ref: "#/components/schemas/Stamdata" } } }
+      responses:
+        "200": { description: Opdateret, content: { application/json: { schema: { $ref: "#/components/schemas/Stamdata" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Stamdata]
+      summary: Slet
+      security: [{ BearerAuth: [] }]
+      responses:
+        "204": { description: Slettet }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/skabeloner:
+    get:
+      tags: [Skabeloner]
+      summary: "Hent egne beskedskabeloner (+ standarder)"
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/BeskedSkabelon" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Skabeloner]
+      summary: "Opret en beskedskabelon"
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/BeskedSkabelon" } } }
+      responses:
+        "201": { description: Oprettet, content: { application/json: { schema: { $ref: "#/components/schemas/BeskedSkabelon" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/skabeloner/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    patch:
+      tags: [Skabeloner]
+      summary: Ret
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content: { application/json: { schema: { $ref: "#/components/schemas/BeskedSkabelon" } } }
+      responses:
+        "200": { description: Opdateret, content: { application/json: { schema: { $ref: "#/components/schemas/BeskedSkabelon" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Skabeloner]
+      summary: Slet
+      security: [{ BearerAuth: [] }]
+      responses:
+        "204": { description: Slettet }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/brobyggere/{id}/udlaeg-konto:
+    parameters:
+      - $ref: "#/components/parameters/PathId"
+    get:
+      tags: [Udlæg]
+      summary: "Hent brobyggers bankoplysninger (kontonr. maskeret)"
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/UdlaegKonto" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Udlæg]
+      summary: "Opret/opdatér bankoplysninger (kontonr. krypteres server-side)"
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/UdlaegKonto" } } }
+      responses:
+        "200": { description: Gemt, content: { application/json: { schema: { $ref: "#/components/schemas/UdlaegKonto" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/udlaeg/eksport:
+    get:
+      tags: [Udlæg]
+      summary: "Kreditor-eksport til e-conomic (CSV). Tildeler kreditornummer + gruppe (år − 2020). Kun Admin. Logges."
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200": { description: CSV (UTF-8, semikolon), content: { text/csv: { schema: { type: string } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
