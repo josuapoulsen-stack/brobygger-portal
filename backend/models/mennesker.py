@@ -1,13 +1,18 @@
 """
 Pydantic-modeller for Mennesker (borgere/klienter).
 
-Felter spejler prototype-globals (window.SoS_MENNESKER).
+Feltnavne er snake_case og spejler ORM'en (`MenneskORM`) + OpenAPI-kontrakten
+1:1, så `from_attributes` kan fylde response-modellen direkte fra en ORM-række.
+
+GDPR Art. 9: `helbredsnoter` er WRITE-ONLY — den modtages ved oprettelse/opdatering
+(krypteres server-side til `helbredsnoter_enc`) men returneres ALDRIG i klartekst.
 """
 
 from __future__ import annotations
 from datetime import datetime
 from typing import Literal, Optional
-from pydantic import BaseModel, EmailStr, field_validator
+from uuid import UUID
+from pydantic import BaseModel, EmailStr
 
 
 MenneskStatus = Literal["ny", "matched", "aktiv", "afsluttet", "venteliste"]
@@ -22,21 +27,29 @@ class MenneskBase(BaseModel):
     telefon: Optional[str] = None
     adresse: Optional[str] = None
     # Behov og kontekst
-    typer: list[str] = []          # samme type-liste som brobyggere
+    typer: list[str] = []
     sprog: list[str] = ["dansk"]
     noter: Optional[str] = None
-    # Status
+    # Status og relationer
     status: MenneskStatus = "ny"
-    matchedWith: Optional[str] = None   # brobygger ID
-    # Helbred (GDPR Art. 9 — krypteres i DB)
-    helbredsnoter: Optional[str] = None
-    # Koordinator
-    raaadgiverId: Optional[str] = None
+    matched_with: Optional[UUID] = None      # brobygger-ID
+    raadgiver_id: Optional[UUID] = None      # koordinator (bruger)
     hq: Optional[str] = None
+    afdeling: Optional[str] = None
+    # Klassificering / rapportering
+    kilde: Optional[str] = None              # henvisningskilde
+    meetpoint: Optional[str] = None
+    sroi_maalgruppe: Optional[str] = None
+    helbreds_kategorier: Optional[list[str]] = None
+    praeferencer: Optional[dict] = None
+    afslut_trivsel: Optional[int] = None
+    afslut_aarsag: Optional[str] = None
+    ucla_fravalgt: bool = False
 
 
 class MenneskCreate(MenneskBase):
-    pass
+    # Write-only — krypteres server-side, ekkoes aldrig tilbage
+    helbredsnoter: Optional[str] = None
 
 
 class MenneskUpdate(BaseModel):
@@ -50,14 +63,24 @@ class MenneskUpdate(BaseModel):
     sprog: Optional[list[str]] = None
     noter: Optional[str] = None
     status: Optional[MenneskStatus] = None
-    matchedWith: Optional[str] = None
-    helbredsnoter: Optional[str] = None
-    raaadgiverId: Optional[str] = None
+    matched_with: Optional[UUID] = None
+    raadgiver_id: Optional[UUID] = None
     hq: Optional[str] = None
+    afdeling: Optional[str] = None
+    kilde: Optional[str] = None
+    meetpoint: Optional[str] = None
+    sroi_maalgruppe: Optional[str] = None
+    helbreds_kategorier: Optional[list[str]] = None
+    praeferencer: Optional[dict] = None
+    afslut_trivsel: Optional[int] = None
+    afslut_aarsag: Optional[str] = None
+    ucla_fravalgt: Optional[bool] = None
+    helbredsnoter: Optional[str] = None       # write-only
 
 
 class Menneske(MenneskBase):
-    id: str
-    createdAt: datetime
+    id: UUID
+    telefon_norm: Optional[str] = None        # kanonisk telefon (read-only, afledt)
+    created_at: datetime
 
     model_config = {"from_attributes": True}
