@@ -177,10 +177,12 @@ Brobyggere inviteres på samme måde og tildeles rollen "Brobygger".
 | Azure Static Web Apps (Free) | 0 kr |
 | App Service B1 | ~160 kr |
 | PostgreSQL B1ms | ~280 kr |
-| SignalR Free | 0 kr |
+| Realtid (SSE i egen backend) | 0 kr |
 | **Total** | **~440 kr/md** |
 
 Prod-miljø med skalering: ~1.800–2.200 kr/md
+
+> **Azure credits:** Bruges automatisk til at dække forbruget ovenfor — du betaler først ud af egen lomme når/hvis creditsene er brugt op. Dev-miljøet på ~440 kr/md rækker derfor længe. Hold øje under **Cost Management + Billing → Credits**.
 
 ---
 

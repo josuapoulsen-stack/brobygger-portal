@@ -12,7 +12,7 @@
 //   • Azure Static Web Apps  (frontend)
 //   • Azure App Service      (FastAPI backend)
 //   • Azure Database for PostgreSQL Flexible Server
-//   • Azure SignalR Service  (realtime beskeder)
+//   • Realtids-beskeder via SSE i FastAPI-backend (ingen separat tjeneste)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @description('Miljø: dev, staging eller prod')
@@ -104,10 +104,7 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
           name:  'DATABASE_URL'
           value: 'postgresql://${dbAdminUsername}:${dbAdminPassword}@${database.properties.fullyQualifiedDomainName}/brobygger?sslmode=require'
         }
-        {
-          name:  'SIGNALR_CONNECTION_STRING'
-          value: signalR.listKeys().primaryConnectionString
-        }
+        // Realtids-beskeder: SSE i egen backend (Azure SignalR udgår, se IMPLEMENTERINGSPLAN 3.2)
         // TODO: Tilføj AZURE_CLIENT_ID, AZURE_TENANT_ID til JWT-validering
         { name: 'AZURE_CLIENT_ID', value: 'TODO_CLIENT_ID' }
         { name: 'AZURE_TENANT_ID', value: 'TODO_TENANT_ID' }
@@ -174,26 +171,9 @@ resource brobyggerDb 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-0
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. Azure SignalR Service — realtime beskeder
+// 4. Realtids-beskeder: SSE i egen FastAPI-backend — ingen separat Azure-tjeneste
+//    (Azure SignalR udgik juni 2026, se IMPLEMENTERINGSPLAN.md 3.2)
 // ─────────────────────────────────────────────────────────────────────────────
-resource signalR 'Microsoft.SignalRService/signalR@2023-02-01' = {
-  name: '${prefix}-signalr'
-  location: location
-  tags: tags
-  sku: {
-    name:     'Free_F1'  // Gratis: 20 samtidige forbindelser, 20.000 msg/dag
-    tier:     'Free'     // Opgrader til Standard_S1 ved go-live (~560 kr/md)
-    capacity: 1
-  }
-  properties: {
-    features: [
-      { flag: 'ServiceMode', value: 'Default' }
-    ]
-    cors: {
-      allowedOrigins: ['*']  // Stram til specifik domain i prod
-    }
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. Azure Key Vault — hemmeligheder (DB-adgangskode, VAPID, JWT-secret)
@@ -283,7 +263,6 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 output staticWebAppUrl          string = 'https://${staticWebApp.properties.defaultHostname}'
 output apiUrl                   string = 'https://${appService.properties.defaultHostName}'
 output dbHostname               string = database.properties.fullyQualifiedDomainName
-output signalREndpoint          string = signalR.properties.externalIP
 output keyVaultName             string = keyVault.name
 output appInsightsConnectionStr string = appInsights.properties.ConnectionString
 
@@ -291,7 +270,7 @@ output appInsightsConnectionStr string = appInsights.properties.ConnectionString
 //   Static Web Apps:  0 kr  (Free tier)
 //   App Service B1:  160 kr
 //   PostgreSQL B1ms: 280 kr
-//   SignalR Free:      0 kr
+//   Realtid (SSE):     0 kr  (kører i App Service, ingen separat tjeneste)
 //   Key Vault:         ~5 kr  (10.000 operations/md gratis)
 //   App Insights:      ~0 kr  (5 GB/md gratis)
 //   ─────────────────────────────
