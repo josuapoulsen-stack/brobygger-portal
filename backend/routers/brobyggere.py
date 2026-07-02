@@ -21,8 +21,9 @@ from ..database import get_db
 from ..orm_models import BrobyggerORM
 from ..models.brobyggere import Brobygger, BrobyggerCreate, BrobyggerUpdate
 from .mennesker import normaliser_telefon
+from .auth import require_user
 
-router = APIRouter(prefix="/v1/brobyggere", tags=["Brobyggere"])
+router = APIRouter(prefix="/v1/brobyggere", tags=["Brobyggere"], dependencies=[Depends(require_user)])
 
 
 def _hent(db: Session, brobygger_id: UUID) -> BrobyggerORM:

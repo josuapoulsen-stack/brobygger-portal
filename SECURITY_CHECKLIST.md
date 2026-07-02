@@ -19,9 +19,9 @@ Status: `[ ]` = mangler · `[x]` = klaret
 
 ## 🟡 Auth-laget — fundamentet
 
-- [ ] Server-side autorisation på **hver** endpoint — rolle udledes kun fra verificeret token
-- [ ] Aktivér RS256 / Entra ID JWKS-validering i `backend/routers/auth.py` (er udkommenteret)
-- [ ] Slet HS256 dev-stub'en (dekoder med committet dev-secret)
+- [~] Server-side autorisation på **hver** endpoint — rolle udledes kun fra verificeret token. Kerneruterne (`mennesker`, `brobyggere`, `aftaler`) håndhæver nu `Depends(require_user)`; `require_roles("Admin"…)` klar til de øvrige ruter når de bygges (juli 2026)
+- [x] Aktivér RS256 / Entra ID JWKS-validering i `backend/routers/auth.py` — aktiv når Entra er konfigureret (signatur + issuer + audience mod Microsofts JWKS), nøgle-cache med rotation-refresh (juli 2026)
+- [~] HS256 dev-stub'en er nu **gated**: kun aktiv når Entra IKKE er sat op OG `ENVIRONMENT != production` (umulig i prod — startup-vagten blokerer). `POST /v1/auth/dev-token` udsteder testtokens og returnerer 404 så snart Entra er konfigureret. Fuld sletning når Entra er live
 - [x] Deploy-guard: backend nægter at starte med dev-secret/HS256/TODO-config når `ENVIRONMENT=production` (`backend/config.py` → `_guard_production_secrets`, juni 2026)
 - [x] FASE-2 kan ikke deploye med default `JWT_SECRET` — håndhævet af deploy-guard ovenfor (fejler ved opstart)
 - [ ] `infra/main.bicep`: erstat literal placeholder-secret-værdier (`jwt-secret`, `vapid-private-key`) med Key Vault-referencer / secure params — committe aldrig secret-værdier i IaC

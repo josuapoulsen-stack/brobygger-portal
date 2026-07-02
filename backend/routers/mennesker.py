@@ -22,8 +22,9 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..orm_models import MenneskORM
 from ..models.mennesker import Menneske, MenneskCreate, MenneskUpdate
+from .auth import require_user
 
-router = APIRouter(prefix="/v1/mennesker", tags=["Mennesker"])
+router = APIRouter(prefix="/v1/mennesker", tags=["Mennesker"], dependencies=[Depends(require_user)])
 
 
 def normaliser_telefon(raw: Optional[str]) -> Optional[str]:

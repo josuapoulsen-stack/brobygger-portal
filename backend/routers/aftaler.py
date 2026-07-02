@@ -16,8 +16,9 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..orm_models import AftaleORM, BrobyggerORM, MenneskORM
 from ..models.aftaler import Aftale, AftaleCreate, AftaleStatusUpdate
+from .auth import require_user
 
-router = APIRouter(prefix="/v1/aftaler", tags=["Aftaler"])
+router = APIRouter(prefix="/v1/aftaler", tags=["Aftaler"], dependencies=[Depends(require_user)])
 
 # Statusser der tæller som et "aktivt forløb" på brobyggeren
 AKTIVE_STATUS = {"planlagt", "pending", "confirmed"}
