@@ -1,9 +1,11 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BrobyggerPortal.Api.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,14 +13,43 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BrobyggerDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
-// ── Entra ID (Azure AD) JWT-validering ───────────────────────────────────────
-// Erstatter den håndlavede RS256/JWKS-kode fra Python-backend'en. Microsoft.Identity.Web
-// henter selv JWKS, validerer signatur/issuer/audience og udstiller app-roller som claims.
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+// ── Auth ─────────────────────────────────────────────────────────────────────
+// Entra konfigureret  → ægte RS256/JWKS via Microsoft.Identity.Web (produktion).
+// Entra IKKE konfigureret + ikke-produktion → HS256 dev-token (testfase).
+// Ikke-produktion-kravet håndhæves: prod uden Entra fejler ved opstart.
+var azureAd = builder.Configuration.GetSection("AzureAd");
+var entraConfigured =
+    !(azureAd["TenantId"]?.StartsWith("TODO") ?? true) &&
+    !(azureAd["ClientId"]?.StartsWith("TODO") ?? true);
+
+if (!entraConfigured && builder.Environment.IsProduction())
+    throw new InvalidOperationException("Entra ID mangler i produktion — auth ikke konfigureret.");
+
+var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
+if (entraConfigured)
+{
+    authBuilder.AddMicrosoftIdentityWebApi(azureAd);
+}
+else
+{
+    var devKey = builder.Configuration["Dev:JwtSecret"]
+        ?? "dev-hemmelighed-skift-mig-mindst-32-tegn-lang-noegle";
+    authBuilder.AddJwtBearer(o =>
+    {
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(devKey)),
+            RoleClaimType = "roles",
+        };
+    });
+}
 
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton(new AuthMode(entraConfigured));
+builder.Services.AddSingleton<BrobyggerPortal.Api.Services.GraphService>();
 
 // ── Controllers + JSON i snake_case (matcher OpenAPI-kontrakten) ─────────────
 builder.Services
@@ -45,6 +76,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    // Dev: anvend migrations + seed fiktivt data (kun opdigtet — aldrig rigtige borgere)
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<BrobyggerDbContext>();
+    db.Database.Migrate();
+    await BrobyggerPortal.Api.Data.DbSeeder.SeedAsync(db);
 }
 
 app.UseHttpsRedirection();
@@ -53,7 +90,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Sundhedstjek — offentligt (til Azure App Service probes)
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
+
+/// <summary>Injiceres i controllers så de ved om ægte Entra er aktiv (bruges af dev-token).</summary>
+public record AuthMode(bool EntraConfigured);

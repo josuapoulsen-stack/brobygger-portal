@@ -19,6 +19,9 @@
     <!-- Entra ID (Azure AD) JWT-validering — Microsofts førsteklasses bibliotek -->
     <PackageReference Include="Microsoft.Identity.Web" Version="3.8.0" />
 
+    <!-- Microsoft Graph (mail + Outlook-kalender) — token via Azure.Identity, kald via REST -->
+    <PackageReference Include="Azure.Identity" Version="1.13.1" />
+
     <!-- OpenAPI / Swagger UI -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
   </ItemGroup>

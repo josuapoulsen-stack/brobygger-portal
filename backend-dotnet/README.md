@@ -8,16 +8,20 @@ ASP.NET Core Web API på **.NET 10 (LTS)** med **Entity Framework Core** (Postgr
 > Microsoft-økosystem-integration (Azure, Entra, Graph) og lettere overlevering til
 > Microsoft-orienterede udviklere. Frontend forbliver React.
 
-## Hvad er bygget (første skive)
+## Hvad er bygget
 
-- Datamodel + `DbContext` for **Mennesker**, **Brobyggere**, **Aftaler**
-- Fulde CRUD-controllers for alle tre (list/get/create/patch/delete, kapacitetstjek på aftaler,
-  telefon-normalisering, soft-delete på mennesker)
-- Entra ID JWT-validering (RS256/JWKS klares af Microsoft.Identity.Web)
+- Datamodel + `DbContext` for alle ressourcer: **Mennesker, Brobyggere, Aftaler,
+  Henvendelser, UCLA, Kontaktpersoner, Opkald, Stamdata, Skabeloner, Udlæg-konto**
+- Fulde CRUD-controllers (kapacitetstjek, telefon-normalisering, soft-delete, rolle-gating)
+- **Auth:** Entra ID (Microsoft.Identity.Web) når konfigureret; ellers HS256 **dev-token**
+  (`POST /v1/auth/dev-token`) til testfasen — umulig i produktion
+- **Microsoft Graph:** send mail + opret Outlook-kalenderaftaler (`Services/GraphService.cs`,
+  `/v1/graph/*`, `/v1/aftaler/{id}/kalender`) — aktiveres via `Graph:Enabled`
+- **Dev:** auto-migrate + fiktivt seed ved opstart (`DbSeeder`)
 - JSON i snake_case (matcher `../api/openapi.yaml`)
 
-**Mangler endnu:** EF-migrations kørt mod DB, dev-token til testfasen, øvrige ressourcer
-(henvendelser, ucla, opkald, stamdata …), art. 9-kryptering af helbredsnoter, seed-data.
+**Mangler endnu:** art. 9-kryptering af helbredsnoter + kontonr., SSE-beskeder,
+opdateret CI/CD til .NET, brugertests.
 
 ## Forudsætninger
 

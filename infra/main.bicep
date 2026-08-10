@@ -95,21 +95,19 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
     serverFarmId: appServicePlan.id
     httpsOnly:    true
     siteConfig: {
-      linuxFxVersion: 'PYTHON|3.12'
+      linuxFxVersion: 'DOTNETCORE|10.0'
       appSettings: [
-        { name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE', value: 'false' }
-        { name: 'SCM_DO_BUILD_DURING_DEPLOYMENT',      value: 'true' }
-        { name: 'ENVIRONMENT',                          value: environment }
+        { name: 'ASPNETCORE_ENVIRONMENT', value: environment == 'prod' ? 'Production' : 'Development' }
         {
-          name:  'DATABASE_URL'
-          value: 'postgresql://${dbAdminUsername}:${dbAdminPassword}@${database.properties.fullyQualifiedDomainName}/brobygger?sslmode=require'
+          // .NET læser ConnectionStrings:Postgres — dobbelt-underscore = sektions-separator
+          name:  'ConnectionStrings__Postgres'
+          value: 'Host=${database.properties.fullyQualifiedDomainName};Database=brobygger;Username=${dbAdminUsername};Password=${dbAdminPassword};Ssl Mode=Require'
         }
         // Realtids-beskeder: SSE i egen backend (Azure SignalR udgår, se IMPLEMENTERINGSPLAN 3.2)
-        // TODO: Tilføj AZURE_CLIENT_ID, AZURE_TENANT_ID til JWT-validering
-        { name: 'AZURE_CLIENT_ID', value: 'TODO_CLIENT_ID' }
-        { name: 'AZURE_TENANT_ID', value: 'TODO_TENANT_ID' }
-        // TODO: JWT_SECRET bruges kun i dev — fjernes i prod (brug Entra ID)
-        { name: 'JWT_SECRET',      value: 'TODO_CHANGE_IN_PROD' }
+        // Entra ID — udfyld fra app-registreringen (se AZURE_SETUP.md)
+        { name: 'AzureAd__TenantId', value: 'TODO_TENANT_ID' }
+        { name: 'AzureAd__ClientId', value: 'TODO_CLIENT_ID' }
+        { name: 'AzureAd__Audience', value: 'TODO_CLIENT_ID' }
       ]
       cors: {
         allowedOrigins: [
