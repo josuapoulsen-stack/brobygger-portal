@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>BrobyggerPortal.Api</RootNamespace>
+    <UserSecretsId>98486643-ee15-40f6-b74e-eb32e547a158</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

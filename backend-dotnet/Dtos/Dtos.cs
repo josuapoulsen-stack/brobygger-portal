@@ -194,6 +194,7 @@ public record AftaleCreateDto
     public string? Beskrivelse { get; init; }
     public AftaleStatus Status { get; init; } = AftaleStatus.Planlagt;
     public string Notes { get; init; } = string.Empty;
+    public DateTimeOffset? EfterspurgtAt { get; init; }   // udelades → sættes til nu
     public string? Aftaletype { get; init; }
     public string? Brobygningstype { get; init; }
     public string? Henvender { get; init; }
@@ -228,6 +229,8 @@ public record AftaleReadDto
     public string? Beskrivelse { get; init; }
     public AftaleStatus Status { get; init; }
     public string Notes { get; init; } = string.Empty;
+    public DateTimeOffset EfterspurgtAt { get; init; }
+    public DateTimeOffset? BekraeftetAt { get; init; }
     public string? Aftaletype { get; init; }
     public string? Brobygningstype { get; init; }
     public string? Henvender { get; init; }
@@ -254,7 +257,8 @@ public record AftaleReadDto
     {
         Id = a.Id, BrobyggerId = a.BrobyggerId, MenneskeId = a.MenneskeId, Dato = a.Dato,
         Varighed = a.Varighed, Type = a.Type, Sted = a.Sted, Beskrivelse = a.Beskrivelse,
-        Status = a.Status, Notes = a.Notes, Aftaletype = a.Aftaletype, Brobygningstype = a.Brobygningstype,
+        Status = a.Status, Notes = a.Notes, EfterspurgtAt = a.EfterspurgtAt, BekraeftetAt = a.BekraeftetAt,
+        Aftaletype = a.Aftaletype, Brobygningstype = a.Brobygningstype,
         Henvender = a.Henvender, Modtager = a.Modtager, Finansiering = a.Finansiering,
         Samarbejdspartner = a.Samarbejdspartner, Afdeling = a.Afdeling, AflystAf = a.AflystAf,
         AflysningsAarsag = a.AflysningsAarsag, Transportplan = a.Transportplan, AktivitetsTid = a.AktivitetsTid,

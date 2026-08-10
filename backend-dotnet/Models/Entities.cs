@@ -80,6 +80,9 @@ public class Aftale
     public string? Beskrivelse { get; set; }
     public AftaleStatus Status { get; set; } = AftaleStatus.Planlagt;
     public string Notes { get; set; } = string.Empty;
+    // Livscyklus: efterspørgsel nu → bekræftelse kan komme dage/uger/måneder senere
+    public DateTimeOffset EfterspurgtAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? BekraeftetAt { get; set; }
     // Klassificering (fra stamdata)
     public string? Aftaletype { get; set; }
     public string? Brobygningstype { get; set; }          // Social | Forening | Sundhed

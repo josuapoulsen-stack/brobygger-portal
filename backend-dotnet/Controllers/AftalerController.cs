@@ -49,7 +49,9 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
         {
             BrobyggerId = dto.BrobyggerId, MenneskeId = dto.MenneskeId, Dato = dto.Dato,
             Varighed = dto.Varighed, Type = dto.Type, Sted = dto.Sted, Beskrivelse = dto.Beskrivelse,
-            Status = dto.Status, Notes = dto.Notes, Aftaletype = dto.Aftaletype,
+            Status = dto.Status, Notes = dto.Notes, EfterspurgtAt = dto.EfterspurgtAt ?? DateTimeOffset.UtcNow,
+            BekraeftetAt = dto.Status == AftaleStatus.Confirmed ? DateTimeOffset.UtcNow : null,
+            Aftaletype = dto.Aftaletype,
             Brobygningstype = dto.Brobygningstype, Henvender = dto.Henvender, Modtager = dto.Modtager,
             Finansiering = dto.Finansiering, Samarbejdspartner = dto.Samarbejdspartner, Afdeling = dto.Afdeling,
             Transportplan = dto.Transportplan, AktivitetsTid = dto.AktivitetsTid, FremmoedeType = dto.FremmoedeType,
@@ -69,6 +71,9 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
         if (a is null) return NotFound();
         a.Status = dto.Status;
         if (!string.IsNullOrEmpty(dto.Notes)) a.Notes = dto.Notes;
+        // Registrér bekræftelsestidspunktet første gang aftalen bekræftes
+        if (dto.Status == AftaleStatus.Confirmed && a.BekraeftetAt is null)
+            a.BekraeftetAt = DateTimeOffset.UtcNow;
         a.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync();
         return AftaleReadDto.From(a);
