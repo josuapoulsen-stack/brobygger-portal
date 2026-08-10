@@ -4,9 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Brobygger — mennesker</title>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     :root { --ink:#18222b; --soft:#5a6a76; --line:#e3e0d7; --accent:#2f6f6a; --bg:#f6f4ef; --card:#fff; }
     * { box-sizing:border-box; }
@@ -31,31 +28,76 @@
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div class="wrap">
+    <h1>Mennesker</h1>
+    <p class="sub">Rigtig skærm, koblet på det nye system. Data kommer fra din lokale backend.</p>
+    <div id="status" class="status ok">Forbinder til systemet…</div>
 
-  <script type="text/babel" data-presets="react">
-    const { useState, useEffect } = React;
-    const BASE = "http://localhost:5080";   // det lokale .NET-system
-    let TOKEN = "";
+    <table>
+      <thead>
+        <tr><th>Navn</th><th>Alder</th><th>Telefon</th><th>Hovedsæde</th><th>Status</th></tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="5" class="muted">Henter…</td></tr>
+      </tbody>
+    </table>
+
+    <form id="opret-form">
+      <div><label>Navn *</label><input id="f-navn" required /></div>
+      <div><label>Alder</label><input id="f-alder" type="number" /></div>
+      <div><label>Telefon</label><input id="f-telefon" /></div>
+      <div><label>Hovedsæde</label><input id="f-hq" /></div>
+      <div>
+        <label>Status</label>
+        <select id="f-status">
+          <option value="ny">Ny</option>
+          <option value="matched">Matched</option>
+          <option value="aktiv">Aktiv</option>
+          <option value="afsluttet">Afsluttet</option>
+          <option value="venteliste">Venteliste</option>
+        </select>
+      </div>
+      <div class="full"><button type="submit">Opret menneske</button></div>
+    </form>
+  </div>
+
+  <script>
+    // Ren JavaScript — ingen eksterne filer, så siden tegner sig uanset netværk.
+    var BASE = "http://localhost:5080";   // det lokale .NET-system
+    var TOKEN = "";
+
+    var elStatus = document.getElementById("status");
+    var elRows = document.getElementById("rows");
+
+    function setStatus(msg, ok) {
+      elStatus.textContent = msg;
+      elStatus.className = "status " + (ok ? "ok" : "err");
+    }
+
+    function esc(s) {
+      return (s == null ? "" : String(s)).replace(/[&<>"]/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+      });
+    }
 
     async function api(method, path, body) {
-      const res = await fetch(BASE + path, {
-        method,
-        headers: {
-          "Accept": "application/json",
-          ...(body ? { "Content-Type": "application/json" } : {}),
-          ...(TOKEN ? { "Authorization": "Bearer " + TOKEN } : {}),
-        },
+      var res = await fetch(BASE + path, {
+        method: method,
+        headers: Object.assign(
+          { "Accept": "application/json" },
+          body ? { "Content-Type": "application/json" } : {},
+          TOKEN ? { "Authorization": "Bearer " + TOKEN } : {}
+        ),
         body: body ? JSON.stringify(body) : undefined,
       });
       if (res.status === 204) return null;
-      const data = await res.json().catch(() => null);
+      var data = await res.json().catch(function () { return null; });
       if (!res.ok) throw new Error((data && data.title) || ("Fejl " + res.status));
       return data;
     }
 
     async function devLogin() {
-      const r = await fetch(BASE + "/v1/auth/dev-token", {
+      var r = await fetch(BASE + "/v1/auth/dev-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roles: ["Admin"] }),
@@ -64,89 +106,50 @@
       TOKEN = (await r.json()).access_token;
     }
 
-    function App() {
-      const [rows, setRows] = useState([]);
-      const [status, setStatus] = useState({ msg: "Forbinder til systemet…", ok: true });
-      const [form, setForm] = useState({ navn: "", alder: "", telefon: "", hq: "", status: "ny" });
-
-      async function indlaes() {
-        const data = await api("GET", "/v1/mennesker");
-        setRows(data);
-        setStatus({ msg: data.length + " mennesker hentet fra systemet.", ok: true });
+    function render(rows) {
+      if (!rows.length) {
+        elRows.innerHTML = '<tr><td colspan="5" class="muted">Ingen mennesker endnu.</td></tr>';
+        return;
       }
-
-      useEffect(() => {
-        (async () => {
-          try { await devLogin(); await indlaes(); }
-          catch (e) { setStatus({ msg: "Kunne ikke forbinde — kører backend på localhost:5080? (" + e.message + ")", ok: false }); }
-        })();
-      }, []);
-
-      async function opret(e) {
-        e.preventDefault();
-        try {
-          await api("POST", "/v1/mennesker", {
-            navn: form.navn,
-            alder: form.alder ? parseInt(form.alder, 10) : null,
-            telefon: form.telefon || null,
-            hq: form.hq || null,
-            status: form.status,
-          });
-          setForm({ navn: "", alder: "", telefon: "", hq: "", status: "ny" });
-          await indlaes();
-        } catch (e) {
-          setStatus({ msg: "Kunne ikke oprette: " + e.message, ok: false });
-        }
-      }
-
-      const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
-
-      return (
-        <div className="wrap">
-          <h1>Mennesker</h1>
-          <p className="sub">Rigtig skærm, koblet på det nye system. Data kommer fra din lokale backend.</p>
-          <div className={"status " + (status.ok ? "ok" : "err")}>{status.msg}</div>
-
-          <table>
-            <thead>
-              <tr><th>Navn</th><th>Alder</th><th>Telefon</th><th>Hovedsæde</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              {rows.map((m) => (
-                <tr key={m.id}>
-                  <td>{m.navn}</td>
-                  <td>{m.alder ?? "—"}</td>
-                  <td>{m.telefon ?? "—"}</td>
-                  <td>{m.hq ?? "—"}</td>
-                  <td><span className="pill">{m.status}</span></td>
-                </tr>
-              ))}
-              {rows.length === 0 && <tr><td colSpan="5" className="muted">Ingen mennesker endnu.</td></tr>}
-            </tbody>
-          </table>
-
-          <form onSubmit={opret}>
-            <div><label>Navn *</label><input required value={form.navn} onChange={set("navn")} /></div>
-            <div><label>Alder</label><input type="number" value={form.alder} onChange={set("alder")} /></div>
-            <div><label>Telefon</label><input value={form.telefon} onChange={set("telefon")} /></div>
-            <div><label>Hovedsæde</label><input value={form.hq} onChange={set("hq")} /></div>
-            <div>
-              <label>Status</label>
-              <select value={form.status} onChange={set("status")}>
-                <option value="ny">Ny</option>
-                <option value="matched">Matched</option>
-                <option value="aktiv">Aktiv</option>
-                <option value="afsluttet">Afsluttet</option>
-                <option value="venteliste">Venteliste</option>
-              </select>
-            </div>
-            <div className="full"><button type="submit">Opret menneske</button></div>
-          </form>
-        </div>
-      );
+      elRows.innerHTML = rows.map(function (m) {
+        return "<tr><td>" + esc(m.navn) + "</td><td>" + esc(m.alder == null ? "—" : m.alder) +
+          "</td><td>" + esc(m.telefon || "—") + "</td><td>" + esc(m.hq || "—") +
+          '</td><td><span class="pill">' + esc(m.status) + "</span></td></tr>";
+      }).join("");
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    async function indlaes() {
+      var data = await api("GET", "/v1/mennesker");
+      render(data);
+      setStatus(data.length + " mennesker hentet fra systemet.", true);
+    }
+
+    document.getElementById("opret-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var alder = document.getElementById("f-alder").value;
+      try {
+        await api("POST", "/v1/mennesker", {
+          navn: document.getElementById("f-navn").value,
+          alder: alder ? parseInt(alder, 10) : null,
+          telefon: document.getElementById("f-telefon").value || null,
+          hq: document.getElementById("f-hq").value || null,
+          status: document.getElementById("f-status").value,
+        });
+        e.target.reset();
+        await indlaes();
+      } catch (err) {
+        setStatus("Kunne ikke oprette: " + err.message, false);
+      }
+    });
+
+    (async function () {
+      try {
+        await devLogin();
+        await indlaes();
+      } catch (err) {
+        setStatus("Kunne ikke forbinde — kører backend på localhost:5080? (" + err.message + ")", false);
+      }
+    })();
   </script>
 </body>
 </html>
