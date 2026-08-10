@@ -76,12 +76,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    // Dev: anvend migrations + seed fiktivt data (kun opdigtet — aldrig rigtige borgere)
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<BrobyggerDbContext>();
-    db.Database.Migrate();
-    await BrobyggerPortal.Api.Data.DbSeeder.SeedAsync(db);
 }
 
 app.UseHttpsRedirection();
@@ -91,6 +85,19 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+// Dev: anvend migrations + seed fiktivt data ved rigtig opstart (ikke under dotnet ef-kommandoer).
+// GYLDEN REGEL: kun opdigtet seed — aldrig rigtige borgere.
+if (app.Environment.IsDevelopment())
+{
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<BrobyggerDbContext>();
+        db.Database.Migrate();
+        BrobyggerPortal.Api.Data.DbSeeder.SeedAsync(db).GetAwaiter().GetResult();
+    });
+}
 
 app.Run();
 

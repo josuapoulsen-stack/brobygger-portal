@@ -17,10 +17,10 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
 
     <!-- Entra ID (Azure AD) JWT-validering — Microsofts førsteklasses bibliotek -->
-    <PackageReference Include="Microsoft.Identity.Web" Version="3.8.0" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="4.14.2" />
 
     <!-- Microsoft Graph (mail + Outlook-kalender) — token via Azure.Identity, kald via REST -->
-    <PackageReference Include="Azure.Identity" Version="1.13.1" />
+    <PackageReference Include="Azure.Identity" Version="1.17.2" />
 
     <!-- OpenAPI / Swagger UI -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
