@@ -14,12 +14,19 @@ public class Henvendelse
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
-public class UclaMaaling
+public class Trivselsmaaling
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid MenneskeId { get; set; }
+    public string Instrument { get; set; } = "kombineret";   // kombineret | ucla3 | who5
     public UclaSlags Slags { get; set; } = UclaSlags.Baseline;
-    public int Score { get; set; }                  // UCLA-3: 3–9
+    public int Score { get; set; }                           // total (kombineret: 5–25, højere = bedre trivsel)
+    // Kombineret 5-item (Likert 1–5). Null for ucla3/who5.
+    public int? Ensom { get; set; }                          // "Jeg føler mig ensom" (reverse-scores)
+    public int? Faellesskab { get; set; }                    // "…hører til i et fællesskab"
+    public int? Stoette { get; set; }                        // "…personer jeg kan få støtte fra"
+    public int? Hverdag { get; set; }                        // "…i stand til at håndtere min hverdag"
+    public int? Velbefindende { get; set; }                  // "Mit generelle velbefindende er godt"
     public DateTimeOffset Dato { get; set; } = DateTimeOffset.UtcNow;
     public string? Noter { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;

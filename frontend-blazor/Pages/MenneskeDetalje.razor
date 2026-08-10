@@ -63,19 +63,47 @@ else
     </div>
 
     <div class="card">
-        <h3>UCLA-3 (ensomhed)</h3>
+        <h3>Trivsel</h3>
         <ul class="liste">
-            @foreach (var u in ucla)
+            @foreach (var u in maalinger)
             {
-                <li><b>@u.Score</b> · @u.Slags · @u.Dato.ToLocalTime().ToString("dd. MMM yyyy") <div class="two">@u.Noter</div></li>
+                <li><b>@u.Score</b> · @InstrumentLabel(u.Instrument) · @u.Slags · @u.Dato.ToLocalTime().ToString("dd. MMM yyyy") <div class="two">@u.Noter</div></li>
             }
-            @if (ucla.Count == 0) { <li class="muted">Ingen målinger.</li> }
+            @if (maalinger.Count == 0) { <li class="muted">Ingen målinger.</li> }
         </ul>
         <div class="row">
-            <select @bind="nyUcla.Slags"><option value="baseline">Baseline</option><option value="opfoelgning">Opfølgning</option></select>
-            <input type="number" placeholder="Score 3-9" @bind="nyUcla.Score" />
-            <input placeholder="Noter" @bind="nyUcla.Noter" />
-            <button class="mini" @onclick="TilfoejUcla">Tilføj</button>
+            <select @bind="nyMaaling.Instrument">
+                <option value="kombineret">Kombineret (5 spørgsmål)</option>
+                <option value="ucla3">UCLA-3</option>
+                <option value="who5">WHO-5</option>
+            </select>
+            <select @bind="nyMaaling.Slags"><option value="baseline">Baseline</option><option value="opfoelgning">Opfølgning</option></select>
+        </div>
+        @if (nyMaaling.Instrument == "kombineret")
+        {
+            <div class="likert">
+                @foreach (var q in Spoergsmaal)
+                {
+                    <div class="lq">
+                        <span>@q.Tekst</span>
+                        <select value="@q.Get()" @onchange="e => q.Set(int.Parse((string)e.Value!))">
+                            <option value="1">1 · Helt uenig</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5 · Helt enig</option>
+                        </select>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="row"><input type="number" placeholder="Score" @bind="nyMaaling.Score" /></div>
+        }
+        <div class="row">
+            <input placeholder="Noter" @bind="nyMaaling.Noter" />
+            <button class="mini" @onclick="TilfoejMaaling">Tilføj måling</button>
         </div>
     </div>
 
@@ -123,6 +151,9 @@ else
     .row input, .row select { width:auto; flex:1; min-width:120px; }
     .chk { display:flex; align-items:center; gap:.3rem; font-size:.82rem; color:var(--soft); }
     .chk input { width:auto; }
+    .likert { display:flex; flex-direction:column; gap:.4rem; margin-bottom:.6rem; }
+    .lq { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; }
+    .lq select { width:auto; min-width:150px; }
 </style>
 
 @code {
@@ -130,15 +161,26 @@ else
 
     private Menneske? m;
     private List<Henvendelse> henvendelser = [];
-    private List<UclaMaaling> ucla = [];
+    private List<Trivselsmaaling> maalinger = [];
     private List<Kontaktperson> kontakt = [];
     private List<Aftale> aftaler = [];
     private string? helbred;
     private string? error;
 
     private HenvendelseCreate nyHenv = new();
-    private UclaCreate nyUcla = new();
+    private MaalingCreate nyMaaling = new();
     private KontaktpersonCreate nyKontakt = new();
+
+    private record Q(string Tekst, Func<int?> Get, Action<int> Set);
+    private Q[] Spoergsmaal => new[]
+    {
+        new Q("Jeg føler mig ensom", () => nyMaaling.Ensom, v => nyMaaling.Ensom = v),
+        new Q("Jeg føler, at jeg hører til i et fællesskab", () => nyMaaling.Faellesskab, v => nyMaaling.Faellesskab = v),
+        new Q("Jeg har personer, jeg kan få støtte fra", () => nyMaaling.Stoette, v => nyMaaling.Stoette = v),
+        new Q("Jeg føler mig i stand til at håndtere min hverdag", () => nyMaaling.Hverdag, v => nyMaaling.Hverdag = v),
+        new Q("Mit generelle velbefindende er godt", () => nyMaaling.Velbefindende, v => nyMaaling.Velbefindende = v),
+    };
+    private static string InstrumentLabel(string i) => i switch { "ucla3" => "UCLA-3", "who5" => "WHO-5", _ => "Kombineret" };
 
     protected override async Task OnParametersSetAsync() => await Load();
 
@@ -148,7 +190,7 @@ else
         {
             m = await Api.GetMenneske(Id);
             henvendelser = await Api.GetHenvendelser(Id);
-            ucla = await Api.GetUcla(Id);
+            maalinger = await Api.GetMaalinger(Id);
             kontakt = await Api.GetKontaktpersoner(Id);
             aftaler = await Api.GetAftalerForMenneske(Id);
             error = null;
@@ -168,9 +210,9 @@ else
         catch (Exception e) { error = e.Message; }
     }
 
-    private async Task TilfoejUcla()
+    private async Task TilfoejMaaling()
     {
-        try { await Api.CreateUcla(Id, nyUcla); nyUcla = new(); ucla = await Api.GetUcla(Id); }
+        try { await Api.CreateMaaling(Id, nyMaaling); nyMaaling = new(); maalinger = await Api.GetMaalinger(Id); }
         catch (Exception e) { error = e.Message; }
     }
 

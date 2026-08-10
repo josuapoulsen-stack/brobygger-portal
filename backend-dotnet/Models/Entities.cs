@@ -26,6 +26,7 @@ public class Menneske
     public string? Hq { get; set; }
     public string? Afdeling { get; set; }
     public string? Kilde { get; set; }
+    public string? Brobygningstype { get; set; }          // social | forening | sundhed (foreslår trivselsinstrument)
     public string? Meetpoint { get; set; }
     public string? SroiMaalgruppe { get; set; }
     public List<string>? HelbredsKategorier { get; set; }

@@ -38,8 +38,8 @@ public class ApiClient(HttpClient http)
     public Task<List<Henvendelse>> GetHenvendelser(Guid menneskeId) => GetList<Henvendelse>($"/v1/mennesker/{menneskeId}/henvendelser");
     public async Task CreateHenvendelse(Guid menneskeId, HenvendelseCreate h) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/mennesker/{menneskeId}/henvendelser", h, Json)).EnsureSuccessStatusCode(); }
 
-    public Task<List<UclaMaaling>> GetUcla(Guid menneskeId) => GetList<UclaMaaling>($"/v1/mennesker/{menneskeId}/ucla");
-    public async Task CreateUcla(Guid menneskeId, UclaCreate u) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/mennesker/{menneskeId}/ucla", u, Json)).EnsureSuccessStatusCode(); }
+    public Task<List<Trivselsmaaling>> GetMaalinger(Guid menneskeId) => GetList<Trivselsmaaling>($"/v1/mennesker/{menneskeId}/maalinger");
+    public async Task CreateMaaling(Guid menneskeId, MaalingCreate u) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/mennesker/{menneskeId}/maalinger", u, Json)).EnsureSuccessStatusCode(); }
 
     public Task<List<Kontaktperson>> GetKontaktpersoner(Guid menneskeId) => GetList<Kontaktperson>($"/v1/mennesker/{menneskeId}/kontaktpersoner");
     public async Task CreateKontaktperson(Guid menneskeId, KontaktpersonCreate k) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/mennesker/{menneskeId}/kontaktpersoner", k, Json)).EnsureSuccessStatusCode(); }

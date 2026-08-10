@@ -14,6 +14,7 @@ public class Menneske
     public string? Hq { get; set; }
     public string? Afdeling { get; set; }
     public string? Kilde { get; set; }
+    public string? Brobygningstype { get; set; }
     public string? SroiMaalgruppe { get; set; }
     public Guid? MatchedWith { get; set; }
     public bool UclaFravalgt { get; set; }
@@ -86,18 +87,30 @@ public class HenvendelseCreate
     public bool Foerstegang { get; set; }
 }
 
-public class UclaMaaling
+public class Trivselsmaaling
 {
     public Guid Id { get; set; }
+    public string Instrument { get; set; } = "";
     public string Slags { get; set; } = "";
     public int Score { get; set; }
+    public int? Ensom { get; set; }
+    public int? Faellesskab { get; set; }
+    public int? Stoette { get; set; }
+    public int? Hverdag { get; set; }
+    public int? Velbefindende { get; set; }
     public DateTimeOffset Dato { get; set; }
     public string? Noter { get; set; }
 }
-public class UclaCreate
+public class MaalingCreate
 {
+    public string Instrument { get; set; } = "kombineret";
     public string Slags { get; set; } = "baseline";
     public int Score { get; set; }
+    public int? Ensom { get; set; } = 3;
+    public int? Faellesskab { get; set; } = 3;
+    public int? Stoette { get; set; } = 3;
+    public int? Hverdag { get; set; } = 3;
+    public int? Velbefindende { get; set; } = 3;
     public string? Noter { get; set; }
 }
 

@@ -35,18 +35,25 @@ public class HenvendelserController(BrobyggerDbContext db) : ControllerBase
 }
 
 [ApiController, Authorize]
-public class UclaController(BrobyggerDbContext db) : ControllerBase
+public class MaalingerController(BrobyggerDbContext db) : ControllerBase
 {
-    [HttpGet("/v1/mennesker/{menneskeId:guid}/ucla")]
+    [HttpGet("/v1/mennesker/{menneskeId:guid}/maalinger")]
     public async Task<IActionResult> List(Guid menneskeId) =>
-        Ok(await db.UclaMaalinger.Where(u => u.MenneskeId == menneskeId).OrderBy(u => u.Dato).ToListAsync());
+        Ok(await db.Trivselsmaalinger.Where(u => u.MenneskeId == menneskeId).OrderBy(u => u.Dato).ToListAsync());
 
-    [HttpPost("/v1/mennesker/{menneskeId:guid}/ucla")]
-    public async Task<IActionResult> Create(Guid menneskeId, UclaMaaling dto)
+    [HttpPost("/v1/mennesker/{menneskeId:guid}/maalinger")]
+    public async Task<IActionResult> Create(Guid menneskeId, Trivselsmaaling dto)
     {
         dto.Id = Guid.NewGuid(); dto.MenneskeId = menneskeId; dto.CreatedAt = DateTimeOffset.UtcNow;
-        db.UclaMaalinger.Add(dto); await db.SaveChangesAsync();
-        return Created($"/v1/ucla/{dto.Id}", dto);
+        // Kombineret: beregn samlet trivsels-score (5–25, højere = bedre). "Ensom" vendes om.
+        if (dto.Instrument == "kombineret" &&
+            dto.Ensom is int e && dto.Faellesskab is int f && dto.Stoette is int s &&
+            dto.Hverdag is int h && dto.Velbefindende is int v)
+        {
+            dto.Score = (6 - e) + f + s + h + v;
+        }
+        db.Trivselsmaalinger.Add(dto); await db.SaveChangesAsync();
+        return Created($"/v1/maalinger/{dto.Id}", dto);
     }
 }
 
