@@ -13,7 +13,7 @@
         @foreach (var m in rows)
         {
             <tr>
-                <td>@m.Navn</td>
+                <td><a href="mennesker/@m.Id">@m.Navn</a></td>
                 <td>@(m.Alder?.ToString() ?? "—")</td>
                 <td>@(m.Telefon ?? "—")</td>
                 <td>@(m.Hq ?? "—")</td>

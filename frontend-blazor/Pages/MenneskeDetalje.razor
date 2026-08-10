@@ -1,0 +1,182 @@
+@page "/mennesker/{Id:guid}"
+@inject ApiClient Api
+@inject NavigationManager Nav
+
+@if (error is not null) { <div class="status err">@error</div> }
+
+@if (m is null)
+{
+    <p class="muted">Henter…</p>
+}
+else
+{
+    <p class="sub"><a href="mennesker">← Mennesker</a></p>
+    <h1>@m.Navn</h1>
+    <p class="sub">
+        @(m.Alder is null ? "" : m.Alder + " år · ")@(m.Kon ?? "")
+        @(string.IsNullOrEmpty(m.Hq) ? "" : " · " + m.Hq)
+        <span class="pill">@m.Status</span>
+    </p>
+
+    <div class="grid2">
+        <div class="card">
+            <h3>Stamdata</h3>
+            <dl>
+                <dt>Telefon</dt><dd>@(m.Telefon ?? "—")</dd>
+                <dt>E-mail</dt><dd>@(m.Email ?? "—")</dd>
+                <dt>Adresse</dt><dd>@(m.Adresse ?? "—")</dd>
+                <dt>Afdeling</dt><dd>@(m.Afdeling ?? "—")</dd>
+                <dt>Kilde</dt><dd>@(m.Kilde ?? "—")</dd>
+                <dt>Oprettet</dt><dd>@m.CreatedAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
+            </dl>
+        </div>
+
+        <div class="card">
+            <h3>Helbred (følsomt)</h3>
+            @if (helbred is null)
+            {
+                <p class="muted">Skjult. Kun Admin/Rådgiver kan se helbredsnoter.</p>
+                <button class="mini" @onclick="VisHelbred">Vis helbredsnoter</button>
+            }
+            else
+            {
+                <p>@(string.IsNullOrEmpty(helbred) ? "(ingen noter)" : helbred)</p>
+            }
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Henvendelser</h3>
+        <ul class="liste">
+            @foreach (var h in henvendelser)
+            {
+                <li><b>@h.Dato.ToLocalTime().ToString("dd. MMM yyyy")</b> · @(h.Kanal ?? "—") @(h.Foerstegang ? "· førstegang" : "") <div class="two">@h.Resume</div></li>
+            }
+            @if (henvendelser.Count == 0) { <li class="muted">Ingen endnu.</li> }
+        </ul>
+        <div class="row">
+            <select @bind="nyHenv.Kanal"><option value="telefon">Telefon</option><option value="mail">Mail</option><option value="fysisk">Fysisk</option><option value="henvist">Henvist</option></select>
+            <input placeholder="Resume" @bind="nyHenv.Resume" />
+            <label class="chk"><input type="checkbox" @bind="nyHenv.Foerstegang" /> Førstegang</label>
+            <button class="mini" @onclick="TilfoejHenv">Tilføj</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>UCLA-3 (ensomhed)</h3>
+        <ul class="liste">
+            @foreach (var u in ucla)
+            {
+                <li><b>@u.Score</b> · @u.Slags · @u.Dato.ToLocalTime().ToString("dd. MMM yyyy") <div class="two">@u.Noter</div></li>
+            }
+            @if (ucla.Count == 0) { <li class="muted">Ingen målinger.</li> }
+        </ul>
+        <div class="row">
+            <select @bind="nyUcla.Slags"><option value="baseline">Baseline</option><option value="opfoelgning">Opfølgning</option></select>
+            <input type="number" placeholder="Score 3-9" @bind="nyUcla.Score" />
+            <input placeholder="Noter" @bind="nyUcla.Noter" />
+            <button class="mini" @onclick="TilfoejUcla">Tilføj</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Kontaktpersoner</h3>
+        <ul class="liste">
+            @foreach (var k in kontakt)
+            {
+                <li><b>@k.Navn</b> @(string.IsNullOrEmpty(k.Relation) ? "" : "· " + k.Relation) <div class="two">@k.Telefon @k.Email</div></li>
+            }
+            @if (kontakt.Count == 0) { <li class="muted">Ingen.</li> }
+        </ul>
+        <div class="row">
+            <input placeholder="Navn" @bind="nyKontakt.Navn" />
+            <input placeholder="Relation" @bind="nyKontakt.Relation" />
+            <input placeholder="Telefon" @bind="nyKontakt.Telefon" />
+            <button class="mini" @onclick="TilfoejKontakt">Tilføj</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Aftaler</h3>
+        <table>
+            <thead><tr><th>Dato</th><th>Type</th><th>Status</th></tr></thead>
+            <tbody>
+                @foreach (var a in aftaler)
+                {
+                    <tr><td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td><td>@a.Type</td><td><span class="pill">@a.Status</span></td></tr>
+                }
+                @if (aftaler.Count == 0) { <tr><td colspan="3" class="muted">Ingen.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+}
+
+<style>
+    .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-top:1rem; }
+    .card h3 { margin:0 0 .6rem; font-size:1rem; }
+    dl { display:grid; grid-template-columns:auto 1fr; gap:.2rem .8rem; margin:0; font-size:.88rem; }
+    dt { color:var(--soft); }
+    .liste { list-style:none; padding:0; margin:0 0 .8rem; display:flex; flex-direction:column; gap:.5rem; font-size:.88rem; }
+    .liste li { border-bottom:1px solid var(--line); padding-bottom:.4rem; }
+    .row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+    .row input, .row select { width:auto; flex:1; min-width:120px; }
+    .chk { display:flex; align-items:center; gap:.3rem; font-size:.82rem; color:var(--soft); }
+    .chk input { width:auto; }
+</style>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Menneske? m;
+    private List<Henvendelse> henvendelser = [];
+    private List<UclaMaaling> ucla = [];
+    private List<Kontaktperson> kontakt = [];
+    private List<Aftale> aftaler = [];
+    private string? helbred;
+    private string? error;
+
+    private HenvendelseCreate nyHenv = new();
+    private UclaCreate nyUcla = new();
+    private KontaktpersonCreate nyKontakt = new();
+
+    protected override async Task OnParametersSetAsync() => await Load();
+
+    private async Task Load()
+    {
+        try
+        {
+            m = await Api.GetMenneske(Id);
+            henvendelser = await Api.GetHenvendelser(Id);
+            ucla = await Api.GetUcla(Id);
+            kontakt = await Api.GetKontaktpersoner(Id);
+            aftaler = await Api.GetAftalerForMenneske(Id);
+            error = null;
+        }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task VisHelbred()
+    {
+        try { helbred = await Api.GetHelbredsnoter(Id) ?? ""; }
+        catch (Exception e) { error = "Kunne ikke hente helbredsnoter: " + e.Message; }
+    }
+
+    private async Task TilfoejHenv()
+    {
+        try { await Api.CreateHenvendelse(Id, nyHenv); nyHenv = new(); henvendelser = await Api.GetHenvendelser(Id); }
+        catch (Exception e) { error = e.Message; }
+    }
+
+    private async Task TilfoejUcla()
+    {
+        try { await Api.CreateUcla(Id, nyUcla); nyUcla = new(); ucla = await Api.GetUcla(Id); }
+        catch (Exception e) { error = e.Message; }
+    }
+
+    private async Task TilfoejKontakt()
+    {
+        try { await Api.CreateKontaktperson(Id, nyKontakt); nyKontakt = new(); kontakt = await Api.GetKontaktpersoner(Id); }
+        catch (Exception e) { error = e.Message; }
+    }
+}
