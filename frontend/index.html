@@ -3,152 +3,189 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Brobygger — mennesker</title>
+  <title>Brobygger Portal</title>
   <style>
-    :root { --ink:#18222b; --soft:#5a6a76; --line:#e3e0d7; --accent:#2f6f6a; --bg:#f6f4ef; --card:#fff; }
+    :root { --ink:#18222b; --soft:#5a6a76; --line:#e3e0d7; --accent:#2f6f6a; --accent2:#234f4b; --bg:#f6f4ef; --card:#fff; }
     * { box-sizing:border-box; }
     body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
-    .wrap { max-width:960px; margin:0 auto; padding:2rem 1.25rem; }
-    h1 { font-size:1.5rem; margin:0 0 .25rem; }
-    .sub { color:var(--soft); margin:0 0 1.5rem; font-size:.9rem; }
+    header { background:var(--accent2); color:#fff; padding:.9rem 1.25rem; }
+    header .brand { font-weight:700; font-size:1.05rem; }
+    nav { display:flex; gap:.25rem; margin-top:.6rem; flex-wrap:wrap; }
+    nav a { color:#dfeae8; text-decoration:none; padding:.35rem .8rem; border-radius:999px; font-size:.9rem; cursor:pointer; }
+    nav a.active { background:rgba(255,255,255,.18); color:#fff; font-weight:600; }
+    .wrap { max-width:1000px; margin:0 auto; padding:1.5rem 1.25rem; }
+    h1 { font-size:1.4rem; margin:0 0 .25rem; }
+    .sub { color:var(--soft); margin:0 0 1.25rem; font-size:.88rem; }
     .status { font-size:.85rem; padding:.5rem .75rem; border-radius:8px; margin-bottom:1rem; }
     .status.ok { background:#e0ece3; color:#2c6a45; }
     .status.err { background:#f2ddd6; color:#a5432f; }
     table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
-    th,td { text-align:left; padding:.6rem .8rem; border-bottom:1px solid var(--line); font-size:.9rem; }
+    th,td { text-align:left; padding:.55rem .8rem; border-bottom:1px solid var(--line); font-size:.88rem; vertical-align:middle; }
     th { background:#efece4; font-weight:600; }
     tr:last-child td { border-bottom:none; }
-    .pill { font-size:.72rem; padding:.1rem .5rem; border-radius:999px; background:#e2ecea; color:var(--accent); }
+    .pill { font-size:.72rem; padding:.12rem .55rem; border-radius:999px; background:#e2ecea; color:var(--accent); white-space:nowrap; }
+    .pill.gul { background:#f0e6cf; color:#8a6a1f; }
+    .pill.gron { background:#e0ece3; color:#2c6a45; }
+    .pill.graa { background:#e7e3d8; color:#5a6a76; }
     form { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.6rem; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-top:1.25rem; }
-    label { font-size:.78rem; color:var(--soft); display:block; margin-bottom:.2rem; }
+    label { font-size:.76rem; color:var(--soft); display:block; margin-bottom:.2rem; }
     input,select { width:100%; padding:.45rem .55rem; border:1px solid var(--line); border-radius:8px; font:inherit; }
-    button { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:.55rem 1rem; font:inherit; font-weight:600; cursor:pointer; }
+    button { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:.5rem 1rem; font:inherit; font-weight:600; cursor:pointer; }
+    button.mini { padding:.3rem .65rem; font-size:.8rem; }
+    button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
     .full { grid-column:1/-1; display:flex; justify-content:flex-end; }
     .muted { color:var(--soft); font-size:.85rem; }
+    .two { color:var(--soft); font-size:.78rem; }
   </style>
 </head>
 <body>
+  <header>
+    <div class="brand">Brobygger Portal</div>
+    <nav>
+      <a data-view="mennesker">Mennesker</a>
+      <a data-view="brobyggere">Brobyggere</a>
+      <a data-view="aftaler">Aftaler</a>
+    </nav>
+  </header>
   <div class="wrap">
-    <h1>Mennesker</h1>
-    <p class="sub">Rigtig skærm, koblet på det nye system. Data kommer fra din lokale backend.</p>
     <div id="status" class="status ok">Forbinder til systemet…</div>
-
-    <table>
-      <thead>
-        <tr><th>Navn</th><th>Alder</th><th>Telefon</th><th>Hovedsæde</th><th>Status</th></tr>
-      </thead>
-      <tbody id="rows">
-        <tr><td colspan="5" class="muted">Henter…</td></tr>
-      </tbody>
-    </table>
-
-    <form id="opret-form">
-      <div><label>Navn *</label><input id="f-navn" required /></div>
-      <div><label>Alder</label><input id="f-alder" type="number" /></div>
-      <div><label>Telefon</label><input id="f-telefon" /></div>
-      <div><label>Hovedsæde</label><input id="f-hq" /></div>
-      <div>
-        <label>Status</label>
-        <select id="f-status">
-          <option value="ny">Ny</option>
-          <option value="matched">Matched</option>
-          <option value="aktiv">Aktiv</option>
-          <option value="afsluttet">Afsluttet</option>
-          <option value="venteliste">Venteliste</option>
-        </select>
-      </div>
-      <div class="full"><button type="submit">Opret menneske</button></div>
-    </form>
+    <div id="view"></div>
   </div>
 
   <script>
-    // Ren JavaScript — ingen eksterne filer, så siden tegner sig uanset netværk.
-    var BASE = "http://localhost:5080";   // det lokale .NET-system
+    var BASE = "http://localhost:5080";
     var TOKEN = "";
-
     var elStatus = document.getElementById("status");
-    var elRows = document.getElementById("rows");
+    var elView = document.getElementById("view");
 
-    function setStatus(msg, ok) {
-      elStatus.textContent = msg;
-      elStatus.className = "status " + (ok ? "ok" : "err");
-    }
+    // Cache til opslag id -> navn
+    var cache = { brobyggere: [], mennesker: [] };
 
-    function esc(s) {
-      return (s == null ? "" : String(s)).replace(/[&<>"]/g, function (c) {
-        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
-      });
-    }
+    function setStatus(msg, ok) { elStatus.textContent = msg; elStatus.className = "status " + (ok ? "ok" : "err"); }
+    function esc(s) { return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+    function dt(s) { if(!s) return "—"; try { return new Date(s).toLocaleDateString("da-DK",{day:"2-digit",month:"short",year:"numeric"}); } catch(e){ return s; } }
+    function navn(list, id) { var x=(list||[]).find(function(o){return o.id===id;}); return x? x.navn : "—"; }
 
     async function api(method, path, body) {
       var res = await fetch(BASE + path, {
         method: method,
-        headers: Object.assign(
-          { "Accept": "application/json" },
-          body ? { "Content-Type": "application/json" } : {},
-          TOKEN ? { "Authorization": "Bearer " + TOKEN } : {}
-        ),
+        headers: Object.assign({ "Accept":"application/json" }, body?{"Content-Type":"application/json"}:{}, TOKEN?{"Authorization":"Bearer "+TOKEN}:{}),
         body: body ? JSON.stringify(body) : undefined,
       });
       if (res.status === 204) return null;
-      var data = await res.json().catch(function () { return null; });
-      if (!res.ok) throw new Error((data && data.title) || ("Fejl " + res.status));
+      var data = await res.json().catch(function(){return null;});
+      if (!res.ok) throw new Error((data&&data.title) || ("Fejl "+res.status));
       return data;
     }
-
     async function devLogin() {
-      var r = await fetch(BASE + "/v1/auth/dev-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roles: ["Admin"] }),
-      });
-      if (!r.ok) throw new Error("Kunne ikke logge ind (dev-token)");
+      var r = await fetch(BASE + "/v1/auth/dev-token", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({roles:["Admin"]}) });
+      if (!r.ok) throw new Error("Kunne ikke logge ind");
       TOKEN = (await r.json()).access_token;
     }
 
-    function render(rows) {
-      if (!rows.length) {
-        elRows.innerHTML = '<tr><td colspan="5" class="muted">Ingen mennesker endnu.</td></tr>';
-        return;
+    // ---------- MENNESKER ----------
+    async function viewMennesker() {
+      elView.innerHTML =
+        '<h1>Mennesker</h1><p class="sub">Borgere vi hjælper.</p>' +
+        '<table><thead><tr><th>Navn</th><th>Alder</th><th>Telefon</th><th>Hovedsæde</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table>' +
+        '<form id="f"><div><label>Navn *</label><input id="navn" required></div><div><label>Alder</label><input id="alder" type="number"></div>' +
+        '<div><label>Telefon</label><input id="telefon"></div><div><label>Hovedsæde</label><input id="hq"></div>' +
+        '<div><label>Status</label><select id="st"><option value="ny">Ny</option><option value="matched">Matched</option><option value="aktiv">Aktiv</option><option value="afsluttet">Afsluttet</option><option value="venteliste">Venteliste</option></select></div>' +
+        '<div class="full"><button type="submit">Opret menneske</button></div></form>';
+      async function load() {
+        var d = await api("GET","/v1/mennesker"); cache.mennesker = d;
+        document.getElementById("rows").innerHTML = d.length ? d.map(function(m){
+          return "<tr><td>"+esc(m.navn)+"</td><td>"+esc(m.alder==null?"—":m.alder)+"</td><td>"+esc(m.telefon||"—")+"</td><td>"+esc(m.hq||"—")+'</td><td><span class="pill">'+esc(m.status)+"</span></td></tr>";
+        }).join("") : '<tr><td colspan="5" class="muted">Ingen endnu.</td></tr>';
+        setStatus(d.length+" mennesker.", true);
       }
-      elRows.innerHTML = rows.map(function (m) {
-        return "<tr><td>" + esc(m.navn) + "</td><td>" + esc(m.alder == null ? "—" : m.alder) +
-          "</td><td>" + esc(m.telefon || "—") + "</td><td>" + esc(m.hq || "—") +
-          '</td><td><span class="pill">' + esc(m.status) + "</span></td></tr>";
-      }).join("");
+      document.getElementById("f").addEventListener("submit", async function(e){
+        e.preventDefault(); var a=document.getElementById("alder").value;
+        try { await api("POST","/v1/mennesker",{ navn:document.getElementById("navn").value, alder:a?parseInt(a,10):null, telefon:document.getElementById("telefon").value||null, hq:document.getElementById("hq").value||null, status:document.getElementById("st").value }); e.target.reset(); await load(); }
+        catch(err){ setStatus("Fejl: "+err.message,false); }
+      });
+      await load();
     }
 
-    async function indlaes() {
-      var data = await api("GET", "/v1/mennesker");
-      render(data);
-      setStatus(data.length + " mennesker hentet fra systemet.", true);
+    // ---------- BROBYGGERE ----------
+    async function viewBrobyggere() {
+      elView.innerHTML =
+        '<h1>Brobyggere</h1><p class="sub">Frivillige der bygger bro.</p>' +
+        '<table><thead><tr><th>Navn</th><th>Telefon</th><th>Hovedsæde</th><th>Kapacitet</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table>' +
+        '<form id="f"><div><label>Navn *</label><input id="navn" required></div><div><label>Telefon</label><input id="telefon"></div>' +
+        '<div><label>Hovedsæde</label><input id="hq"></div><div><label>Max forløb</label><input id="max" type="number" value="3"></div>' +
+        '<div><label>Status</label><select id="st"><option value="ny">Ny</option><option value="aktiv">Aktiv</option><option value="pause">Pause</option><option value="inaktiv">Inaktiv</option></select></div>' +
+        '<div class="full"><button type="submit">Opret brobygger</button></div></form>';
+      async function load() {
+        var d = await api("GET","/v1/brobyggere"); cache.brobyggere = d;
+        document.getElementById("rows").innerHTML = d.length ? d.map(function(b){
+          return "<tr><td>"+esc(b.navn)+"</td><td>"+esc(b.telefon||"—")+"</td><td>"+esc(b.hq||"—")+"</td><td>"+esc(b.active)+" / "+esc(b.max_active)+'</td><td><span class="pill">'+esc(b.status)+"</span></td></tr>";
+        }).join("") : '<tr><td colspan="5" class="muted">Ingen endnu.</td></tr>';
+        setStatus(d.length+" brobyggere.", true);
+      }
+      document.getElementById("f").addEventListener("submit", async function(e){
+        e.preventDefault(); var mx=document.getElementById("max").value;
+        try { await api("POST","/v1/brobyggere",{ navn:document.getElementById("navn").value, telefon:document.getElementById("telefon").value||null, hq:document.getElementById("hq").value||null, max_active:mx?parseInt(mx,10):3, status:document.getElementById("st").value }); e.target.reset(); await load(); }
+        catch(err){ setStatus("Fejl: "+err.message,false); }
+      });
+      await load();
     }
 
-    document.getElementById("opret-form").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      var alder = document.getElementById("f-alder").value;
-      try {
-        await api("POST", "/v1/mennesker", {
-          navn: document.getElementById("f-navn").value,
-          alder: alder ? parseInt(alder, 10) : null,
-          telefon: document.getElementById("f-telefon").value || null,
-          hq: document.getElementById("f-hq").value || null,
-          status: document.getElementById("f-status").value,
+    // ---------- AFTALER ----------
+    function aftaleStatusPill(s) {
+      var cls = s==="confirmed"?"gron": s==="pending"?"gul": (s==="aflyst"||s==="afslaaet"||s==="brudt")?"graa":"";
+      return '<span class="pill '+cls+'">'+esc(s)+"</span>";
+    }
+    async function viewAftaler() {
+      // sørg for opslag er hentet
+      if (!cache.brobyggere.length) cache.brobyggere = await api("GET","/v1/brobyggere");
+      if (!cache.mennesker.length) cache.mennesker = await api("GET","/v1/mennesker");
+      var bbOpt = cache.brobyggere.map(function(b){return '<option value="'+b.id+'">'+esc(b.navn)+"</option>";}).join("");
+      var mnOpt = cache.mennesker.map(function(m){return '<option value="'+m.id+'">'+esc(m.navn)+"</option>";}).join("");
+      elView.innerHTML =
+        '<h1>Aftaler</h1><p class="sub">Efterspørg en brobygning nu — bekræft den når den er på plads (dage/uger senere).</p>' +
+        '<table><thead><tr><th>Menneske</th><th>Brobygger</th><th>Dato</th><th>Status</th><th>Efterspurgt</th><th>Bekræftet</th><th></th></tr></thead><tbody id="rows"></tbody></table>' +
+        '<form id="f"><div><label>Menneske *</label><select id="mn">'+mnOpt+'</select></div><div><label>Brobygger *</label><select id="bb">'+bbOpt+'</select></div>' +
+        '<div><label>Dato/tid *</label><input id="dato" type="datetime-local" required></div>' +
+        '<div><label>Type</label><select id="type"><option value="moede">Møde</option><option value="aktivitet">Aktivitet</option><option value="telefonopkald">Telefonopkald</option><option value="online">Online</option></select></div>' +
+        '<div class="full"><button type="submit">Efterspørg aftale</button></div></form>';
+      async function load() {
+        var d = await api("GET","/v1/aftaler");
+        document.getElementById("rows").innerHTML = d.length ? d.map(function(a){
+          var kanBekraeftes = a.status!=="confirmed" && a.status!=="aflyst" && a.status!=="afslaaet" && a.status!=="brudt";
+          var btn = kanBekraeftes ? '<button class="mini bekraeft" data-id="'+a.id+'">Bekræft</button>' : "";
+          return "<tr><td>"+esc(navn(cache.mennesker,a.menneske_id))+"</td><td>"+esc(navn(cache.brobyggere,a.brobygger_id))+"</td><td>"+dt(a.dato)+"</td><td>"+aftaleStatusPill(a.status)+"</td><td class='two'>"+dt(a.efterspurgt_at)+"</td><td class='two'>"+dt(a.bekraeftet_at)+"</td><td>"+btn+"</td></tr>";
+        }).join("") : '<tr><td colspan="7" class="muted">Ingen aftaler endnu.</td></tr>';
+        Array.prototype.forEach.call(document.querySelectorAll(".bekraeft"), function(b){
+          b.addEventListener("click", async function(){
+            try { await api("PATCH","/v1/aftaler/"+b.dataset.id+"/status",{status:"confirmed",notes:""}); await load(); setStatus("Aftale bekræftet.", true); }
+            catch(err){ setStatus("Fejl: "+err.message,false); }
+          });
         });
-        e.target.reset();
-        await indlaes();
-      } catch (err) {
-        setStatus("Kunne ikke oprette: " + err.message, false);
+        setStatus(d.length+" aftaler.", true);
       }
-    });
+      document.getElementById("f").addEventListener("submit", async function(e){
+        e.preventDefault();
+        var v=document.getElementById("dato").value;
+        try {
+          await api("POST","/v1/aftaler",{ menneske_id:document.getElementById("mn").value, brobygger_id:document.getElementById("bb").value, dato:new Date(v).toISOString(), type:document.getElementById("type").value, status:"pending" });
+          e.target.reset(); await load();
+        } catch(err){ setStatus("Fejl: "+err.message,false); }
+      });
+      await load();
+    }
 
-    (async function () {
-      try {
-        await devLogin();
-        await indlaes();
-      } catch (err) {
-        setStatus("Kunne ikke forbinde — kører backend på localhost:5080? (" + err.message + ")", false);
-      }
+    var views = { mennesker:viewMennesker, brobyggere:viewBrobyggere, aftaler:viewAftaler };
+    function go(name) {
+      Array.prototype.forEach.call(document.querySelectorAll("nav a"), function(a){ a.classList.toggle("active", a.dataset.view===name); });
+      location.hash = name;
+      (views[name] || viewMennesker)().catch(function(err){ setStatus("Fejl: "+err.message,false); });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("nav a"), function(a){ a.addEventListener("click", function(){ go(a.dataset.view); }); });
+
+    (async function(){
+      try { await devLogin(); go((location.hash||"#mennesker").slice(1)); }
+      catch(err){ setStatus("Kunne ikke forbinde — kører backend på localhost:5080? ("+err.message+")", false); }
     })();
   </script>
 </body>
