@@ -1,0 +1,43 @@
+@page "/"
+@inject ApiClient Api
+
+<h1>Overblik</h1>
+<p class="sub">Brobygger Portal — status lige nu.</p>
+@if (error is not null) { <div class="status err">@error</div> }
+
+<div class="tiles">
+    <a class="tile" href="mennesker"><div class="num">@mennesker</div><div class="lbl">Mennesker</div></a>
+    <a class="tile" href="brobyggere"><div class="num">@brobyggere</div><div class="lbl">Brobyggere</div></a>
+    <a class="tile" href="aftaler"><div class="num">@aktive</div><div class="lbl">Aktive aftaler</div></a>
+    <a class="tile" href="aftaler"><div class="num">@afventer</div><div class="lbl">Afventer bekræftelse</div></a>
+    <div class="tile"><div class="num">@ledig</div><div class="lbl">Ledig kapacitet</div></div>
+</div>
+
+<style>
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; }
+    .tile { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.2rem; text-decoration:none; color:inherit; display:block; }
+    a.tile:hover { border-color:var(--accent); }
+    .num { font-size:2rem; font-weight:700; color:var(--accent2); }
+    .lbl { color:var(--soft); font-size:.9rem; margin-top:.2rem; }
+</style>
+
+@code {
+    private int mennesker, brobyggere, aktive, afventer, ledig;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var mn = await Api.GetMennesker();
+            var bb = await Api.GetBrobyggere();
+            var af = await Api.GetAftaler();
+            mennesker = mn.Count;
+            brobyggere = bb.Count;
+            aktive = af.Count(a => a.Status is "planlagt" or "pending" or "confirmed");
+            afventer = af.Count(a => a.Status == "pending");
+            ledig = bb.Sum(b => Math.Max(0, b.MaxActive - b.Active));
+        }
+        catch (Exception e) { error = "Kunne ikke hente — kører backend på localhost:5080? (" + e.Message + ")"; }
+    }
+}
