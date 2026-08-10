@@ -2,6 +2,7 @@ using BrobyggerPortal.Api.Common;
 using BrobyggerPortal.Api.Data;
 using BrobyggerPortal.Api.Dtos;
 using BrobyggerPortal.Api.Models;
+using BrobyggerPortal.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ namespace BrobyggerPortal.Api.Controllers;
 [ApiController]
 [Route("v1/mennesker")]
 [Authorize]
-public class MenneskerController(BrobyggerDbContext db) : ControllerBase
+public class MenneskerController(BrobyggerDbContext db, CryptoService crypto) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MenneskeReadDto>>> List(
@@ -45,8 +46,8 @@ public class MenneskerController(BrobyggerDbContext db) : ControllerBase
             HelbredsKategorier = dto.HelbredsKategorier, PraeferencerJson = dto.Praeferencer,
             AfslutTrivsel = dto.AfslutTrivsel, AfslutAarsag = dto.AfslutAarsag, UclaFravalgt = dto.UclaFravalgt,
             TelefonNorm = Telefon.Normaliser(dto.Telefon),
+            HelbredsnoterEnc = crypto.EncryptHealth(dto.Helbredsnoter),   // art. 9 — krypteret
         };
-        // TODO (art. 9): krypter dto.Helbredsnoter -> m.HelbredsnoterEnc (pgcrypto/KeyVault-tjeneste)
         db.Mennesker.Add(m);
         await db.SaveChangesAsync();
         return CreatedAtAction(nameof(Get), new { id = m.Id }, MenneskeReadDto.From(m));
@@ -80,11 +81,20 @@ public class MenneskerController(BrobyggerDbContext db) : ControllerBase
         if (dto.AfslutTrivsel is not null) m.AfslutTrivsel = dto.AfslutTrivsel;
         if (dto.AfslutAarsag is not null) m.AfslutAarsag = dto.AfslutAarsag;
         if (dto.UclaFravalgt is not null) m.UclaFravalgt = dto.UclaFravalgt.Value;
-        // TODO (art. 9): hvis dto.Helbredsnoter er sat -> krypter til m.HelbredsnoterEnc
+        if (dto.Helbredsnoter is not null) m.HelbredsnoterEnc = crypto.EncryptHealth(dto.Helbredsnoter);
 
         m.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync();
         return MenneskeReadDto.From(m);
+    }
+
+    // Følsom læsning (art. 9): kun Admin/Rådgiver. TODO: log i revisionsspor (aktør/tid/mål-id).
+    [HttpGet("{id:guid}/helbredsnoter"), Authorize(Roles = "Admin,Raadgiver")]
+    public async Task<IActionResult> Helbredsnoter(Guid id)
+    {
+        var m = await db.Mennesker.FindAsync(id);
+        if (m is null || m.DeletedAt is not null) return NotFound();
+        return Ok(new { helbredsnoter = crypto.DecryptHealth(m.HelbredsnoterEnc) });
     }
 
     [HttpDelete("{id:guid}")]

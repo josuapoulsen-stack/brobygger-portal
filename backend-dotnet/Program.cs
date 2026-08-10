@@ -50,6 +50,8 @@ else
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton(new AuthMode(entraConfigured));
 builder.Services.AddSingleton<BrobyggerPortal.Api.Services.GraphService>();
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<BrobyggerPortal.Api.Services.CryptoService>();
 
 // ── Controllers + JSON i snake_case (matcher OpenAPI-kontrakten) ─────────────
 builder.Services

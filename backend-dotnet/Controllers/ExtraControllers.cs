@@ -156,13 +156,17 @@ public class SkabelonerController(BrobyggerDbContext db) : ControllerBase
 
 // Bankoplysninger — kontonr. maskeres altid udad; kryptering server-side (TODO).
 public record UdlaegKontoInputDto(string? RegNr, string? KontoNr, string? Iban);
-public record UdlaegKontoReadDto(Guid Id, Guid BrobyggerId, string? RegNr, string? Iban, bool HarKontoNr);
+public record UdlaegKontoReadDto(Guid Id, Guid BrobyggerId, string? RegNr, string? Iban, bool HarKontoNr, string? KontoNrMaske);
 
 [ApiController, Authorize(Roles = "Admin"), Route("v1/brobyggere/{brobyggerId:guid}/udlaeg-konto")]
-public class UdlaegKontoController(BrobyggerDbContext db) : ControllerBase
+public class UdlaegKontoController(BrobyggerDbContext db, BrobyggerPortal.Api.Services.CryptoService crypto) : ControllerBase
 {
-    private static UdlaegKontoReadDto Mask(UdlaegKonto k) =>
-        new(k.Id, k.BrobyggerId, k.RegNr, k.Iban, k.KontoNrEnc is not null);
+    private UdlaegKontoReadDto Mask(UdlaegKonto k)
+    {
+        var nr = crypto.DecryptBank(k.KontoNrEnc);
+        var maske = nr is { Length: >= 4 } ? "••••" + nr[^4..] : null;
+        return new(k.Id, k.BrobyggerId, k.RegNr, k.Iban, k.KontoNrEnc is not null, maske);
+    }
 
     [HttpGet]
     public async Task<IActionResult> Get(Guid brobyggerId)
@@ -178,7 +182,7 @@ public class UdlaegKontoController(BrobyggerDbContext db) : ControllerBase
         if (k is null) { k = new UdlaegKonto { BrobyggerId = brobyggerId }; db.UdlaegKonti.Add(k); }
         k.RegNr = dto.RegNr;
         k.Iban = dto.Iban;
-        // TODO (art. 5/32): krypter dto.KontoNr -> k.KontoNrEnc (pgcrypto/KeyVault). Gemmes aldrig i klartekst.
+        if (dto.KontoNr is not null) k.KontoNrEnc = crypto.EncryptBank(dto.KontoNr);  // krypteret, aldrig klartekst
         k.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync();
         return Ok(Mask(k));
