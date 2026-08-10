@@ -1,0 +1,10 @@
+# .NET build-output
+bin/
+obj/
+
+# Bruger-specifikke filer
+*.user
+appsettings.*.local.json
+
+# EF Core (hvis der genereres lokale artefakter)
+*.db
