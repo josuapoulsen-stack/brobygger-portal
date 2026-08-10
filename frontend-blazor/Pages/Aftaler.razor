@@ -1,0 +1,101 @@
+@page "/aftaler"
+@inject ApiClient Api
+
+<h1>Aftaler</h1>
+<p class="sub">Efterspørg en brobygning nu — bekræft den når den er på plads (dage/uger senere).</p>
+@if (error is not null) { <div class="status err">@error</div> }
+
+<table>
+    <thead><tr><th>Menneske</th><th>Brobygger</th><th>Dato</th><th>Status</th><th>Efterspurgt</th><th>Bekræftet</th><th></th></tr></thead>
+    <tbody>
+        @if (rows.Count == 0) { <tr><td colspan="7" class="muted">Ingen aftaler endnu.</td></tr> }
+        @foreach (var a in rows)
+        {
+            <tr>
+                <td>@NavnM(a.MenneskeId)</td>
+                <td>@NavnB(a.BrobyggerId)</td>
+                <td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td>
+                <td><span class="pill @Pill(a.Status)">@a.Status</span></td>
+                <td class="two">@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</td>
+                <td class="two">@(a.BekraeftetAt is null ? "—" : a.BekraeftetAt.Value.ToLocalTime().ToString("dd. MMM yyyy"))</td>
+                <td>
+                    @if (KanBekraeftes(a.Status))
+                    {
+                        <button class="mini" @onclick="() => Bekraeft(a.Id)">Bekræft</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<form @onsubmit="Opret">
+    <div>
+        <label>Menneske *</label>
+        <select @bind="form.MenneskeId">
+            @foreach (var m in mennesker) { <option value="@m.Id">@m.Navn</option> }
+        </select>
+    </div>
+    <div>
+        <label>Brobygger *</label>
+        <select @bind="form.BrobyggerId">
+            @foreach (var b in brobyggere) { <option value="@b.Id">@b.Navn</option> }
+        </select>
+    </div>
+    <div><label>Dato/tid *</label><input type="datetime-local" @bind="dato" /></div>
+    <div>
+        <label>Type</label>
+        <select @bind="form.Type">
+            <option value="moede">Møde</option>
+            <option value="aktivitet">Aktivitet</option>
+            <option value="telefonopkald">Telefonopkald</option>
+            <option value="online">Online</option>
+        </select>
+    </div>
+    <div class="full"><button type="submit">Efterspørg aftale</button></div>
+</form>
+
+@code {
+    private List<Aftale> rows = [];
+    private List<Menneske> mennesker = [];
+    private List<Brobygger> brobyggere = [];
+    private AftaleCreate form = new();
+    private DateTime dato = DateTime.Now;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            mennesker = await Api.GetMennesker();
+            brobyggere = await Api.GetBrobyggere();
+            if (mennesker.Count > 0) form.MenneskeId = mennesker[0].Id;
+            if (brobyggere.Count > 0) form.BrobyggerId = brobyggere[0].Id;
+            await Load();
+        }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task Load()
+    {
+        try { rows = await Api.GetAftaler(); error = null; }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task Opret()
+    {
+        try { form.Dato = dato; await Api.CreateAftale(form); await Load(); }
+        catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
+    }
+
+    private async Task Bekraeft(Guid id)
+    {
+        try { await Api.BekraeftAftale(id); await Load(); }
+        catch (Exception e) { error = "Kunne ikke bekræfte: " + e.Message; }
+    }
+
+    private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
+    private string NavnB(Guid id) => brobyggere.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
+    private static bool KanBekraeftes(string s) => s is not ("confirmed" or "aflyst" or "afslaaet" or "brudt");
+    private static string Pill(string s) => s switch { "confirmed" => "gron", "pending" => "gul", "aflyst" or "afslaaet" or "brudt" => "graa", _ => "" };
+}

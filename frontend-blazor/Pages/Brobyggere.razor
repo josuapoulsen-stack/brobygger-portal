@@ -1,0 +1,60 @@
+@page "/brobyggere"
+@inject ApiClient Api
+
+<h1>Brobyggere</h1>
+<p class="sub">Frivillige der bygger bro.</p>
+@if (error is not null) { <div class="status err">@error</div> }
+
+<table>
+    <thead><tr><th>Navn</th><th>Telefon</th><th>Hovedsæde</th><th>Kapacitet</th><th>Status</th></tr></thead>
+    <tbody>
+        @if (rows.Count == 0) { <tr><td colspan="5" class="muted">Ingen endnu.</td></tr> }
+        @foreach (var b in rows)
+        {
+            <tr>
+                <td>@b.Navn</td>
+                <td>@(b.Telefon ?? "—")</td>
+                <td>@(b.Hq ?? "—")</td>
+                <td>@b.Active / @b.MaxActive</td>
+                <td><span class="pill">@b.Status</span></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<form @onsubmit="Opret">
+    <div><label>Navn *</label><input @bind="form.Navn" required /></div>
+    <div><label>Telefon</label><input @bind="form.Telefon" /></div>
+    <div><label>Hovedsæde</label><input @bind="form.Hq" /></div>
+    <div><label>Max forløb</label><input type="number" @bind="form.MaxActive" /></div>
+    <div>
+        <label>Status</label>
+        <select @bind="form.Status">
+            <option value="ny">Ny</option>
+            <option value="aktiv">Aktiv</option>
+            <option value="pause">Pause</option>
+            <option value="inaktiv">Inaktiv</option>
+        </select>
+    </div>
+    <div class="full"><button type="submit">Opret brobygger</button></div>
+</form>
+
+@code {
+    private List<Brobygger> rows = [];
+    private BrobyggerCreate form = new();
+    private string? error;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        try { rows = await Api.GetBrobyggere(); error = null; }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task Opret()
+    {
+        try { await Api.CreateBrobygger(form); form = new(); await Load(); }
+        catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
+    }
+}

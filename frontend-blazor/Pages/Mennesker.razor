@@ -1,0 +1,62 @@
+@page "/"
+@page "/mennesker"
+@inject ApiClient Api
+
+<h1>Mennesker</h1>
+<p class="sub">Borgere vi hjælper.</p>
+@if (error is not null) { <div class="status err">@error</div> }
+
+<table>
+    <thead><tr><th>Navn</th><th>Alder</th><th>Telefon</th><th>Hovedsæde</th><th>Status</th></tr></thead>
+    <tbody>
+        @if (rows.Count == 0) { <tr><td colspan="5" class="muted">Ingen endnu.</td></tr> }
+        @foreach (var m in rows)
+        {
+            <tr>
+                <td>@m.Navn</td>
+                <td>@(m.Alder?.ToString() ?? "—")</td>
+                <td>@(m.Telefon ?? "—")</td>
+                <td>@(m.Hq ?? "—")</td>
+                <td><span class="pill">@m.Status</span></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<form @onsubmit="Opret">
+    <div><label>Navn *</label><input @bind="form.Navn" required /></div>
+    <div><label>Alder</label><input type="number" @bind="form.Alder" /></div>
+    <div><label>Telefon</label><input @bind="form.Telefon" /></div>
+    <div><label>Hovedsæde</label><input @bind="form.Hq" /></div>
+    <div>
+        <label>Status</label>
+        <select @bind="form.Status">
+            <option value="ny">Ny</option>
+            <option value="matched">Matched</option>
+            <option value="aktiv">Aktiv</option>
+            <option value="afsluttet">Afsluttet</option>
+            <option value="venteliste">Venteliste</option>
+        </select>
+    </div>
+    <div class="full"><button type="submit">Opret menneske</button></div>
+</form>
+
+@code {
+    private List<Menneske> rows = [];
+    private MenneskeCreate form = new();
+    private string? error;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        try { rows = await Api.GetMennesker(); error = null; }
+        catch (Exception e) { error = "Kunne ikke hente — kører backend på localhost:5080? (" + e.Message + ")"; }
+    }
+
+    private async Task Opret()
+    {
+        try { await Api.CreateMenneske(form); form = new(); await Load(); }
+        catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
+    }
+}

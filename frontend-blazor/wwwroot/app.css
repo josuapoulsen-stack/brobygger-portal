@@ -1,0 +1,29 @@
+:root { --ink:#18222b; --soft:#5a6a76; --line:#e3e0d7; --accent:#2f6f6a; --accent2:#234f4b; --bg:#f6f4ef; --card:#fff; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+header { background:var(--accent2); color:#fff; padding:.9rem 1.25rem; }
+header .brand { font-weight:700; font-size:1.05rem; }
+nav { display:flex; gap:.25rem; margin-top:.6rem; flex-wrap:wrap; }
+nav a { color:#dfeae8; text-decoration:none; padding:.35rem .8rem; border-radius:999px; font-size:.9rem; }
+nav a.active { background:rgba(255,255,255,.18); color:#fff; font-weight:600; }
+.wrap { max-width:1000px; margin:0 auto; padding:1.5rem 1.25rem; }
+h1 { font-size:1.4rem; margin:0 0 .25rem; }
+.sub { color:var(--soft); margin:0 0 1.25rem; font-size:.88rem; }
+.status { font-size:.85rem; padding:.5rem .75rem; border-radius:8px; margin-bottom:1rem; }
+.status.err { background:#f2ddd6; color:#a5432f; }
+table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+th,td { text-align:left; padding:.55rem .8rem; border-bottom:1px solid var(--line); font-size:.88rem; }
+th { background:#efece4; font-weight:600; }
+tr:last-child td { border-bottom:none; }
+.pill { font-size:.72rem; padding:.12rem .55rem; border-radius:999px; background:#e2ecea; color:var(--accent); white-space:nowrap; }
+.pill.gul { background:#f0e6cf; color:#8a6a1f; }
+.pill.gron { background:#e0ece3; color:#2c6a45; }
+.pill.graa { background:#e7e3d8; color:#5a6a76; }
+form { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.6rem; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-top:1.25rem; }
+label { font-size:.76rem; color:var(--soft); display:block; margin-bottom:.2rem; }
+input,select { width:100%; padding:.45rem .55rem; border:1px solid var(--line); border-radius:8px; font:inherit; }
+button { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:.5rem 1rem; font:inherit; font-weight:600; cursor:pointer; }
+button.mini { padding:.3rem .65rem; font-size:.8rem; }
+.full { grid-column:1/-1; display:flex; justify-content:flex-end; }
+.muted { color:var(--soft); font-size:.85rem; }
+.two { color:var(--soft); font-size:.78rem; }
