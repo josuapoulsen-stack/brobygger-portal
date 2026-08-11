@@ -14,7 +14,8 @@ public class ApiClient(HttpClient http)
     public async Task EnsureLoginAsync()
     {
         if (_loggedIn) return;
-        var res = await http.PostAsJsonAsync("/v1/auth/dev-token", new { roles = new[] { "Admin" } }, Json);
+        // Dev: giv testbrugeren alle roller, så alle skærme kan afprøves. I produktion styrer Entra rollerne.
+        var res = await http.PostAsJsonAsync("/v1/auth/dev-token", new { roles = new[] { "Admin", "Raadgiver", "Oekonomi" } }, Json);
         res.EnsureSuccessStatusCode();
         var tok = await res.Content.ReadFromJsonAsync<DevToken>(Json);
         http.DefaultRequestHeaders.Authorization = new("Bearer", tok!.AccessToken);

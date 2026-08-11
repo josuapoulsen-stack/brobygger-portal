@@ -165,7 +165,8 @@ public class SkabelonerController(BrobyggerDbContext db) : ControllerBase
 public record UdlaegKontoInputDto(string? RegNr, string? KontoNr, string? Iban);
 public record UdlaegKontoReadDto(Guid Id, Guid BrobyggerId, string? RegNr, string? Iban, bool HarKontoNr, string? KontoNrMaske);
 
-[ApiController, Authorize(Roles = "Admin"), Route("v1/brobyggere/{brobyggerId:guid}/udlaeg-konto")]
+// Bankoplysninger: KUN "Oekonomi"-rollen — ikke synligt for rådgivere, brobyggere eller øvrige admins.
+[ApiController, Authorize(Roles = "Oekonomi"), Route("v1/brobyggere/{brobyggerId:guid}/udlaeg-konto")]
 public class UdlaegKontoController(BrobyggerDbContext db, BrobyggerPortal.Api.Services.CryptoService crypto) : ControllerBase
 {
     private UdlaegKontoReadDto Mask(UdlaegKonto k)

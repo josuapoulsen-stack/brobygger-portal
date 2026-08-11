@@ -36,6 +36,7 @@ else
         ?? "dev-hemmelighed-skift-mig-mindst-32-tegn-lang-noegle";
     authBuilder.AddJwtBearer(o =>
     {
+        o.MapInboundClaims = false;   // bevar "roles"-claim som den er, så rolle-tjek virker
         o.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
