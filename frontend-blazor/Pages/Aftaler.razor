@@ -106,7 +106,7 @@
 
     private async Task Opret()
     {
-        try { form.Dato = dato; await Api.CreateAftale(form); await Load(); }
+        try { form.Dato = DateTime.SpecifyKind(dato, DateTimeKind.Local).ToUniversalTime(); await Api.CreateAftale(form); await Load(); }
         catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
     }
 
