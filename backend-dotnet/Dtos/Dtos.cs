@@ -23,6 +23,7 @@ public record MenneskeCreateDto
     public string? Hq { get; init; }
     public string? Afdeling { get; init; }
     public string? Kilde { get; init; }
+    public string? Brobygningstype { get; init; }
     public string? Meetpoint { get; init; }
     public string? SroiMaalgruppe { get; init; }
     public List<string>? HelbredsKategorier { get; init; }
@@ -50,6 +51,7 @@ public record MenneskeUpdateDto
     public string? Hq { get; init; }
     public string? Afdeling { get; init; }
     public string? Kilde { get; init; }
+    public string? Brobygningstype { get; init; }
     public string? Meetpoint { get; init; }
     public string? SroiMaalgruppe { get; init; }
     public List<string>? HelbredsKategorier { get; init; }
@@ -79,6 +81,7 @@ public record MenneskeReadDto
     public string? Hq { get; init; }
     public string? Afdeling { get; init; }
     public string? Kilde { get; init; }
+    public string? Brobygningstype { get; init; }
     public string? Meetpoint { get; init; }
     public string? SroiMaalgruppe { get; init; }
     public List<string>? HelbredsKategorier { get; init; }
@@ -94,7 +97,7 @@ public record MenneskeReadDto
         Telefon = m.Telefon, TelefonNorm = m.TelefonNorm, Adresse = m.Adresse,
         Typer = m.Typer, Sprog = m.Sprog, Noter = m.Noter, Status = m.Status,
         MatchedWith = m.MatchedWith, RaadgiverId = m.RaadgiverId, Hq = m.Hq,
-        Afdeling = m.Afdeling, Kilde = m.Kilde, Meetpoint = m.Meetpoint,
+        Afdeling = m.Afdeling, Kilde = m.Kilde, Brobygningstype = m.Brobygningstype, Meetpoint = m.Meetpoint,
         SroiMaalgruppe = m.SroiMaalgruppe, HelbredsKategorier = m.HelbredsKategorier,
         Praeferencer = m.PraeferencerJson, AfslutTrivsel = m.AfslutTrivsel,
         AfslutAarsag = m.AfslutAarsag, UclaFravalgt = m.UclaFravalgt, CreatedAt = m.CreatedAt,

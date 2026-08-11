@@ -1,0 +1,103 @@
+@page "/brobyggere/{Id:guid}"
+@inject ApiClient Api
+
+@if (error is not null) { <div class="status err">@error</div> }
+
+@if (b is null)
+{
+    <p class="muted">Henter…</p>
+}
+else
+{
+    <p class="sub"><a href="brobyggere">← Brobyggere</a></p>
+    <h1>@b.Navn</h1>
+    <p class="sub">
+        @(string.IsNullOrEmpty(b.Hq) ? "" : b.Hq + " · ")
+        Kapacitet @b.Active / @b.MaxActive
+        <span class="pill">@b.Status</span>
+    </p>
+
+    <div class="card">
+        <h3>Stamdata</h3>
+        <dl>
+            <dt>Telefon</dt><dd>@(b.Telefon ?? "—")</dd>
+            <dt>Hovedsæde</dt><dd>@(b.Hq ?? "—")</dd>
+            <dt>Aktive forløb</dt><dd>@b.Active / @b.MaxActive</dd>
+        </dl>
+    </div>
+
+    <div class="card">
+        <h3>Bankoplysninger (udlæg)</h3>
+        @if (konto is null)
+        {
+            <p class="muted">Ingen oplysninger endnu.</p>
+        }
+        else
+        {
+            <dl>
+                <dt>Reg.nr.</dt><dd>@(konto.RegNr ?? "—")</dd>
+                <dt>Kontonr.</dt><dd>@(konto.KontoNrMaske ?? (konto.HarKontoNr ? "••••" : "—"))</dd>
+                <dt>IBAN</dt><dd>@(konto.Iban ?? "—")</dd>
+            </dl>
+        }
+        <div class="row">
+            <input placeholder="Reg.nr." @bind="kontoInput.RegNr" />
+            <input placeholder="Kontonr. (krypteres)" @bind="kontoInput.KontoNr" />
+            <input placeholder="IBAN" @bind="kontoInput.Iban" />
+            <button class="mini" @onclick="GemKonto">Gem</button>
+        </div>
+        <p class="two">Kontonummer krypteres og vises altid maskeret.</p>
+    </div>
+
+    <div class="card">
+        <h3>Aftaler</h3>
+        <table>
+            <thead><tr><th>Dato</th><th>Type</th><th>Status</th></tr></thead>
+            <tbody>
+                @foreach (var a in aftaler)
+                {
+                    <tr><td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td><td>@a.Type</td><td><span class="pill">@a.Status</span></td></tr>
+                }
+                @if (aftaler.Count == 0) { <tr><td colspan="3" class="muted">Ingen.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+}
+
+<style>
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-top:1rem; }
+    .card h3 { margin:0 0 .6rem; font-size:1rem; }
+    dl { display:grid; grid-template-columns:auto 1fr; gap:.2rem .8rem; margin:0; font-size:.88rem; }
+    dt { color:var(--soft); }
+</style>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Brobygger? b;
+    private List<Aftale> aftaler = [];
+    private UdlaegKonto? konto;
+    private UdlaegKontoInput kontoInput = new();
+    private string? error;
+
+    protected override async Task OnParametersSetAsync() => await Load();
+
+    private async Task Load()
+    {
+        try
+        {
+            b = await Api.GetBrobygger(Id);
+            aftaler = await Api.GetAftalerForBrobygger(Id);
+            konto = await Api.GetUdlaegKonto(Id);
+            if (konto is not null) kontoInput = new UdlaegKontoInput { RegNr = konto.RegNr, Iban = konto.Iban };
+            error = null;
+        }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task GemKonto()
+    {
+        try { konto = await Api.PutUdlaegKonto(Id, kontoInput); kontoInput.KontoNr = null; }
+        catch (Exception e) { error = "Kunne ikke gemme: " + e.Message; }
+    }
+}

@@ -12,8 +12,8 @@
         @foreach (var a in rows)
         {
             <tr>
-                <td>@NavnM(a.MenneskeId)</td>
-                <td>@NavnB(a.BrobyggerId)</td>
+                <td><a href="mennesker/@a.MenneskeId">@NavnM(a.MenneskeId)</a></td>
+                <td><a href="brobyggere/@a.BrobyggerId">@NavnB(a.BrobyggerId)</a></td>
                 <td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td>
                 <td><span class="pill @Pill(a.Status)">@a.Status</span></td>
                 <td class="two">@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</td>

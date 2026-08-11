@@ -134,3 +134,28 @@ public class HelbredsnoterResp
 {
     public string? Helbredsnoter { get; set; }
 }
+
+public class UdlaegKonto
+{
+    public Guid Id { get; set; }
+    public Guid BrobyggerId { get; set; }
+    public string? RegNr { get; set; }
+    public string? Iban { get; set; }
+    public bool HarKontoNr { get; set; }
+    public string? KontoNrMaske { get; set; }
+}
+public class UdlaegKontoInput
+{
+    public string? RegNr { get; set; }
+    public string? KontoNr { get; set; }
+    public string? Iban { get; set; }
+}
+
+public class MenneskeUpdate
+{
+    public string? Status { get; set; }
+    public string? Brobygningstype { get; set; }
+    public string? Telefon { get; set; }
+    public string? Hq { get; set; }
+    public int? Alder { get; set; }
+}

@@ -31,6 +31,24 @@ public class ApiClient(HttpClient http)
     public async Task CreateMenneske(MenneskeCreate m) { await EnsureLoginAsync(); (await http.PostAsJsonAsync("/v1/mennesker", m, Json)).EnsureSuccessStatusCode(); }
 
     public Task<List<Brobygger>> GetBrobyggere() => GetList<Brobygger>("/v1/brobyggere");
+    public async Task<Brobygger?> GetBrobygger(Guid id) { await EnsureLoginAsync(); return await http.GetFromJsonAsync<Brobygger>($"/v1/brobyggere/{id}", Json); }
+    public Task<List<Aftale>> GetAftalerForBrobygger(Guid id) => GetList<Aftale>($"/v1/aftaler?brobyggerId={id}");
+    public async Task<UdlaegKonto?> GetUdlaegKonto(Guid brobyggerId)
+    {
+        await EnsureLoginAsync();
+        var r = await http.GetAsync($"/v1/brobyggere/{brobyggerId}/udlaeg-konto");
+        if (r.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<UdlaegKonto>(Json);
+    }
+    public async Task<UdlaegKonto?> PutUdlaegKonto(Guid brobyggerId, UdlaegKontoInput dto)
+    {
+        await EnsureLoginAsync();
+        var r = await http.PutAsJsonAsync($"/v1/brobyggere/{brobyggerId}/udlaeg-konto", dto, Json);
+        r.EnsureSuccessStatusCode();
+        return await r.Content.ReadFromJsonAsync<UdlaegKonto>(Json);
+    }
+    public async Task UpdateMenneske(Guid id, MenneskeUpdate dto) { await EnsureLoginAsync(); (await http.PatchAsJsonAsync($"/v1/mennesker/{id}", dto, Json)).EnsureSuccessStatusCode(); }
     public async Task CreateBrobygger(BrobyggerCreate b) { await EnsureLoginAsync(); (await http.PostAsJsonAsync("/v1/brobyggere", b, Json)).EnsureSuccessStatusCode(); }
 
     public async Task<Menneske?> GetMenneske(Guid id) { await EnsureLoginAsync(); return await http.GetFromJsonAsync<Menneske>($"/v1/mennesker/{id}", Json); }

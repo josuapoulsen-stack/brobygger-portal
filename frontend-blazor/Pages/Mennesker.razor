@@ -5,11 +5,13 @@
 <p class="sub">Borgere vi hjælper.</p>
 @if (error is not null) { <div class="status err">@error</div> }
 
+<div class="row"><input class="soeg" placeholder="Søg navn eller hovedsæde…" @bind="search" @bind:event="oninput" /></div>
+
 <table>
     <thead><tr><th>Navn</th><th>Alder</th><th>Telefon</th><th>Hovedsæde</th><th>Status</th></tr></thead>
     <tbody>
-        @if (rows.Count == 0) { <tr><td colspan="5" class="muted">Ingen endnu.</td></tr> }
-        @foreach (var m in rows)
+        @if (!Filtered.Any()) { <tr><td colspan="5" class="muted">Ingen endnu.</td></tr> }
+        @foreach (var m in Filtered)
         {
             <tr>
                 <td><a href="mennesker/@m.Id">@m.Navn</a></td>
@@ -43,7 +45,13 @@
 @code {
     private List<Menneske> rows = [];
     private MenneskeCreate form = new();
+    private string search = "";
     private string? error;
+
+    private IEnumerable<Menneske> Filtered => string.IsNullOrWhiteSpace(search)
+        ? rows
+        : rows.Where(m => (m.Navn ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
+                       || (m.Hq ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync() => await Load();
 

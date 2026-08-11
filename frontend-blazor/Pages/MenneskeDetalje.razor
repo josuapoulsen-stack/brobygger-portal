@@ -46,6 +46,21 @@ else
     </div>
 
     <div class="card">
+        <h3>Redigér</h3>
+        <div class="row">
+            <select @bind="rediger.Status">
+                <option value="ny">Ny</option><option value="matched">Matched</option><option value="aktiv">Aktiv</option><option value="afsluttet">Afsluttet</option><option value="venteliste">Venteliste</option>
+            </select>
+            <select @bind="rediger.Brobygningstype">
+                <option value="">— brobygningstype —</option><option value="social">Social</option><option value="forening">Forening</option><option value="sundhed">Sundhed</option>
+            </select>
+            <input placeholder="Telefon" @bind="rediger.Telefon" />
+            <input placeholder="Hovedsæde" @bind="rediger.Hq" />
+            <button class="mini" @onclick="Gem">Gem</button>
+        </div>
+    </div>
+
+    <div class="card">
         <h3>Henvendelser</h3>
         <ul class="liste">
             @foreach (var h in henvendelser)
@@ -169,6 +184,7 @@ else
 
     private HenvendelseCreate nyHenv = new();
     private MaalingCreate nyMaaling = new();
+    private MenneskeUpdate rediger = new();
     private KontaktpersonCreate nyKontakt = new();
 
     private record Q(string Tekst, Func<int?> Get, Action<int> Set);
@@ -193,9 +209,17 @@ else
             maalinger = await Api.GetMaalinger(Id);
             kontakt = await Api.GetKontaktpersoner(Id);
             aftaler = await Api.GetAftalerForMenneske(Id);
+            if (m is not null)
+                rediger = new MenneskeUpdate { Status = m.Status, Brobygningstype = m.Brobygningstype, Telefon = m.Telefon, Hq = m.Hq, Alder = m.Alder };
             error = null;
         }
         catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task Gem()
+    {
+        try { await Api.UpdateMenneske(Id, rediger); await Load(); }
+        catch (Exception e) { error = "Kunne ikke gemme: " + e.Message; }
     }
 
     private async Task VisHelbred()

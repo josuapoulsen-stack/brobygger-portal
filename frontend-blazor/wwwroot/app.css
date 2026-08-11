@@ -27,3 +27,7 @@ button.mini { padding:.3rem .65rem; font-size:.8rem; }
 .full { grid-column:1/-1; display:flex; justify-content:flex-end; }
 .muted { color:var(--soft); font-size:.85rem; }
 .two { color:var(--soft); font-size:.78rem; }
+.row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin-bottom:.75rem; }
+.row input, .row select { width:auto; }
+.soeg { max-width:320px; }
+a { color:var(--accent); }

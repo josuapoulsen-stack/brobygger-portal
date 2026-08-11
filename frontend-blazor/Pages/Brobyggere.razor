@@ -5,14 +5,16 @@
 <p class="sub">Frivillige der bygger bro.</p>
 @if (error is not null) { <div class="status err">@error</div> }
 
+<div class="row"><input class="soeg" placeholder="Søg navn eller hovedsæde…" @bind="search" @bind:event="oninput" /></div>
+
 <table>
     <thead><tr><th>Navn</th><th>Telefon</th><th>Hovedsæde</th><th>Kapacitet</th><th>Status</th></tr></thead>
     <tbody>
-        @if (rows.Count == 0) { <tr><td colspan="5" class="muted">Ingen endnu.</td></tr> }
-        @foreach (var b in rows)
+        @if (!Filtered.Any()) { <tr><td colspan="5" class="muted">Ingen endnu.</td></tr> }
+        @foreach (var b in Filtered)
         {
             <tr>
-                <td>@b.Navn</td>
+                <td><a href="brobyggere/@b.Id">@b.Navn</a></td>
                 <td>@(b.Telefon ?? "—")</td>
                 <td>@(b.Hq ?? "—")</td>
                 <td>@b.Active / @b.MaxActive</td>
@@ -42,7 +44,13 @@
 @code {
     private List<Brobygger> rows = [];
     private BrobyggerCreate form = new();
+    private string search = "";
     private string? error;
+
+    private IEnumerable<Brobygger> Filtered => string.IsNullOrWhiteSpace(search)
+        ? rows
+        : rows.Where(b => (b.Navn ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
+                       || (b.Hq ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync() => await Load();
 

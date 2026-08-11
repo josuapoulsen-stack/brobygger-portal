@@ -42,7 +42,7 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto) : 
             Telefon = dto.Telefon, Adresse = dto.Adresse, Typer = dto.Typer, Sprog = dto.Sprog,
             Noter = dto.Noter, Status = dto.Status, MatchedWith = dto.MatchedWith,
             RaadgiverId = dto.RaadgiverId, Hq = dto.Hq, Afdeling = dto.Afdeling, Kilde = dto.Kilde,
-            Meetpoint = dto.Meetpoint, SroiMaalgruppe = dto.SroiMaalgruppe,
+            Brobygningstype = dto.Brobygningstype, Meetpoint = dto.Meetpoint, SroiMaalgruppe = dto.SroiMaalgruppe,
             HelbredsKategorier = dto.HelbredsKategorier, PraeferencerJson = dto.Praeferencer,
             AfslutTrivsel = dto.AfslutTrivsel, AfslutAarsag = dto.AfslutAarsag, UclaFravalgt = dto.UclaFravalgt,
             TelefonNorm = Telefon.Normaliser(dto.Telefon),
@@ -74,6 +74,7 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto) : 
         if (dto.Hq is not null) m.Hq = dto.Hq;
         if (dto.Afdeling is not null) m.Afdeling = dto.Afdeling;
         if (dto.Kilde is not null) m.Kilde = dto.Kilde;
+        if (dto.Brobygningstype is not null) m.Brobygningstype = dto.Brobygningstype;
         if (dto.Meetpoint is not null) m.Meetpoint = dto.Meetpoint;
         if (dto.SroiMaalgruppe is not null) m.SroiMaalgruppe = dto.SroiMaalgruppe;
         if (dto.HelbredsKategorier is not null) m.HelbredsKategorier = dto.HelbredsKategorier;
