@@ -70,6 +70,7 @@ public class AftaleCreate
     public DateTimeOffset Dato { get; set; }
     public string Type { get; set; } = "moede";
     public string Status { get; set; } = "pending";
+    public string? Beskrivelse { get; set; }
 }
 
 public class Henvendelse
@@ -158,6 +159,19 @@ public class MenneskeUpdate
     public string? Telefon { get; set; }
     public string? Hq { get; set; }
     public int? Alder { get; set; }
+}
+
+public class Besked
+{
+    public Guid Id { get; set; }
+    public string Afsender { get; set; } = "";
+    public string Tekst { get; set; } = "";
+    public DateTimeOffset Tidspunkt { get; set; }
+}
+public class BeskedCreate
+{
+    public string? Afsender { get; set; }
+    public string Tekst { get; set; } = "";
 }
 
 public class Optael

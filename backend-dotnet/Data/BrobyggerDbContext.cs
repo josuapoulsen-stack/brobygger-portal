@@ -15,6 +15,7 @@ public class BrobyggerDbContext(DbContextOptions<BrobyggerDbContext> options) : 
     public DbSet<Stamdata> Stamdata => Set<Stamdata>();
     public DbSet<BeskedSkabelon> Skabeloner => Set<BeskedSkabelon>();
     public DbSet<UdlaegKonto> UdlaegKonti => Set<UdlaegKonto>();
+    public DbSet<Besked> Beskeder => Set<Besked>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -45,5 +46,6 @@ public class BrobyggerDbContext(DbContextOptions<BrobyggerDbContext> options) : 
         b.Entity<Opkald>(e => { e.Property(x => x.Type).HasConversion<string>(); e.HasIndex(x => x.MenneskeId); e.HasIndex(x => x.BrobyggerId); });
         b.Entity<Stamdata>().HasIndex(x => new { x.Kategori, x.Hovedsaede });
         b.Entity<UdlaegKonto>().HasIndex(x => x.BrobyggerId).IsUnique();
+        b.Entity<Besked>().HasIndex(x => x.AftaleId);
     }
 }

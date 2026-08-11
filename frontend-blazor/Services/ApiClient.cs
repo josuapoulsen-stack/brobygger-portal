@@ -83,6 +83,9 @@ public class ApiClient(HttpClient http)
     }
 
     public Task<List<Aftale>> GetAftaler() => GetList<Aftale>("/v1/aftaler");
+    public async Task<Aftale?> GetAftale(Guid id) { await EnsureLoginAsync(); return await http.GetFromJsonAsync<Aftale>($"/v1/aftaler/{id}", Json); }
+    public Task<List<Besked>> GetBeskeder(Guid aftaleId) => GetList<Besked>($"/v1/aftaler/{aftaleId}/beskeder");
+    public async Task CreateBesked(Guid aftaleId, BeskedCreate dto) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/aftaler/{aftaleId}/beskeder", dto, Json)).EnsureSuccessStatusCode(); }
     public async Task CreateAftale(AftaleCreate a) { await EnsureLoginAsync(); (await http.PostAsJsonAsync("/v1/aftaler", a, Json)).EnsureSuccessStatusCode(); }
     public async Task SetAftaleStatus(Guid id, string status) { await EnsureLoginAsync(); (await http.PatchAsJsonAsync($"/v1/aftaler/{id}/status", new { status, notes = "" }, Json)).EnsureSuccessStatusCode(); }
 

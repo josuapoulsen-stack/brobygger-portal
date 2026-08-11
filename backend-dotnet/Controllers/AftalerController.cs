@@ -60,6 +60,14 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
         };
         db.Aftaler.Add(a);
         await db.SaveChangesAsync();
+
+        // Besked fra skabelon/oprettelse lægges som første besked i aftalens tråd
+        if (!string.IsNullOrWhiteSpace(dto.Beskrivelse))
+        {
+            db.Beskeder.Add(new Besked { AftaleId = a.Id, Afsender = User.Identity?.Name ?? "Koordinator", Tekst = dto.Beskrivelse! });
+            await db.SaveChangesAsync();
+        }
+
         // TODO (SSE): push "ny_aftale"-event til brobygger via egen backend-stream
         return CreatedAtAction(nameof(Get), new { id = a.Id }, AftaleReadDto.From(a));
     }

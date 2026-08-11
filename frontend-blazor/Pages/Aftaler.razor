@@ -14,7 +14,7 @@
             <tr>
                 <td><a href="mennesker/@a.MenneskeId">@NavnM(a.MenneskeId)</a></td>
                 <td><a href="brobyggere/@a.BrobyggerId">@NavnB(a.BrobyggerId)</a></td>
-                <td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td>
+                <td><a href="aftaler/@a.Id">@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</a></td>
                 <td><span class="pill @Pill(a.Status)">@a.Status</span></td>
                 <td class="two">@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</td>
                 <td class="two">@(a.BekraeftetAt is null ? "—" : a.BekraeftetAt.Value.ToLocalTime().ToString("dd. MMM yyyy"))</td>
@@ -60,6 +60,17 @@
             <option value="online">Online</option>
         </select>
     </div>
+    <div>
+        <label>Skabelon (besked)</label>
+        <select @onchange="BrugSkabelon">
+            <option value="">— vælg skabelon —</option>
+            @foreach (var sk in skabeloner) { <option value="@sk.Id">@sk.Navn</option> }
+        </select>
+    </div>
+    <div style="grid-column:1/-1">
+        <label>Besked til aftalen</label>
+        <textarea @bind="form.Beskrivelse" rows="3"></textarea>
+    </div>
     <div class="full"><button type="submit">Efterspørg aftale</button></div>
 </form>
 
@@ -67,6 +78,7 @@
     private List<Aftale> rows = [];
     private List<Menneske> mennesker = [];
     private List<Brobygger> brobyggere = [];
+    private List<Skabelon> skabeloner = [];
     private AftaleCreate form = new();
     private DateTime dato = DateTime.Now;
     private string? error;
@@ -77,6 +89,7 @@
         {
             mennesker = await Api.GetMennesker();
             brobyggere = await Api.GetBrobyggere();
+            skabeloner = await Api.GetSkabeloner();
             if (mennesker.Count > 0) form.MenneskeId = mennesker[0].Id;
             if (brobyggere.Count > 0) form.BrobyggerId = brobyggere[0].Id;
             await Load();
@@ -100,6 +113,16 @@
     {
         try { await Api.SetAftaleStatus(id, status); await Load(); }
         catch (Exception e) { error = "Kunne ikke opdatere: " + e.Message; }
+    }
+
+    private void BrugSkabelon(ChangeEventArgs e)
+    {
+        if (!Guid.TryParse(e.Value?.ToString(), out var id)) return;
+        var sk = skabeloner.FirstOrDefault(x => x.Id == id);
+        if (sk is null) return;
+        var navn = mennesker.FirstOrDefault(m => m.Id == form.MenneskeId)?.Navn ?? "";
+        var bnavn = brobyggere.FirstOrDefault(b => b.Id == form.BrobyggerId)?.Navn ?? "";
+        form.Beskrivelse = sk.Indhold.Replace("{navn}", navn).Replace("{brobygger}", bnavn);
     }
 
     private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";

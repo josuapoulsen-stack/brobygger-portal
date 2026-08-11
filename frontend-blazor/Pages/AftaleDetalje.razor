@@ -1,0 +1,91 @@
+@page "/aftaler/{Id:guid}"
+@inject ApiClient Api
+
+@if (error is not null) { <div class="status err">@error</div> }
+
+@if (a is null)
+{
+    <p class="muted">Henter…</p>
+}
+else
+{
+    <p class="sub"><a href="aftaler">← Aftaler</a></p>
+    <h1>Aftale</h1>
+
+    <div class="card">
+        <dl>
+            <dt>Menneske</dt><dd><a href="mennesker/@a.MenneskeId">@(menneske?.Navn ?? "—")</a></dd>
+            <dt>Brobygger</dt><dd><a href="brobyggere/@a.BrobyggerId">@(brobygger?.Navn ?? "—")</a></dd>
+            <dt>Dato</dt><dd>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</dd>
+            <dt>Type</dt><dd>@a.Type</dd>
+            <dt>Status</dt><dd><span class="pill">@a.Status</span></dd>
+            <dt>Efterspurgt</dt><dd>@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
+            <dt>Bekræftet</dt><dd>@(a.BekraeftetAt is null ? "—" : a.BekraeftetAt.Value.ToLocalTime().ToString("dd. MMM yyyy"))</dd>
+        </dl>
+    </div>
+
+    <div class="card">
+        <h3>Beskeder</h3>
+        <div class="traad">
+            @foreach (var b in beskeder)
+            {
+                <div class="besked">
+                    <div class="meta">@b.Afsender · @b.Tidspunkt.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</div>
+                    <div>@b.Tekst</div>
+                </div>
+            }
+            @if (beskeder.Count == 0) { <p class="muted">Ingen beskeder endnu.</p> }
+        </div>
+        <div class="row">
+            <textarea @bind="nyBesked.Tekst" rows="2" placeholder="Skriv en besked…"></textarea>
+            <button class="mini" @onclick="Send">Send</button>
+        </div>
+        <p class="two">Brobyggeren kan se aftalen og beskederne, når adgangsstyring (Entra) er live.</p>
+    </div>
+}
+
+<style>
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.2rem; margin-top:1rem; max-width:640px; }
+    .card h3 { margin:0 0 .6rem; font-size:1rem; }
+    dl { display:grid; grid-template-columns:auto 1fr; gap:.2rem .8rem; margin:0; font-size:.9rem; }
+    dt { color:var(--soft); }
+    .traad { display:flex; flex-direction:column; gap:.6rem; margin-bottom:.8rem; }
+    .besked { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:.5rem .7rem; font-size:.9rem; }
+    .besked .meta { color:var(--soft); font-size:.75rem; margin-bottom:.15rem; }
+</style>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Aftale? a;
+    private Menneske? menneske;
+    private Brobygger? brobygger;
+    private List<Besked> beskeder = [];
+    private BeskedCreate nyBesked = new();
+    private string? error;
+
+    protected override async Task OnParametersSetAsync() => await Load();
+
+    private async Task Load()
+    {
+        try
+        {
+            a = await Api.GetAftale(Id);
+            if (a is not null)
+            {
+                menneske = await Api.GetMenneske(a.MenneskeId);
+                brobygger = await Api.GetBrobygger(a.BrobyggerId);
+                beskeder = await Api.GetBeskeder(Id);
+            }
+            error = null;
+        }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task Send()
+    {
+        if (string.IsNullOrWhiteSpace(nyBesked.Tekst)) return;
+        try { await Api.CreateBesked(Id, nyBesked); nyBesked = new(); beskeder = await Api.GetBeskeder(Id); }
+        catch (Exception e) { error = "Kunne ikke sende: " + e.Message; }
+    }
+}

@@ -76,6 +76,16 @@ public class BeskedSkabelon
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
+public class Besked
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid AftaleId { get; set; }
+    public string Afsender { get; set; } = "";
+    public string Tekst { get; set; } = "";
+    public DateTimeOffset Tidspunkt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
 public class UdlaegKonto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
