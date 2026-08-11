@@ -87,7 +87,16 @@ public class ApiClient(HttpClient http)
     public async Task<Aftale?> GetAftale(Guid id) { await EnsureLoginAsync(); return await http.GetFromJsonAsync<Aftale>($"/v1/aftaler/{id}", Json); }
     public Task<List<Besked>> GetBeskeder(Guid aftaleId) => GetList<Besked>($"/v1/aftaler/{aftaleId}/beskeder");
     public async Task CreateBesked(Guid aftaleId, BeskedCreate dto) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/aftaler/{aftaleId}/beskeder", dto, Json)).EnsureSuccessStatusCode(); }
-    public async Task CreateAftale(AftaleCreate a) { await EnsureLoginAsync(); (await http.PostAsJsonAsync("/v1/aftaler", a, Json)).EnsureSuccessStatusCode(); }
+    public async Task CreateAftale(AftaleCreate a) { await EnsureLoginAsync(); await EnsureOk(await http.PostAsJsonAsync("/v1/aftaler", a, Json)); }
+
+    // Læser serverens fejltekst med, så fejlbanneret viser den reelle årsag i stedet for en generisk 500.
+    private static async Task EnsureOk(HttpResponseMessage r)
+    {
+        if (r.IsSuccessStatusCode) return;
+        var body = await r.Content.ReadAsStringAsync();
+        if (body.Length > 400) body = body[..400];
+        throw new Exception($"{(int)r.StatusCode}: {body}");
+    }
     public async Task SetAftaleStatus(Guid id, string status) { await EnsureLoginAsync(); (await http.PatchAsJsonAsync($"/v1/aftaler/{id}/status", new { status, notes = "" }, Json)).EnsureSuccessStatusCode(); }
 
     public async Task Match(Guid menneskeId, Guid brobyggerId) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/mennesker/{menneskeId}/match", new { brobyggerId }, Json)).EnsureSuccessStatusCode(); }
