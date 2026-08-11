@@ -159,3 +159,14 @@ public class MenneskeUpdate
     public string? Hq { get; set; }
     public int? Alder { get; set; }
 }
+
+public class GdprRapport
+{
+    public Menneske Menneske { get; set; } = new();
+    public string? Helbredsnoter { get; set; }
+    public List<Henvendelse> Henvendelser { get; set; } = [];
+    public List<Trivselsmaaling> Maalinger { get; set; } = [];
+    public List<Kontaktperson> Kontaktpersoner { get; set; } = [];
+    public List<Aftale> Aftaler { get; set; } = [];
+    public DateTimeOffset Udtrukket { get; set; }
+}

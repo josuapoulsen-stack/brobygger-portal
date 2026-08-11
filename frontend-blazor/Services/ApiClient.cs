@@ -50,6 +50,8 @@ public class ApiClient(HttpClient http)
         return await r.Content.ReadFromJsonAsync<UdlaegKonto>(Json);
     }
     public async Task UpdateMenneske(Guid id, MenneskeUpdate dto) { await EnsureLoginAsync(); (await http.PatchAsJsonAsync($"/v1/mennesker/{id}", dto, Json)).EnsureSuccessStatusCode(); }
+
+    public async Task<GdprRapport?> GetGdprRapport(Guid id) { await EnsureLoginAsync(); return await http.GetFromJsonAsync<GdprRapport>($"/v1/mennesker/{id}/gdpr-rapport", Json); }
     public async Task CreateBrobygger(BrobyggerCreate b) { await EnsureLoginAsync(); (await http.PostAsJsonAsync("/v1/brobyggere", b, Json)).EnsureSuccessStatusCode(); }
 
     public async Task<Menneske?> GetMenneske(Guid id) { await EnsureLoginAsync(); return await http.GetFromJsonAsync<Menneske>($"/v1/mennesker/{id}", Json); }

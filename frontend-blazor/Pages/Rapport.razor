@@ -1,0 +1,91 @@
+@page "/mennesker/{Id:guid}/rapport"
+@inject ApiClient Api
+@inject IJSRuntime JS
+
+@if (error is not null) { <div class="status err">@error</div> }
+
+@if (r is null)
+{
+    <p class="muted">Henter…</p>
+}
+else
+{
+    <div class="noprint row">
+        <a href="mennesker/@Id">← Tilbage</a>
+        <button class="mini" @onclick="Print">Print / gem som PDF</button>
+    </div>
+
+    <div class="rapport">
+        <h1>Indsigtsrapport</h1>
+        <p class="two">GDPR art. 15 · udtrukket @r.Udtrukket.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</p>
+
+        <h2>Stamdata</h2>
+        <dl>
+            <dt>Navn</dt><dd>@r.Menneske.Navn</dd>
+            <dt>Alder</dt><dd>@(r.Menneske.Alder?.ToString() ?? "—")</dd>
+            <dt>Køn</dt><dd>@(r.Menneske.Kon ?? "—")</dd>
+            <dt>Telefon</dt><dd>@(r.Menneske.Telefon ?? "—")</dd>
+            <dt>E-mail</dt><dd>@(r.Menneske.Email ?? "—")</dd>
+            <dt>Adresse</dt><dd>@(r.Menneske.Adresse ?? "—")</dd>
+            <dt>Hovedsæde</dt><dd>@(r.Menneske.Hq ?? "—")</dd>
+            <dt>Kilde</dt><dd>@(r.Menneske.Kilde ?? "—")</dd>
+            <dt>Status</dt><dd>@r.Menneske.Status</dd>
+            <dt>Oprettet</dt><dd>@r.Menneske.CreatedAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
+        </dl>
+
+        <h2>Helbredsoplysninger</h2>
+        <p>@(string.IsNullOrEmpty(r.Helbredsnoter) ? "(ingen registreret)" : r.Helbredsnoter)</p>
+
+        <h2>Henvendelser (@r.Henvendelser.Count)</h2>
+        @foreach (var h in r.Henvendelser)
+        {
+            <p>@h.Dato.ToLocalTime().ToString("dd. MMM yyyy") · @(h.Kanal ?? "—")@(h.Foerstegang ? " · førstegang" : "") — @h.Resume</p>
+        }
+
+        <h2>Trivselsmålinger (@r.Maalinger.Count)</h2>
+        @foreach (var u in r.Maalinger)
+        {
+            <p>@u.Dato.ToLocalTime().ToString("dd. MMM yyyy") · @u.Instrument · @u.Slags · score @u.Score @(string.IsNullOrEmpty(u.Noter) ? "" : "— " + u.Noter)</p>
+        }
+
+        <h2>Kontaktpersoner (@r.Kontaktpersoner.Count)</h2>
+        @foreach (var k in r.Kontaktpersoner)
+        {
+            <p>@k.Navn @(string.IsNullOrEmpty(k.Relation) ? "" : "(" + k.Relation + ")") · @k.Telefon @k.Email</p>
+        }
+
+        <h2>Aftaler (@r.Aftaler.Count)</h2>
+        @foreach (var a in r.Aftaler)
+        {
+            <p>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy") · @a.Type · @a.Status</p>
+        }
+    </div>
+}
+
+<style>
+    .rapport { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:2rem; margin-top:1rem; max-width:760px; }
+    .rapport h1 { margin:0 0 .2rem; }
+    .rapport h2 { font-size:1.05rem; margin:1.4rem 0 .4rem; border-bottom:1px solid var(--line); padding-bottom:.2rem; }
+    .rapport p { margin:.15rem 0; font-size:.9rem; }
+    .rapport dl { display:grid; grid-template-columns:auto 1fr; gap:.15rem .8rem; font-size:.9rem; }
+    .rapport dt { color:var(--soft); }
+    @@media print {
+        header, .noprint { display:none !important; }
+        .wrap { padding:0; max-width:100%; }
+        .rapport { border:none; padding:0; }
+    }
+</style>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private GdprRapport? r;
+    private string? error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try { r = await Api.GetGdprRapport(Id); }
+        catch (Exception e) { error = "Kunne ikke hente rapport: " + e.Message; }
+    }
+
+    private async Task Print() => await JS.InvokeVoidAsync("blazorPrint");
+}
