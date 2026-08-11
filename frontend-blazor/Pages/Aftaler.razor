@@ -70,6 +70,7 @@
     <div style="grid-column:1/-1">
         <label>Besked til aftalen</label>
         <textarea @bind="form.Beskrivelse" rows="3"></textarea>
+        <p class="two">Pladsholdere: {menneske}, {brobygger}, {dato} — udfyldes når du vælger skabelonen.</p>
     </div>
     <div class="full"><button type="submit">Efterspørg aftale</button></div>
 </form>
@@ -120,9 +121,12 @@
         if (!Guid.TryParse(e.Value?.ToString(), out var id)) return;
         var sk = skabeloner.FirstOrDefault(x => x.Id == id);
         if (sk is null) return;
-        var navn = mennesker.FirstOrDefault(m => m.Id == form.MenneskeId)?.Navn ?? "";
-        var bnavn = brobyggere.FirstOrDefault(b => b.Id == form.BrobyggerId)?.Navn ?? "";
-        form.Beskrivelse = sk.Indhold.Replace("{navn}", navn).Replace("{brobygger}", bnavn);
+        var menneske = mennesker.FirstOrDefault(m => m.Id == form.MenneskeId)?.Navn ?? "";
+        var brobygger = brobyggere.FirstOrDefault(b => b.Id == form.BrobyggerId)?.Navn ?? "";
+        form.Beskrivelse = sk.Indhold
+            .Replace("{menneske}", menneske)
+            .Replace("{brobygger}", brobygger)
+            .Replace("{dato}", dato.ToString("dd. MMM yyyy HH:mm"));
     }
 
     private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";

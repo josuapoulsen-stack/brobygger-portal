@@ -2,7 +2,7 @@
 @inject ApiClient Api
 
 <h1>Beskedskabeloner</h1>
-<p class="sub">Standardtekster til SMS/mail — så kommunikationen er ensartet.</p>
+<p class="sub">Standardtekster til beskeder/aftaler — så kommunikationen er ensartet.</p>
 @if (error is not null) { <div class="status err">@error</div> }
 
 <div class="liste">
@@ -13,27 +13,39 @@
                 <b>@s.Navn</b>
                 <div class="two">@s.Indhold</div>
             </div>
-            <button class="mini ghost" @onclick="() => Slet(s.Id)">Slet</button>
+            <div class="handling">
+                <button class="mini ghost" @onclick="() => Redigér(s)">Redigér</button>
+                <button class="mini ghost" @onclick="() => Slet(s.Id)">Slet</button>
+            </div>
         </div>
     }
     @if (rows.Count == 0) { <p class="muted">Ingen skabeloner endnu.</p> }
 </div>
 
-<form @onsubmit="Opret">
+<form @onsubmit="Gem">
     <div><label>Navn *</label><input @bind="form.Navn" required /></div>
-    <div style="grid-column:1/-1"><label>Indhold *</label><textarea @bind="form.Indhold" rows="3" required></textarea></div>
-    <div class="full"><button type="submit">Opret skabelon</button></div>
+    <div style="grid-column:1/-1">
+        <label>Indhold *</label>
+        <textarea @bind="form.Indhold" rows="3" required></textarea>
+        <p class="two">Pladsholdere der udfyldes automatisk i aftalen: <code>{menneske}</code> (borgerens navn), <code>{brobygger}</code> (brobyggerens navn), <code>{dato}</code>.</p>
+    </div>
+    <div class="full">
+        @if (redigerId is not null) { <button type="button" class="mini ghost" @onclick="Annuller">Annullér</button> }
+        <button type="submit">@(redigerId is null ? "Opret skabelon" : "Gem ændringer")</button>
+    </div>
 </form>
 
 <style>
     .liste { display:flex; flex-direction:column; gap:.6rem; margin-bottom:1rem; }
     .skab { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:.8rem 1rem; }
-    textarea { width:100%; padding:.45rem .55rem; border:1px solid var(--line); border-radius:8px; font:inherit; }
+    code { background:var(--bg); border:1px solid var(--line); border-radius:4px; padding:0 .25rem; font-size:.82rem; }
+    .full { gap:.5rem; }
 </style>
 
 @code {
     private List<Skabelon> rows = [];
     private SkabelonCreate form = new();
+    private Guid? redigerId;
     private string? error;
 
     protected override async Task OnInitializedAsync() => await Load();
@@ -44,10 +56,28 @@
         catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
     }
 
-    private async Task Opret()
+    private void Redigér(Skabelon s)
     {
-        try { await Api.CreateSkabelon(form); form = new(); await Load(); }
-        catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
+        redigerId = s.Id;
+        form = new SkabelonCreate { Navn = s.Navn, Indhold = s.Indhold };
+    }
+
+    private void Annuller()
+    {
+        redigerId = null;
+        form = new();
+    }
+
+    private async Task Gem()
+    {
+        try
+        {
+            if (redigerId is Guid id) await Api.UpdateSkabelon(id, form);
+            else await Api.CreateSkabelon(form);
+            Annuller();
+            await Load();
+        }
+        catch (Exception e) { error = "Kunne ikke gemme: " + e.Message; }
     }
 
     private async Task Slet(Guid id)

@@ -151,6 +151,17 @@ public class SkabelonerController(BrobyggerDbContext db) : ControllerBase
         return Created($"/v1/skabeloner/{dto.Id}", dto);
     }
 
+    [HttpPatch("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, BeskedSkabelon dto)
+    {
+        var s = await db.Skabeloner.FindAsync(id);
+        if (s is null) return NotFound();
+        s.Navn = dto.Navn;
+        s.Indhold = dto.Indhold;
+        await db.SaveChangesAsync();
+        return Ok(s);
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
