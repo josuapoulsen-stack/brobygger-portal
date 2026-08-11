@@ -165,7 +165,7 @@ public class Optael
     public string Navn { get; set; } = "";
     public int Antal { get; set; }
 }
-public class Statistik
+public class StatistikData
 {
     public int AntalMennesker { get; set; }
     public int AntalBrobyggere { get; set; }

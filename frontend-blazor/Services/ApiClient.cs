@@ -53,7 +53,7 @@ public class ApiClient(HttpClient http)
 
     public async Task<GdprRapport?> GetGdprRapport(Guid id) { await EnsureLoginAsync(); return await http.GetFromJsonAsync<GdprRapport>($"/v1/mennesker/{id}/gdpr-rapport", Json); }
 
-    public async Task<Statistik?> GetStatistik() { await EnsureLoginAsync(); return await http.GetFromJsonAsync<Statistik>("/v1/statistik", Json); }
+    public async Task<StatistikData?> GetStatistik() { await EnsureLoginAsync(); return await http.GetFromJsonAsync<StatistikData>("/v1/statistik", Json); }
 
     public async Task<string> GetKreditorCsv() { await EnsureLoginAsync(); return await http.GetStringAsync("/v1/udlaeg/eksport"); }
 
