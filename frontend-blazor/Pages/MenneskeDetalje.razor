@@ -61,6 +61,24 @@ else
     </div>
 
     <div class="card">
+        <h3>Match</h3>
+        @if (m.MatchedWith is Guid bid)
+        {
+            <p>Matchet med <b>@BrobyggerNavn(bid)</b> &nbsp;<button class="mini ghost" @onclick="FjernMatch">Fjern match</button></p>
+        }
+        else
+        {
+            <div class="row">
+                <select @bind="valgtBrobygger">
+                    <option value="@Guid.Empty">— vælg brobygger —</option>
+                    @foreach (var b in brobyggere) { <option value="@b.Id">@b.Navn (@b.Active/@b.MaxActive)</option> }
+                </select>
+                <button class="mini" @onclick="MatchNu">Match</button>
+            </div>
+        }
+    </div>
+
+    <div class="card">
         <h3>Henvendelser</h3>
         <ul class="liste">
             @foreach (var h in henvendelser)
@@ -179,6 +197,8 @@ else
     private List<Trivselsmaaling> maalinger = [];
     private List<Kontaktperson> kontakt = [];
     private List<Aftale> aftaler = [];
+    private List<Brobygger> brobyggere = [];
+    private Guid valgtBrobygger;
     private string? helbred;
     private string? error;
 
@@ -209,6 +229,7 @@ else
             maalinger = await Api.GetMaalinger(Id);
             kontakt = await Api.GetKontaktpersoner(Id);
             aftaler = await Api.GetAftalerForMenneske(Id);
+            brobyggere = await Api.GetBrobyggere();
             if (m is not null)
                 rediger = new MenneskeUpdate { Status = m.Status, Brobygningstype = m.Brobygningstype, Telefon = m.Telefon, Hq = m.Hq, Alder = m.Alder };
             error = null;
@@ -221,6 +242,21 @@ else
         try { await Api.UpdateMenneske(Id, rediger); await Load(); }
         catch (Exception e) { error = "Kunne ikke gemme: " + e.Message; }
     }
+
+    private async Task MatchNu()
+    {
+        if (valgtBrobygger == Guid.Empty) return;
+        try { await Api.Match(Id, valgtBrobygger); await Load(); }
+        catch (Exception e) { error = "Kunne ikke matche: " + e.Message; }
+    }
+
+    private async Task FjernMatch()
+    {
+        try { await Api.Unmatch(Id); await Load(); }
+        catch (Exception e) { error = "Kunne ikke fjerne match: " + e.Message; }
+    }
+
+    private string BrobyggerNavn(Guid id) => brobyggere.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
 
     private async Task VisHelbred()
     {

@@ -18,10 +18,18 @@
                 <td><span class="pill @Pill(a.Status)">@a.Status</span></td>
                 <td class="two">@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</td>
                 <td class="two">@(a.BekraeftetAt is null ? "—" : a.BekraeftetAt.Value.ToLocalTime().ToString("dd. MMM yyyy"))</td>
-                <td>
-                    @if (KanBekraeftes(a.Status))
+                <td class="handling">
+                    @if (a.Status is "pending" or "planlagt")
                     {
-                        <button class="mini" @onclick="() => Bekraeft(a.Id)">Bekræft</button>
+                        <button class="mini" @onclick='() => Skift(a.Id, "confirmed")'>Bekræft</button>
+                    }
+                    @if (a.Status == "confirmed")
+                    {
+                        <button class="mini" @onclick='() => Skift(a.Id, "gennemfoert")'>Gennemført</button>
+                    }
+                    @if (a.Status is not ("aflyst" or "gennemfoert" or "afslaaet" or "brudt"))
+                    {
+                        <button class="mini ghost" @onclick='() => Skift(a.Id, "aflyst")'>Aflys</button>
                     }
                 </td>
             </tr>
@@ -88,14 +96,13 @@
         catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
     }
 
-    private async Task Bekraeft(Guid id)
+    private async Task Skift(Guid id, string status)
     {
-        try { await Api.BekraeftAftale(id); await Load(); }
-        catch (Exception e) { error = "Kunne ikke bekræfte: " + e.Message; }
+        try { await Api.SetAftaleStatus(id, status); await Load(); }
+        catch (Exception e) { error = "Kunne ikke opdatere: " + e.Message; }
     }
 
     private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
     private string NavnB(Guid id) => brobyggere.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
-    private static bool KanBekraeftes(string s) => s is not ("confirmed" or "aflyst" or "afslaaet" or "brudt");
     private static string Pill(string s) => s switch { "confirmed" => "gron", "pending" => "gul", "aflyst" or "afslaaet" or "brudt" => "graa", _ => "" };
 }

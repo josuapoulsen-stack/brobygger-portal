@@ -74,7 +74,10 @@ public class ApiClient(HttpClient http)
 
     public Task<List<Aftale>> GetAftaler() => GetList<Aftale>("/v1/aftaler");
     public async Task CreateAftale(AftaleCreate a) { await EnsureLoginAsync(); (await http.PostAsJsonAsync("/v1/aftaler", a, Json)).EnsureSuccessStatusCode(); }
-    public async Task BekraeftAftale(Guid id) { await EnsureLoginAsync(); (await http.PatchAsJsonAsync($"/v1/aftaler/{id}/status", new { status = "confirmed", notes = "" }, Json)).EnsureSuccessStatusCode(); }
+    public async Task SetAftaleStatus(Guid id, string status) { await EnsureLoginAsync(); (await http.PatchAsJsonAsync($"/v1/aftaler/{id}/status", new { status, notes = "" }, Json)).EnsureSuccessStatusCode(); }
+
+    public async Task Match(Guid menneskeId, Guid brobyggerId) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/mennesker/{menneskeId}/match", new { brobyggerId }, Json)).EnsureSuccessStatusCode(); }
+    public async Task Unmatch(Guid menneskeId) { await EnsureLoginAsync(); (await http.DeleteAsync($"/v1/mennesker/{menneskeId}/match")).EnsureSuccessStatusCode(); }
 
     private class DevToken { public string AccessToken { get; set; } = ""; }
 }

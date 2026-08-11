@@ -31,3 +31,5 @@ button.mini { padding:.3rem .65rem; font-size:.8rem; }
 .row input, .row select { width:auto; }
 .soeg { max-width:320px; }
 a { color:var(--accent); }
+button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+.handling { display:flex; gap:.35rem; flex-wrap:wrap; }
