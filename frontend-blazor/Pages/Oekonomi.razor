@@ -1,0 +1,37 @@
+@page "/oekonomi"
+@inject ApiClient Api
+@inject IJSRuntime JS
+
+<h1>Økonomi</h1>
+<p class="sub">Kreditor-eksport til e-conomic. Kun tilgængelig med Økonomi-rollen.</p>
+@if (error is not null) { <div class="status err">@error</div> }
+@if (besked is not null) { <div class="status ok">@besked</div> }
+
+<div class="card">
+    <h3>Kreditor-eksport (CSV)</h3>
+    <p class="two">Trækker alle registrerede bankoplysninger ud som semikolon-separeret CSV. Kontonumre dekrypteres server-side og udtrækket logges i revisionssporet.</p>
+    <button @onclick="Eksporter">Eksportér kreditorer (CSV)</button>
+</div>
+
+<style>
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.2rem; margin-top:1rem; max-width:560px; }
+    .card h3 { margin:0 0 .4rem; font-size:1rem; }
+    .status.ok { background:#e0ece3; color:#2c6a45; }
+</style>
+
+@code {
+    private string? error;
+    private string? besked;
+
+    private async Task Eksporter()
+    {
+        error = besked = null;
+        try
+        {
+            var csv = await Api.GetKreditorCsv();
+            await JS.InvokeVoidAsync("downloadText", "kreditorer.csv", csv);
+            besked = "CSV downloadet.";
+        }
+        catch (Exception e) { error = "Kunne ikke eksportere (kræver Økonomi-rollen): " + e.Message; }
+    }
+}

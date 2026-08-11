@@ -55,6 +55,8 @@ public class ApiClient(HttpClient http)
 
     public async Task<Statistik?> GetStatistik() { await EnsureLoginAsync(); return await http.GetFromJsonAsync<Statistik>("/v1/statistik", Json); }
 
+    public async Task<string> GetKreditorCsv() { await EnsureLoginAsync(); return await http.GetStringAsync("/v1/udlaeg/eksport"); }
+
     public Task<List<Skabelon>> GetSkabeloner() => GetList<Skabelon>("/v1/skabeloner");
     public async Task CreateSkabelon(SkabelonCreate s) { await EnsureLoginAsync(); (await http.PostAsJsonAsync("/v1/skabeloner", s, Json)).EnsureSuccessStatusCode(); }
     public async Task DeleteSkabelon(Guid id) { await EnsureLoginAsync(); (await http.DeleteAsync($"/v1/skabeloner/{id}")).EnsureSuccessStatusCode(); }
