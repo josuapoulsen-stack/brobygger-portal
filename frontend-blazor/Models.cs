@@ -160,6 +160,36 @@ public class MenneskeUpdate
     public int? Alder { get; set; }
 }
 
+public class Optael
+{
+    public string Navn { get; set; } = "";
+    public int Antal { get; set; }
+}
+public class Statistik
+{
+    public int AntalMennesker { get; set; }
+    public int AntalBrobyggere { get; set; }
+    public int LedigKapacitet { get; set; }
+    public int AntalMaalinger { get; set; }
+    public List<Optael> MenneskerPerStatus { get; set; } = [];
+    public List<Optael> AftalerPerStatus { get; set; } = [];
+    public List<Optael> MenneskerPerHovedsaede { get; set; } = [];
+    public double? TrivselBaselineGns { get; set; }
+    public double? TrivselOpfoelgningGns { get; set; }
+}
+
+public class Skabelon
+{
+    public Guid Id { get; set; }
+    public string Navn { get; set; } = "";
+    public string Indhold { get; set; } = "";
+}
+public class SkabelonCreate
+{
+    public string Navn { get; set; } = "";
+    public string Indhold { get; set; } = "";
+}
+
 public class GdprRapport
 {
     public Menneske Menneske { get; set; } = new();

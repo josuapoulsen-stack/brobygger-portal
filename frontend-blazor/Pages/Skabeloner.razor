@@ -1,0 +1,58 @@
+@page "/skabeloner"
+@inject ApiClient Api
+
+<h1>Beskedskabeloner</h1>
+<p class="sub">Standardtekster til SMS/mail — så kommunikationen er ensartet.</p>
+@if (error is not null) { <div class="status err">@error</div> }
+
+<div class="liste">
+    @foreach (var s in rows)
+    {
+        <div class="skab">
+            <div>
+                <b>@s.Navn</b>
+                <div class="two">@s.Indhold</div>
+            </div>
+            <button class="mini ghost" @onclick="() => Slet(s.Id)">Slet</button>
+        </div>
+    }
+    @if (rows.Count == 0) { <p class="muted">Ingen skabeloner endnu.</p> }
+</div>
+
+<form @onsubmit="Opret">
+    <div><label>Navn *</label><input @bind="form.Navn" required /></div>
+    <div style="grid-column:1/-1"><label>Indhold *</label><textarea @bind="form.Indhold" rows="3" required></textarea></div>
+    <div class="full"><button type="submit">Opret skabelon</button></div>
+</form>
+
+<style>
+    .liste { display:flex; flex-direction:column; gap:.6rem; margin-bottom:1rem; }
+    .skab { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:.8rem 1rem; }
+    textarea { width:100%; padding:.45rem .55rem; border:1px solid var(--line); border-radius:8px; font:inherit; }
+</style>
+
+@code {
+    private List<Skabelon> rows = [];
+    private SkabelonCreate form = new();
+    private string? error;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        try { rows = await Api.GetSkabeloner(); error = null; }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task Opret()
+    {
+        try { await Api.CreateSkabelon(form); form = new(); await Load(); }
+        catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
+    }
+
+    private async Task Slet(Guid id)
+    {
+        try { await Api.DeleteSkabelon(id); await Load(); }
+        catch (Exception e) { error = "Kunne ikke slette: " + e.Message; }
+    }
+}

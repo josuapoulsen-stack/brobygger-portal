@@ -1,0 +1,92 @@
+@page "/statistik"
+@inject ApiClient Api
+
+<h1>Statistik</h1>
+<p class="sub">Overblik og effekt.</p>
+@if (error is not null) { <div class="status err">@error</div> }
+
+@if (s is null)
+{
+    <p class="muted">Henter…</p>
+}
+else
+{
+    <div class="tiles">
+        <div class="tile"><div class="num">@s.AntalMennesker</div><div class="lbl">Mennesker</div></div>
+        <div class="tile"><div class="num">@s.AntalBrobyggere</div><div class="lbl">Brobyggere</div></div>
+        <div class="tile"><div class="num">@s.LedigKapacitet</div><div class="lbl">Ledig kapacitet</div></div>
+        <div class="tile"><div class="num">@s.AntalMaalinger</div><div class="lbl">Trivselsmålinger</div></div>
+    </div>
+
+    <div class="card">
+        <h3>Trivselsudvikling (kombineret · 5–25 · højere = bedre)</h3>
+        <div class="row">
+            <div class="stat"><span class="num2">@(s.TrivselBaselineGns?.ToString() ?? "—")</span><span class="lbl">Baseline (gns.)</span></div>
+            <div class="stat"><span class="num2">@(s.TrivselOpfoelgningGns?.ToString() ?? "—")</span><span class="lbl">Opfølgning (gns.)</span></div>
+            @if (s.TrivselBaselineGns is double b && s.TrivselOpfoelgningGns is double o)
+            {
+                <div class="stat"><span class="num2" style="color:@((o - b) >= 0 ? "var(--good)" : "var(--crit)")">@((o - b) >= 0 ? "+" : "")@Math.Round(o - b, 1)</span><span class="lbl">Ændring</span></div>
+            }
+        </div>
+    </div>
+
+    <div class="grid2">
+        <div class="card">
+            <h3>Mennesker pr. status</h3>
+            @if (s.MenneskerPerStatus.Count == 0) { <p class="muted">Ingen data.</p> }
+            @foreach (var d in s.MenneskerPerStatus)
+            {
+                <div class="bar-row"><span class="k">@d.Navn</span><span class="b" style="width:@Bredde(d.Antal, s.MenneskerPerStatus)px"></span><span class="n">@d.Antal</span></div>
+            }
+        </div>
+        <div class="card">
+            <h3>Aftaler pr. status</h3>
+            @if (s.AftalerPerStatus.Count == 0) { <p class="muted">Ingen data.</p> }
+            @foreach (var d in s.AftalerPerStatus)
+            {
+                <div class="bar-row"><span class="k">@d.Navn</span><span class="b" style="width:@Bredde(d.Antal, s.AftalerPerStatus)px"></span><span class="n">@d.Antal</span></div>
+            }
+        </div>
+        <div class="card">
+            <h3>Mennesker pr. hovedsæde</h3>
+            @if (s.MenneskerPerHovedsaede.Count == 0) { <p class="muted">Ingen data.</p> }
+            @foreach (var d in s.MenneskerPerHovedsaede)
+            {
+                <div class="bar-row"><span class="k">@d.Navn</span><span class="b" style="width:@Bredde(d.Antal, s.MenneskerPerHovedsaede)px"></span><span class="n">@d.Antal</span></div>
+            }
+        </div>
+    </div>
+}
+
+<style>
+    .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; }
+    .tile { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.1rem; }
+    .num { font-size:1.9rem; font-weight:700; color:var(--accent2); }
+    .lbl { color:var(--soft); font-size:.85rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-top:1rem; }
+    .card h3 { margin:0 0 .6rem; font-size:1rem; }
+    .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; }
+    .stat { display:flex; flex-direction:column; margin-right:1.5rem; }
+    .num2 { font-size:1.5rem; font-weight:700; color:var(--accent2); }
+    .bar-row { display:flex; align-items:center; gap:.6rem; margin:.25rem 0; font-size:.85rem; }
+    .bar-row .k { width:130px; color:var(--soft); }
+    .bar-row .b { height:14px; background:var(--accent); border-radius:4px; min-width:6px; }
+    .bar-row .n { font-variant-numeric:tabular-nums; }
+</style>
+
+@code {
+    private Statistik? s;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { s = await Api.GetStatistik(); }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private static int Bredde(int antal, List<Optael> alle)
+    {
+        var max = alle.Count == 0 ? 1 : alle.Max(x => x.Antal);
+        return Math.Max(6, antal * 140 / Math.Max(1, max));
+    }
+}

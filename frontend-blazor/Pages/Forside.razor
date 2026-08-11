@@ -6,12 +6,33 @@
 @if (error is not null) { <div class="status err">@error</div> }
 
 <div class="tiles">
-    <a class="tile" href="mennesker"><div class="num">@mennesker</div><div class="lbl">Mennesker</div></a>
-    <a class="tile" href="brobyggere"><div class="num">@brobyggere</div><div class="lbl">Brobyggere</div></a>
-    <a class="tile" href="aftaler"><div class="num">@aktive</div><div class="lbl">Aktive aftaler</div></a>
-    <a class="tile" href="aftaler"><div class="num">@afventer</div><div class="lbl">Afventer bekræftelse</div></a>
-    <div class="tile"><div class="num">@ledig</div><div class="lbl">Ledig kapacitet</div></div>
+    <a class="tile" href="mennesker"><div class="num">@mennesker.Count</div><div class="lbl">Mennesker</div></a>
+    <a class="tile" href="brobyggere"><div class="num">@brobyggere.Count</div><div class="lbl">Brobyggere</div></a>
+    <a class="tile" href="aftaler"><div class="num">@Aktive</div><div class="lbl">Aktive aftaler</div></a>
+    <a class="tile" href="aftaler"><div class="num">@Afventer.Count</div><div class="lbl">Afventer bekræftelse</div></a>
+    <div class="tile"><div class="num">@Ledig</div><div class="lbl">Ledig kapacitet</div></div>
 </div>
+
+@if (Afventer.Count > 0)
+{
+    <div class="card">
+        <h3>Afventer bekræftelse</h3>
+        <table>
+            <thead><tr><th>Menneske</th><th>Brobygger</th><th>Dato</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var a in Afventer)
+                {
+                    <tr>
+                        <td><a href="mennesker/@a.MenneskeId">@NavnM(a.MenneskeId)</a></td>
+                        <td><a href="brobyggere/@a.BrobyggerId">@NavnB(a.BrobyggerId)</a></td>
+                        <td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td>
+                        <td><button class="mini" @onclick="() => Bekraeft(a.Id)">Bekræft</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
 
 <style>
     .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; }
@@ -19,25 +40,40 @@
     a.tile:hover { border-color:var(--accent); }
     .num { font-size:2rem; font-weight:700; color:var(--accent2); }
     .lbl { color:var(--soft); font-size:.9rem; margin-top:.2rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-top:1.25rem; }
+    .card h3 { margin:0 0 .6rem; font-size:1rem; }
 </style>
 
 @code {
-    private int mennesker, brobyggere, aktive, afventer, ledig;
+    private List<Menneske> mennesker = [];
+    private List<Brobygger> brobyggere = [];
+    private List<Aftale> aftaler = [];
     private string? error;
 
-    protected override async Task OnInitializedAsync()
+    private int Aktive => aftaler.Count(a => a.Status is "planlagt" or "pending" or "confirmed");
+    private List<Aftale> Afventer => aftaler.Where(a => a.Status == "pending").ToList();
+    private int Ledig => brobyggere.Sum(b => Math.Max(0, b.MaxActive - b.Active));
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
     {
         try
         {
-            var mn = await Api.GetMennesker();
-            var bb = await Api.GetBrobyggere();
-            var af = await Api.GetAftaler();
-            mennesker = mn.Count;
-            brobyggere = bb.Count;
-            aktive = af.Count(a => a.Status is "planlagt" or "pending" or "confirmed");
-            afventer = af.Count(a => a.Status == "pending");
-            ledig = bb.Sum(b => Math.Max(0, b.MaxActive - b.Active));
+            mennesker = await Api.GetMennesker();
+            brobyggere = await Api.GetBrobyggere();
+            aftaler = await Api.GetAftaler();
+            error = null;
         }
         catch (Exception e) { error = "Kunne ikke hente — kører backend på localhost:5080? (" + e.Message + ")"; }
     }
+
+    private async Task Bekraeft(Guid id)
+    {
+        try { await Api.SetAftaleStatus(id, "confirmed"); await Load(); }
+        catch (Exception e) { error = "Kunne ikke bekræfte: " + e.Message; }
+    }
+
+    private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
+    private string NavnB(Guid id) => brobyggere.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
 }
