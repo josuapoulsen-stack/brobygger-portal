@@ -159,6 +159,24 @@ else
     </div>
 
     <div class="card">
+        <h3>Opkald</h3>
+        <ul class="liste">
+            @foreach (var o in opkald)
+            {
+                <li><b>@(o.Retning == "ud" ? "↗ Udgående" : "↘ Indgående")</b> · @o.Tidspunkt.ToLocalTime().ToString("dd. MMM yyyy HH:mm") <div class="two">@o.Note</div></li>
+            }
+            @if (opkald.Count == 0) { <li class="muted">Ingen opkald.</li> }
+        </ul>
+        <div class="row">
+            <select @bind="nyOpkald.Retning"><option value="ind">Indgående</option><option value="ud">Udgående</option></select>
+            <select @bind="nyOpkald.Type"><option value="samtale_menneske">Samtale</option><option value="ringeopgave">Ringeopgave</option></select>
+            <input placeholder="Note" @bind="nyOpkald.Note" />
+            <button class="mini" @onclick="LogOpkald">Log opkald</button>
+        </div>
+        <p class="two">Automatisk logning kobles på når telefon-integrationen (ipnordic) er sat op.</p>
+    </div>
+
+    <div class="card">
         <h3>Aftaler</h3>
         <table>
             <thead><tr><th>Dato</th><th>Type</th><th>Status</th></tr></thead>
@@ -199,6 +217,8 @@ else
     private List<Kontaktperson> kontakt = [];
     private List<Aftale> aftaler = [];
     private List<Brobygger> brobyggere = [];
+    private List<Opkald> opkald = [];
+    private OpkaldCreate nyOpkald = new();
     private Guid valgtBrobygger;
     private string? helbred;
     private string? error;
@@ -231,6 +251,8 @@ else
             kontakt = await Api.GetKontaktpersoner(Id);
             aftaler = await Api.GetAftalerForMenneske(Id);
             brobyggere = await Api.GetBrobyggere();
+            opkald = await Api.GetOpkaldForMenneske(Id);
+            nyOpkald.MenneskeId = Id;
             if (m is not null)
                 rediger = new MenneskeUpdate { Status = m.Status, Brobygningstype = m.Brobygningstype, Telefon = m.Telefon, Hq = m.Hq, Alder = m.Alder };
             error = null;
@@ -258,6 +280,13 @@ else
     }
 
     private string BrobyggerNavn(Guid id) => brobyggere.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
+
+    private async Task LogOpkald()
+    {
+        nyOpkald.MenneskeId = Id;
+        try { await Api.LogOpkald(nyOpkald); nyOpkald = new() { MenneskeId = Id }; opkald = await Api.GetOpkaldForMenneske(Id); }
+        catch (Exception e) { error = "Kunne ikke logge opkald: " + e.Message; }
+    }
 
     private async Task VisHelbred()
     {

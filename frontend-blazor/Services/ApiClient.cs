@@ -76,6 +76,9 @@ public class ApiClient(HttpClient http)
 
     public Task<List<Aftale>> GetAftalerForMenneske(Guid menneskeId) => GetList<Aftale>($"/v1/aftaler?menneskeId={menneskeId}");
 
+    public Task<List<Opkald>> GetOpkaldForMenneske(Guid menneskeId) => GetList<Opkald>($"/v1/opkald?menneskeId={menneskeId}");
+    public async Task LogOpkald(OpkaldCreate o) { await EnsureLoginAsync(); await EnsureOk(await http.PostAsJsonAsync("/v1/opkald", o, Json)); }
+
     public async Task<string?> GetHelbredsnoter(Guid menneskeId)
     {
         await EnsureLoginAsync();

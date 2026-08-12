@@ -161,6 +161,23 @@ public class MenneskeUpdate
     public int? Alder { get; set; }
 }
 
+public class Opkald
+{
+    public Guid Id { get; set; }
+    public string Type { get; set; } = "";
+    public string? Retning { get; set; }
+    public int? VarighedSek { get; set; }
+    public string? Note { get; set; }
+    public DateTimeOffset Tidspunkt { get; set; }
+}
+public class OpkaldCreate
+{
+    public Guid MenneskeId { get; set; }
+    public string Type { get; set; } = "samtale_menneske";
+    public string? Retning { get; set; } = "ind";
+    public string? Note { get; set; }
+}
+
 public class Besked
 {
     public Guid Id { get; set; }
