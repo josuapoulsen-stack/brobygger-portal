@@ -53,6 +53,7 @@ builder.Services.AddSingleton(new AuthMode(entraConfigured));
 builder.Services.AddSingleton<BrobyggerPortal.Api.Services.GraphService>();
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<BrobyggerPortal.Api.Services.CryptoService>();
+builder.Services.AddScoped<BrobyggerPortal.Api.Services.AuditService>();
 
 // ── Controllers + JSON i snake_case (matcher OpenAPI-kontrakten) ─────────────
 builder.Services

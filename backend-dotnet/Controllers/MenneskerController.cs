@@ -12,7 +12,7 @@ namespace BrobyggerPortal.Api.Controllers;
 [ApiController]
 [Route("v1/mennesker")]
 [Authorize]
-public class MenneskerController(BrobyggerDbContext db, CryptoService crypto) : ControllerBase
+public class MenneskerController(BrobyggerDbContext db, CryptoService crypto, AuditService audit) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MenneskeReadDto>>> List(
@@ -95,6 +95,7 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto) : 
     {
         var m = await db.Mennesker.FindAsync(id);
         if (m is null || m.DeletedAt is not null) return NotFound();
+        await audit.LogAsync("helbred_visning", User.Identity?.Name ?? "ukendt", "menneske", id);
         return Ok(new { helbredsnoter = crypto.DecryptHealth(m.HelbredsnoterEnc) });
     }
 
@@ -107,6 +108,7 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto) : 
         m.DeletedAt = DateTimeOffset.UtcNow;
         m.Status = MenneskeStatus.Afsluttet;
         await db.SaveChangesAsync();
+        await audit.LogAsync("menneske_slettet", User.Identity?.Name ?? "ukendt", "menneske", id);
         return NoContent();
     }
 }

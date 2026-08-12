@@ -24,6 +24,16 @@ public static class DbSeeder
             new Aftale { BrobyggerId = b3.Id, MenneskeId = m1.Id, Dato = DateTimeOffset.UtcNow.AddDays(2), Varighed = 60, Type = AftaleType.Moede, Status = AftaleStatus.Planlagt, Brobygningstype = "Social", BrobyggerNote = "Første møde — mød op 10 min før." },
             new Aftale { BrobyggerId = b1.Id, MenneskeId = m2.Id, Dato = DateTimeOffset.UtcNow.AddDays(-5), Varighed = 90, Type = AftaleType.Aktivitet, Status = AftaleStatus.Gennemfoert, Brobygningstype = "Forening", Udfald = "gennemfoert", VarighedMin = 85 });
 
+        db.Stamdata.AddRange(
+            new Stamdata { Kategori = "henvender", Vaerdi = "Egen henvendelse" },
+            new Stamdata { Kategori = "henvender", Vaerdi = "Kommune" },
+            new Stamdata { Kategori = "henvender", Vaerdi = "Læge/hospital" },
+            new Stamdata { Kategori = "modtager", Vaerdi = "Borger" },
+            new Stamdata { Kategori = "modtager", Vaerdi = "Pårørende" },
+            new Stamdata { Kategori = "aflysning_aarsag", Vaerdi = "Sygdom" },
+            new Stamdata { Kategori = "aflysning_aarsag", Vaerdi = "Udeblevet" },
+            new Stamdata { Kategori = "aflysning_aarsag", Vaerdi = "Ombooket" });
+
         await db.SaveChangesAsync();
     }
 }

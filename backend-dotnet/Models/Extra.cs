@@ -76,6 +76,18 @@ public class BeskedSkabelon
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
+// Revisionsspor (GDPR art. 30): hvem gjorde hvad, hvornår — aldrig selve indholdet.
+public class AuditLog
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Handling { get; set; } = "";     // gdpr_rapport | kreditor_eksport | helbred_visning | menneske_slettet
+    public string? MaalType { get; set; }           // menneske | brobygger | ...
+    public Guid? MaalId { get; set; }
+    public string Aktoer { get; set; } = "";
+    public string? Detalje { get; set; }
+    public DateTimeOffset Tidspunkt { get; set; } = DateTimeOffset.UtcNow;
+}
+
 public class Besked
 {
     public Guid Id { get; set; } = Guid.NewGuid();

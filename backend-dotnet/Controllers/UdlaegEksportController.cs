@@ -10,7 +10,7 @@ namespace BrobyggerPortal.Api.Controllers;
 // Kreditor-eksport til e-conomic (CSV). KUN Økonomi-rollen. Kontonr. dekrypteres
 // server-side ind i filen. Udtræk logges (revisionsspor).
 [ApiController, Authorize(Roles = "Oekonomi"), Route("v1/udlaeg/eksport")]
-public class UdlaegEksportController(BrobyggerDbContext db, CryptoService crypto, ILogger<UdlaegEksportController> log) : ControllerBase
+public class UdlaegEksportController(BrobyggerDbContext db, CryptoService crypto, AuditService audit, ILogger<UdlaegEksportController> log) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Eksport()
@@ -20,6 +20,7 @@ public class UdlaegEksportController(BrobyggerDbContext db, CryptoService crypto
 
         log.LogInformation("Kreditor-eksport udtrukket af {Bruger} ({Antal} konti)",
             User.Identity?.Name ?? "ukendt", konti.Count);
+        await audit.LogAsync("kreditor_eksport", User.Identity?.Name ?? "ukendt", detalje: $"{konti.Count} konti");
 
         var sb = new StringBuilder();
         sb.AppendLine("navn;reg_nr;konto_nr;iban");

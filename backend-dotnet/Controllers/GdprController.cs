@@ -11,7 +11,7 @@ namespace BrobyggerPortal.Api.Controllers;
 // Kun Admin/Rådgiver. Udtræk logges (revisionsspor). Følsom læsning — helbred inkluderes,
 // da personen har ret til indsigt i egne data.
 [ApiController, Authorize(Roles = "Admin,Raadgiver"), Route("v1/mennesker/{menneskeId:guid}/gdpr-rapport")]
-public class GdprController(BrobyggerDbContext db, CryptoService crypto, ILogger<GdprController> log) : ControllerBase
+public class GdprController(BrobyggerDbContext db, CryptoService crypto, AuditService audit, ILogger<GdprController> log) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Rapport(Guid menneskeId)
@@ -21,6 +21,7 @@ public class GdprController(BrobyggerDbContext db, CryptoService crypto, ILogger
 
         log.LogInformation("GDPR-indsigtsrapport udtrukket for menneske {Id} af {Bruger}",
             menneskeId, User.Identity?.Name ?? "ukendt");
+        await audit.LogAsync("gdpr_rapport", User.Identity?.Name ?? "ukendt", "menneske", menneskeId);
 
         var henvendelser = await db.Henvendelser.Where(h => h.MenneskeId == menneskeId).OrderBy(h => h.Dato).ToListAsync();
         var maalinger = await db.Trivselsmaalinger.Where(x => x.MenneskeId == menneskeId).OrderBy(x => x.Dato).ToListAsync();

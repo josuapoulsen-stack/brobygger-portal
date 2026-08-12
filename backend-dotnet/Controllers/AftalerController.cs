@@ -97,6 +97,24 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
         return AftaleReadDto.From(a);
     }
 
+    public record AftaleLogDto(string Udfald, int? VarighedMin, string? LogNote);
+
+    // Brobygger-log: registrér udfald af afholdt aftale (gennemfoert|afbud|ikke-modt).
+    [HttpPost("{id:guid}/log")]
+    public async Task<ActionResult<AftaleReadDto>> Log(Guid id, AftaleLogDto dto)
+    {
+        var a = await db.Aftaler.FindAsync(id);
+        if (a is null) return NotFound();
+        a.Udfald = dto.Udfald;
+        a.VarighedMin = dto.VarighedMin;
+        a.LogNote = dto.LogNote;
+        a.LoggedAt = DateTimeOffset.UtcNow;
+        if (dto.Udfald == "gennemfoert") a.Status = AftaleStatus.Gennemfoert;
+        a.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync();
+        return AftaleReadDto.From(a);
+    }
+
     [HttpPatch("{id:guid}/status")]
     public async Task<ActionResult<AftaleReadDto>> UpdateStatus(Guid id, AftaleStatusUpdateDto dto)
     {
