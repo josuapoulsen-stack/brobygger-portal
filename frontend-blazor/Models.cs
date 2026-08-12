@@ -63,6 +63,8 @@ public class Aftale
     public string? Brobygningstype { get; set; }
     public DateTimeOffset EfterspurgtAt { get; set; }
     public DateTimeOffset? BekraeftetAt { get; set; }
+    public DateTimeOffset? BrobyggerTildeltAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 }
 
 public class AftaleCreate
@@ -208,6 +210,17 @@ public class Optael
 {
     public string Navn { get; set; } = "";
     public int Antal { get; set; }
+}
+
+public class MatchForslag
+{
+    public Guid Id { get; set; }
+    public string Navn { get; set; } = "";
+    public string? Hq { get; set; }
+    public int Active { get; set; }
+    public int MaxActive { get; set; }
+    public int Score { get; set; }
+    public string Begrundelse { get; set; } = "";
 }
 public class StatistikData
 {

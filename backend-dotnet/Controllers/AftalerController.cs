@@ -54,6 +54,7 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
             Varighed = dto.Varighed, Type = dto.Type, Sted = dto.Sted, Beskrivelse = dto.Beskrivelse,
             Status = dto.Status, Notes = dto.Notes, EfterspurgtAt = dto.EfterspurgtAt ?? DateTimeOffset.UtcNow,
             BekraeftetAt = dto.Status == AftaleStatus.Confirmed ? DateTimeOffset.UtcNow : null,
+            BrobyggerTildeltAt = dto.BrobyggerId is not null ? DateTimeOffset.UtcNow : null,
             Aftaletype = dto.Aftaletype,
             Brobygningstype = dto.Brobygningstype, Henvender = dto.Henvender, Modtager = dto.Modtager,
             Finansiering = dto.Finansiering, Samarbejdspartner = dto.Samarbejdspartner, Afdeling = dto.Afdeling,
@@ -80,7 +81,11 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
     {
         var a = await db.Aftaler.FindAsync(id);
         if (a is null) return NotFound();
-        if (dto.BrobyggerId is not null) a.BrobyggerId = dto.BrobyggerId;
+        if (dto.BrobyggerId is not null && a.BrobyggerId != dto.BrobyggerId)
+        {
+            a.BrobyggerId = dto.BrobyggerId;
+            a.BrobyggerTildeltAt = DateTimeOffset.UtcNow;
+        }
         if (dto.Dato is not null) a.Dato = dto.Dato.Value;
         if (dto.Varighed is not null) a.Varighed = dto.Varighed.Value;
         if (dto.Type is not null) a.Type = dto.Type.Value;

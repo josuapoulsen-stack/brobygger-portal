@@ -84,6 +84,7 @@ public class Aftale
     // Livscyklus: efterspørgsel nu → bekræftelse kan komme dage/uger/måneder senere
     public DateTimeOffset EfterspurgtAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? BekraeftetAt { get; set; }
+    public DateTimeOffset? BrobyggerTildeltAt { get; set; }   // hvornår en brobygger blev knyttet til aftalen
     // Klassificering (fra stamdata)
     public string? Aftaletype { get; set; }
     public string? Brobygningstype { get; set; }          // Social | Forening | Sundhed

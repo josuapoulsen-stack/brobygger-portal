@@ -105,6 +105,7 @@ public class ApiClient(HttpClient http)
 
     public async Task Match(Guid menneskeId, Guid brobyggerId) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/mennesker/{menneskeId}/match", new { brobyggerId }, Json)).EnsureSuccessStatusCode(); }
     public async Task Unmatch(Guid menneskeId) { await EnsureLoginAsync(); (await http.DeleteAsync($"/v1/mennesker/{menneskeId}/match")).EnsureSuccessStatusCode(); }
+    public Task<List<MatchForslag>> GetMatchForslag(Guid menneskeId) => GetList<MatchForslag>($"/v1/mennesker/{menneskeId}/match-forslag");
 
     private class DevToken { public string AccessToken { get; set; } = ""; }
 }
