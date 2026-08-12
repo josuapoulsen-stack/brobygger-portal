@@ -188,7 +188,7 @@ public record BrobyggerReadDto
 
 public record AftaleCreateDto
 {
-    public Guid BrobyggerId { get; init; }
+    public Guid? BrobyggerId { get; init; }
     public Guid MenneskeId { get; init; }
     public DateTimeOffset Dato { get; init; }
     public int Varighed { get; init; } = 60;
@@ -220,10 +220,21 @@ public record AftaleStatusUpdateDto
     public string Notes { get; init; } = string.Empty;
 }
 
+public record AftaleUpdateDto
+{
+    public Guid? BrobyggerId { get; init; }
+    public DateTimeOffset? Dato { get; init; }
+    public int? Varighed { get; init; }
+    public AftaleType? Type { get; init; }
+    public string? Sted { get; init; }
+    public string? Beskrivelse { get; init; }
+    public string? Brobygningstype { get; init; }
+}
+
 public record AftaleReadDto
 {
     public Guid Id { get; init; }
-    public Guid BrobyggerId { get; init; }
+    public Guid? BrobyggerId { get; init; }
     public Guid MenneskeId { get; init; }
     public DateTimeOffset Dato { get; init; }
     public int Varighed { get; init; }

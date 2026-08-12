@@ -15,7 +15,7 @@ else
     <div class="card">
         <dl>
             <dt>Menneske</dt><dd><a href="mennesker/@a.MenneskeId">@(menneske?.Navn ?? "—")</a></dd>
-            <dt>Brobygger</dt><dd><a href="brobyggere/@a.BrobyggerId">@(brobygger?.Navn ?? "—")</a></dd>
+            <dt>Brobygger</dt><dd>@if (a.BrobyggerId is Guid bid2) { <a href="brobyggere/@bid2">@(brobygger?.Navn ?? "—")</a> } else { <span class="muted">Ikke tildelt</span> }</dd>
             <dt>Dato</dt><dd>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</dd>
             <dt>Type</dt><dd>@a.Type</dd>
             <dt>Sted</dt><dd>@(a.Sted ?? "—")</dd>
@@ -24,6 +24,31 @@ else
             <dt>Efterspurgt</dt><dd>@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
             <dt>Bekræftet</dt><dd>@(a.BekraeftetAt is null ? "—" : a.BekraeftetAt.Value.ToLocalTime().ToString("dd. MMM yyyy"))</dd>
         </dl>
+    </div>
+
+    <div class="card">
+        <h3>Redigér aftale</h3>
+        <div class="row">
+            <select @bind="rediger.BrobyggerId">
+                <option value="">— ingen brobygger —</option>
+                @foreach (var bb in brobyggere) { <option value="@bb.Id">@bb.Navn</option> }
+            </select>
+            <input type="datetime-local" @bind="redigerDato" />
+            <input placeholder="Sted" @bind="rediger.Sted" />
+            <select @bind="rediger.Type">
+                <option value="moede">Møde</option>
+                <option value="aktivitet">Aktivitet</option>
+                <option value="telefonopkald">Telefonopkald</option>
+                <option value="online">Online</option>
+            </select>
+            <select @bind="rediger.Brobygningstype">
+                <option value="">—</option>
+                <option value="Social">Social</option>
+                <option value="Forening">Forening</option>
+                <option value="Sundhed">Sundhed</option>
+            </select>
+            <button class="mini" @onclick="GemAftale">Gem</button>
+        </div>
     </div>
 
     <div class="card">
@@ -62,8 +87,11 @@ else
     private Aftale? a;
     private Menneske? menneske;
     private Brobygger? brobygger;
+    private List<Brobygger> brobyggere = [];
     private List<Besked> beskeder = [];
     private BeskedCreate nyBesked = new();
+    private DateTime redigerDato;
+    private AftaleUpdate rediger = new();
     private string? error;
 
     protected override async Task OnParametersSetAsync() => await Load();
@@ -76,12 +104,22 @@ else
             if (a is not null)
             {
                 menneske = await Api.GetMenneske(a.MenneskeId);
-                brobygger = await Api.GetBrobygger(a.BrobyggerId);
+                brobygger = a.BrobyggerId is Guid bid ? await Api.GetBrobygger(bid) : null;
                 beskeder = await Api.GetBeskeder(Id);
+                brobyggere = await Api.GetBrobyggere();
+                redigerDato = a.Dato.ToLocalTime().DateTime;
+                rediger = new AftaleUpdate { BrobyggerId = a.BrobyggerId, Sted = a.Sted, Type = a.Type, Brobygningstype = a.Brobygningstype };
             }
             error = null;
         }
         catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task GemAftale()
+    {
+        rediger.Dato = DateTime.SpecifyKind(redigerDato, DateTimeKind.Local).ToUniversalTime();
+        try { await Api.UpdateAftale(Id, rediger); await Load(); }
+        catch (Exception e) { error = "Kunne ikke gemme: " + e.Message; }
     }
 
     private async Task Send()

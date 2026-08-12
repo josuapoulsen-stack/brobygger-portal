@@ -72,7 +72,7 @@ public class Brobygger
 public class Aftale
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid BrobyggerId { get; set; }
+    public Guid? BrobyggerId { get; set; }          // valgfri — brobygger kan findes efter oprettelse
     public Guid MenneskeId { get; set; }
     public DateTimeOffset Dato { get; set; }
     public int Varighed { get; set; } = 60;

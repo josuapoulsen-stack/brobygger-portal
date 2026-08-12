@@ -39,11 +39,14 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<AftaleReadDto>> Create(AftaleCreateDto dto)
     {
-        var brobygger = await db.Brobyggere.FindAsync(dto.BrobyggerId);
-        if (brobygger is null) return NotFound("Brobygger ikke fundet");
         if (await db.Mennesker.FindAsync(dto.MenneskeId) is null) return NotFound("Menneske ikke fundet");
-        if (AktiveStatus.Contains(dto.Status) && brobygger.Active >= brobygger.MaxActive)
-            return Conflict("Brobygger har ikke kapacitet");
+        if (dto.BrobyggerId is Guid bid)
+        {
+            var brobygger = await db.Brobyggere.FindAsync(bid);
+            if (brobygger is null) return NotFound("Brobygger ikke fundet");
+            if (AktiveStatus.Contains(dto.Status) && brobygger.Active >= brobygger.MaxActive)
+                return Conflict("Brobygger har ikke kapacitet");
+        }
 
         var a = new Aftale
         {
@@ -70,6 +73,23 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
 
         // TODO (SSE): push "ny_aftale"-event til brobygger via egen backend-stream
         return CreatedAtAction(nameof(Get), new { id = a.Id }, AftaleReadDto.From(a));
+    }
+
+    [HttpPatch("{id:guid}")]
+    public async Task<ActionResult<AftaleReadDto>> Update(Guid id, AftaleUpdateDto dto)
+    {
+        var a = await db.Aftaler.FindAsync(id);
+        if (a is null) return NotFound();
+        if (dto.BrobyggerId is not null) a.BrobyggerId = dto.BrobyggerId;
+        if (dto.Dato is not null) a.Dato = dto.Dato.Value;
+        if (dto.Varighed is not null) a.Varighed = dto.Varighed.Value;
+        if (dto.Type is not null) a.Type = dto.Type.Value;
+        if (dto.Sted is not null) a.Sted = dto.Sted;
+        if (dto.Beskrivelse is not null) a.Beskrivelse = dto.Beskrivelse;
+        if (dto.Brobygningstype is not null) a.Brobygningstype = dto.Brobygningstype;
+        a.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync();
+        return AftaleReadDto.From(a);
     }
 
     [HttpPatch("{id:guid}/status")]

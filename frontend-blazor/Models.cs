@@ -54,7 +54,7 @@ public class BrobyggerCreate
 public class Aftale
 {
     public Guid Id { get; set; }
-    public Guid BrobyggerId { get; set; }
+    public Guid? BrobyggerId { get; set; }
     public Guid MenneskeId { get; set; }
     public DateTimeOffset Dato { get; set; }
     public string Type { get; set; } = "moede";
@@ -67,7 +67,7 @@ public class Aftale
 
 public class AftaleCreate
 {
-    public Guid BrobyggerId { get; set; }
+    public Guid? BrobyggerId { get; set; }
     public Guid MenneskeId { get; set; }
     public DateTimeOffset Dato { get; set; }
     public string Type { get; set; } = "moede";
@@ -143,7 +143,7 @@ public class HelbredsnoterResp
 public class UdlaegKonto
 {
     public Guid Id { get; set; }
-    public Guid BrobyggerId { get; set; }
+    public Guid? BrobyggerId { get; set; }
     public string? RegNr { get; set; }
     public string? Iban { get; set; }
     public bool HarKontoNr { get; set; }
@@ -188,6 +188,15 @@ public class Besked
     public string Afsender { get; set; } = "";
     public string Tekst { get; set; } = "";
     public DateTimeOffset Tidspunkt { get; set; }
+}
+
+public class AftaleUpdate
+{
+    public Guid? BrobyggerId { get; set; }
+    public DateTimeOffset? Dato { get; set; }
+    public string? Sted { get; set; }
+    public string? Type { get; set; }
+    public string? Brobygningstype { get; set; }
 }
 public class BeskedCreate
 {
