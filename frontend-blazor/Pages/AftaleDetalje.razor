@@ -18,6 +18,8 @@ else
             <dt>Brobygger</dt><dd><a href="brobyggere/@a.BrobyggerId">@(brobygger?.Navn ?? "—")</a></dd>
             <dt>Dato</dt><dd>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</dd>
             <dt>Type</dt><dd>@a.Type</dd>
+            <dt>Sted</dt><dd>@(a.Sted ?? "—")</dd>
+            <dt>Brobygningstype</dt><dd>@(a.Brobygningstype ?? "—")</dd>
             <dt>Status</dt><dd><span class="pill">@a.Status</span></dd>
             <dt>Efterspurgt</dt><dd>@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
             <dt>Bekræftet</dt><dd>@(a.BekraeftetAt is null ? "—" : a.BekraeftetAt.Value.ToLocalTime().ToString("dd. MMM yyyy"))</dd>

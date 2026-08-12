@@ -51,6 +51,16 @@
         </select>
     </div>
     <div><label>Dato/tid *</label><input type="datetime-local" @bind="dato" /></div>
+    <div><label>Sted</label><input @bind="form.Sted" /></div>
+    <div>
+        <label>Brobygningstype</label>
+        <select @bind="form.Brobygningstype">
+            <option value="">—</option>
+            <option value="Social">Social</option>
+            <option value="Forening">Forening</option>
+            <option value="Sundhed">Sundhed</option>
+        </select>
+    </div>
     <div>
         <label>Type</label>
         <select @bind="form.Type">
@@ -70,7 +80,7 @@
     <div style="grid-column:1/-1">
         <label>Besked til aftalen</label>
         <textarea @bind="form.Beskrivelse" rows="3"></textarea>
-        <p class="two">Pladsholdere: {menneske}, {brobygger}, {dato} — udfyldes når du vælger skabelonen.</p>
+        <p class="two">Pladsholdere: {menneske}, {brobygger}, {sted}, {dato} — udfyldes når du vælger skabelonen.</p>
     </div>
     <div class="full"><button type="submit">Efterspørg aftale</button></div>
 </form>
@@ -126,6 +136,7 @@
         form.Beskrivelse = sk.Indhold
             .Replace("{menneske}", menneske)
             .Replace("{brobygger}", brobygger)
+            .Replace("{sted}", form.Sted ?? "")
             .Replace("{dato}", dato.ToString("dd. MMM yyyy HH:mm"));
     }
 

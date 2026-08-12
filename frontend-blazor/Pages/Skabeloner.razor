@@ -27,7 +27,7 @@
     <div style="grid-column:1/-1">
         <label>Indhold *</label>
         <textarea @bind="form.Indhold" rows="3" required></textarea>
-        <p class="two">Pladsholdere der udfyldes automatisk i aftalen: <code>{menneske}</code> (borgerens navn), <code>{brobygger}</code> (brobyggerens navn), <code>{dato}</code>.</p>
+        <p class="two">Pladsholdere der udfyldes automatisk i aftalen: <code>{menneske}</code> (borgerens navn), <code>{brobygger}</code> (brobyggerens navn), <code>{sted}</code>, <code>{dato}</code>.</p>
     </div>
     <div class="full">
         @if (redigerId is not null) { <button type="button" class="mini ghost" @onclick="Annuller">Annullér</button> }

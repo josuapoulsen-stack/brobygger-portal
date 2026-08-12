@@ -59,6 +59,8 @@ public class Aftale
     public DateTimeOffset Dato { get; set; }
     public string Type { get; set; } = "moede";
     public string Status { get; set; } = "";
+    public string? Sted { get; set; }
+    public string? Brobygningstype { get; set; }
     public DateTimeOffset EfterspurgtAt { get; set; }
     public DateTimeOffset? BekraeftetAt { get; set; }
 }
@@ -70,6 +72,8 @@ public class AftaleCreate
     public DateTimeOffset Dato { get; set; }
     public string Type { get; set; } = "moede";
     public string Status { get; set; } = "pending";
+    public string? Sted { get; set; }
+    public string? Brobygningstype { get; set; }
     public string? Beskrivelse { get; set; }
 }
 
