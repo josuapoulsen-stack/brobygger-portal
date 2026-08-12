@@ -201,6 +201,19 @@ else
             </tbody>
         </table>
     </div>
+
+    @if (adgang.Count > 0)
+    {
+        <div class="card">
+            <h3>Adgangshistorik</h3>
+            <ul class="liste">
+                @foreach (var x in adgang)
+                {
+                    <li>@x.Tidspunkt.ToLocalTime().ToString("dd. MMM yyyy HH:mm") · <b>@x.Handling</b> · @x.Aktoer</li>
+                }
+            </ul>
+        </div>
+    }
 }
 
 <style>
@@ -234,6 +247,7 @@ else
     private List<MatchForslag> forslag = [];
     private List<Opkald> opkald = [];
     private OpkaldCreate nyOpkald = new();
+    private List<Audit> adgang = [];
     private Guid valgtBrobygger;
     private string? helbred;
     private string? error;
@@ -271,6 +285,7 @@ else
             nyOpkald.MenneskeId = Id;
             if (m is not null)
                 rediger = new MenneskeUpdate { Status = m.Status, Brobygningstype = m.Brobygningstype, Telefon = m.Telefon, Hq = m.Hq, Alder = m.Alder };
+            try { adgang = await Api.GetAudit(Id); } catch { adgang = []; }
             error = null;
         }
         catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }

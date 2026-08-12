@@ -65,6 +65,26 @@ public class Aftale
     public DateTimeOffset? BekraeftetAt { get; set; }
     public DateTimeOffset? BrobyggerTildeltAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public string? Udfald { get; set; }
+    public int? VarighedMin { get; set; }
+}
+
+public class AftaleLog
+{
+    public string Udfald { get; set; } = "gennemfoert";
+    public int? VarighedMin { get; set; }
+    public string? LogNote { get; set; }
+}
+
+public class Audit
+{
+    public Guid Id { get; set; }
+    public string Handling { get; set; } = "";
+    public string? MaalType { get; set; }
+    public Guid? MaalId { get; set; }
+    public string Aktoer { get; set; } = "";
+    public string? Detalje { get; set; }
+    public DateTimeOffset Tidspunkt { get; set; }
 }
 
 public class AftaleCreate

@@ -54,6 +54,21 @@ else
     </div>
 
     <div class="card">
+        <h3>Registrér udfald</h3>
+        @if (a.Udfald is not null) { <p class="two">Registreret: <b>@a.Udfald</b> @(a.VarighedMin is int v ? $"· {v} min" : "")</p> }
+        <div class="row">
+            <select @bind="udfald.Udfald">
+                <option value="gennemfoert">Gennemført</option>
+                <option value="afbud">Afbud</option>
+                <option value="ikke-modt">Ikke mødt</option>
+            </select>
+            <input type="number" placeholder="Varighed (min)" @bind="udfald.VarighedMin" />
+            <input placeholder="Note" @bind="udfald.LogNote" />
+            <button class="mini" @onclick="GemUdfald">Gem</button>
+        </div>
+    </div>
+
+    <div class="card">
         <h3>Beskeder</h3>
         <div class="traad">
             @foreach (var b in beskeder)
@@ -94,6 +109,7 @@ else
     private BeskedCreate nyBesked = new();
     private DateTime redigerDato;
     private AftaleUpdate rediger = new();
+    private AftaleLog udfald = new();
     private string? error;
 
     protected override async Task OnParametersSetAsync() => await Load();
@@ -122,6 +138,12 @@ else
         rediger.Dato = DateTime.SpecifyKind(redigerDato, DateTimeKind.Local).ToUniversalTime();
         try { await Api.UpdateAftale(Id, rediger); await Load(); }
         catch (Exception e) { error = "Kunne ikke gemme: " + e.Message; }
+    }
+
+    private async Task GemUdfald()
+    {
+        try { await Api.LogUdfald(Id, udfald); await Load(); }
+        catch (Exception e) { error = "Kunne ikke gemme udfald: " + e.Message; }
     }
 
     private async Task Send()

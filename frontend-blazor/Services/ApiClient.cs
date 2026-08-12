@@ -102,6 +102,8 @@ public class ApiClient(HttpClient http)
         throw new Exception($"{(int)r.StatusCode}: {body}");
     }
     public async Task SetAftaleStatus(Guid id, string status) { await EnsureLoginAsync(); (await http.PatchAsJsonAsync($"/v1/aftaler/{id}/status", new { status, notes = "" }, Json)).EnsureSuccessStatusCode(); }
+    public async Task LogUdfald(Guid id, AftaleLog dto) { await EnsureLoginAsync(); await EnsureOk(await http.PostAsJsonAsync($"/v1/aftaler/{id}/log", dto, Json)); }
+    public Task<List<Audit>> GetAudit(Guid? maalId = null) => GetList<Audit>(maalId is Guid m ? $"/v1/audit?maalId={m}" : "/v1/audit");
 
     public async Task Match(Guid menneskeId, Guid brobyggerId) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/mennesker/{menneskeId}/match", new { brobyggerId }, Json)).EnsureSuccessStatusCode(); }
     public async Task Unmatch(Guid menneskeId) { await EnsureLoginAsync(); (await http.DeleteAsync($"/v1/mennesker/{menneskeId}/match")).EnsureSuccessStatusCode(); }

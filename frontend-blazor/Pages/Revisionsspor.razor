@@ -1,0 +1,34 @@
+@page "/revisionsspor"
+@inject ApiClient Api
+
+<h1>Revisionsspor</h1>
+<p class="sub">Følsomme handlinger — hvem gjorde hvad, hvornår. (Kun Admin.)</p>
+@if (error is not null) { <div class="status err">@error</div> }
+
+<table>
+    <thead><tr><th>Tidspunkt</th><th>Handling</th><th>Mål</th><th>Aktør</th><th>Detalje</th></tr></thead>
+    <tbody>
+        @if (rows.Count == 0) { <tr><td colspan="5" class="muted">Ingen poster.</td></tr> }
+        @foreach (var a in rows)
+        {
+            <tr>
+                <td class="two">@a.Tidspunkt.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</td>
+                <td><span class="pill">@a.Handling</span></td>
+                <td class="two">@a.MaalType @a.MaalId</td>
+                <td>@a.Aktoer</td>
+                <td class="two">@a.Detalje</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Audit> rows = [];
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { rows = await Api.GetAudit(); }
+        catch (Exception e) { error = "Kunne ikke hente (kræver Admin): " + e.Message; }
+    }
+}
