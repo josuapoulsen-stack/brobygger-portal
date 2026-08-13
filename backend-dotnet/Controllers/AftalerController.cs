@@ -28,6 +28,26 @@ public class AftalerController(BrobyggerDbContext db, BrobyggerPortal.Api.Servic
         return Ok(rows.Select(AftaleReadDto.From));
     }
 
+    [HttpGet("eksport"), Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Eksport()
+    {
+        var aftaler = await db.Aftaler.OrderByDescending(a => a.Dato).ToListAsync();
+        var mennesker = await db.Mennesker.ToDictionaryAsync(m => m.Id, m => m.Navn);
+        var brobyggere = await db.Brobyggere.ToDictionaryAsync(b => b.Id, b => b.Navn);
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("dato;menneske;brobygger;status;type;brobygningstype;sted;udfald");
+        foreach (var a in aftaler)
+        {
+            var mn = mennesker.GetValueOrDefault(a.MenneskeId, "");
+            var bb = a.BrobyggerId is Guid bid && brobyggere.TryGetValue(bid, out var n) ? n : "";
+            sb.AppendLine($"{a.Dato:yyyy-MM-dd HH:mm};{Csv(mn)};{Csv(bb)};{a.Status};{a.Type};{Csv(a.Brobygningstype)};{Csv(a.Sted)};{Csv(a.Udfald)}");
+        }
+        return File(System.Text.Encoding.UTF8.GetBytes(sb.ToString()), "text/csv; charset=utf-8", "aftaler.csv");
+    }
+
+    private static string Csv(string? s) => s is null ? "" : "\"" + s.Replace("\"", "\"\"") + "\"";
+
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<AftaleReadDto>> Get(Guid id)
     {
@@ -46,6 +66,14 @@ public class AftalerController(BrobyggerDbContext db, BrobyggerPortal.Api.Servic
             if (brobygger is null) return NotFound("Brobygger ikke fundet");
             if (AktiveStatus.Contains(dto.Status) && brobygger.Active >= brobygger.MaxActive)
                 return Conflict("Brobygger har ikke kapacitet");
+
+            // Dobbeltbookings-tjek: overlappende tidsrum for samme brobygger
+            var nySlut = dto.Dato.AddMinutes(dto.Varighed);
+            var optaget = await db.Aftaler
+                .Where(x => x.BrobyggerId == bid && x.Status != AftaleStatus.Aflyst && x.Status != AftaleStatus.Afslaaet)
+                .ToListAsync();
+            if (optaget.Any(x => x.Dato < nySlut && dto.Dato < x.Dato.AddMinutes(x.Varighed)))
+                return Conflict("Brobygger har allerede en aftale i det tidsrum");
         }
 
         var a = new Aftale
