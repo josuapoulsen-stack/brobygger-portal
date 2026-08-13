@@ -45,6 +45,7 @@
 </table>
 
 <form @onsubmit="Opret">
+    <div style="grid-column:1/-1"><label>Titel</label><input @bind="form.Titel" placeholder="fx Nusrat til øjenlæge" /></div>
     <div>
         <label>Menneske *</label>
         <select @bind="form.MenneskeId">
@@ -83,6 +84,12 @@
             @foreach (var s in modtagerListe) { <option value="@s.Vaerdi">@s.Vaerdi</option> }
         </select>
     </div>
+    <div><label>Henvender (konkret)</label><input @bind="form.HenvenderKonkret" /></div>
+    <div><label>Modtager (konkret)</label><input @bind="form.ModtagerKonkret" /></div>
+    <div><label>Programtype</label><input @bind="form.Programtype" placeholder="fx SBB" /></div>
+    <div><label>Indsatstype</label><input @bind="form.Indsatstype" placeholder="fx IDAB" /></div>
+    <div><label>Gentagelser (antal)</label><input type="number" @bind="form.GentagelserAntal" /></div>
+    <div><label>Dage imellem</label><input type="number" @bind="form.DageImellem" /></div>
     <div>
         <label>Type</label>
         <select @bind="form.Type">

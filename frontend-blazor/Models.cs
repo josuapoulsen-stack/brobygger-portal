@@ -61,6 +61,13 @@ public class Aftale
     public string Status { get; set; } = "";
     public string? Sted { get; set; }
     public string? Brobygningstype { get; set; }
+    public string? Titel { get; set; }
+    public string? Programtype { get; set; }
+    public string? Indsatstype { get; set; }
+    public string? HenvenderKonkret { get; set; }
+    public string? ModtagerKonkret { get; set; }
+    public int? GentagelserAntal { get; set; }
+    public int? DageImellem { get; set; }
     public DateTimeOffset EfterspurgtAt { get; set; }
     public DateTimeOffset? BekraeftetAt { get; set; }
     public DateTimeOffset? BrobyggerTildeltAt { get; set; }
@@ -106,8 +113,17 @@ public class AftaleCreate
     public string Status { get; set; } = "pending";
     public string? Sted { get; set; }
     public string? Brobygningstype { get; set; }
+    public string? Titel { get; set; }
+    public string? Programtype { get; set; }
+    public string? Indsatstype { get; set; }
+    public string? Samarbejdskommune { get; set; }
+    public string? Samarbejdshospital { get; set; }
     public string? Henvender { get; set; }
+    public string? HenvenderKonkret { get; set; }
     public string? Modtager { get; set; }
+    public string? ModtagerKonkret { get; set; }
+    public int? GentagelserAntal { get; set; }
+    public int? DageImellem { get; set; }
     public string? Beskrivelse { get; set; }
 }
 

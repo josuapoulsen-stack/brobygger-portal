@@ -14,6 +14,9 @@ else
 
     <div class="card">
         <dl>
+            @if (!string.IsNullOrEmpty(a.Titel)) { <dt>Titel</dt><dd>@a.Titel</dd> }
+            @if (!string.IsNullOrEmpty(a.Programtype)) { <dt>Programtype</dt><dd>@a.Programtype @a.Indsatstype</dd> }
+            @if (a.GentagelserAntal is int g && g > 0) { <dt>Gentagelser</dt><dd>@g gange, @a.DageImellem dage imellem</dd> }
             <dt>Menneske</dt><dd><a href="mennesker/@a.MenneskeId">@(menneske?.Navn ?? "—")</a></dd>
             <dt>Brobygger</dt><dd>@if (a.BrobyggerId is Guid bid2) { <a href="brobyggere/@bid2">@(brobygger?.Navn ?? "—")</a> } else { <span class="muted">Ikke tildelt</span> }</dd>
             <dt>Dato</dt><dd>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</dd>
