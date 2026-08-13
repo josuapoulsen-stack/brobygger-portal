@@ -16,7 +16,15 @@
         @foreach (var a in rows)
         {
             <tr>
-                <td><a href="mennesker/@a.MenneskeId">@NavnM(a.MenneskeId)</a></td>
+                <td>
+                    <a href="mennesker/@a.MenneskeId">@NavnM(a.MenneskeId)</a>
+                    @if (!string.IsNullOrEmpty(a.Titel)) { <div class="two">@a.Titel</div> }
+                    <div style="margin-top:.2rem">
+                        @if (!string.IsNullOrEmpty(a.Brobygningstype)) { <span class="pill @BtClass(a.Brobygningstype)">@a.Brobygningstype</span> }
+                        @if (!string.IsNullOrEmpty(a.Programtype)) { <span class="chip-code">@a.Programtype</span> }
+                        @if (!string.IsNullOrEmpty(a.Indsatstype)) { <span class="chip-code">@a.Indsatstype</span> }
+                    </div>
+                </td>
                 <td>
                     @if (a.BrobyggerId is Guid bid) { <a href="brobyggere/@bid">@NavnB(bid)</a> }
                     else { <span class="muted">Ikke tildelt</span> }
@@ -188,4 +196,5 @@
     private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
     private string NavnB(Guid id) => brobyggere.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
     private static string Pill(string s) => s switch { "confirmed" => "gron", "pending" => "gul", "aflyst" or "afslaaet" or "brudt" => "graa", _ => "" };
+    private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };
 }

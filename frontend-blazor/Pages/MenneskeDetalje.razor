@@ -16,6 +16,8 @@ else
         @(m.Alder is null ? "" : m.Alder + " år · ")@(m.Kon ?? "")
         @(string.IsNullOrEmpty(m.Hq) ? "" : " · " + m.Hq)
         <span class="pill">@m.Status</span>
+        @if (!string.IsNullOrEmpty(m.Brobygningstype)) { <span class="pill @BtClass(m.Brobygningstype)">@m.Brobygningstype</span> }
+        @if (!string.IsNullOrEmpty(m.Region)) { <span class="pill graa">@m.Region</span> }
     </p>
     <p class="sub"><a href="mennesker/@Id/rapport">📄 Indsigtsrapport (GDPR art. 15)</a></p>
 
@@ -274,6 +276,7 @@ else
         new Q("Mit generelle velbefindende er godt", () => nyMaaling.Velbefindende, v => nyMaaling.Velbefindende = v),
     };
     private static string InstrumentLabel(string i) => i switch { "ucla3" => "UCLA-3", "who5" => "WHO-5", _ => "Kombineret" };
+    private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };
 
     protected override async Task OnParametersSetAsync() => await Load();
 
