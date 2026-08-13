@@ -45,6 +45,17 @@ else
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(devKey)),
             RoleClaimType = "roles",
         };
+        // SSE: EventSource kan ikke sætte Authorization-header, så token accepteres via ?access_token= på /v1/stream
+        o.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var t = ctx.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(t) && ctx.Request.Path.StartsWithSegments("/v1/stream"))
+                    ctx.Token = t;
+                return Task.CompletedTask;
+            },
+        };
     });
 }
 
