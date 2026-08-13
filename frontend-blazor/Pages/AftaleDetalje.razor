@@ -15,7 +15,15 @@ else
     <div class="card">
         <dl>
             @if (!string.IsNullOrEmpty(a.Titel)) { <dt>Titel</dt><dd>@a.Titel</dd> }
-            @if (!string.IsNullOrEmpty(a.Programtype)) { <dt>Programtype</dt><dd>@a.Programtype @a.Indsatstype</dd> }
+            @if (!string.IsNullOrEmpty(a.Programtype) || !string.IsNullOrEmpty(a.Indsatstype))
+            {
+                <dt>Indsats</dt>
+                <dd>
+                    @if (!string.IsNullOrEmpty(a.Programtype)) { <span class="chip-code">@a.Programtype</span> }
+                    @if (!string.IsNullOrEmpty(a.Indsatstype)) { <span class="chip-code">@a.Indsatstype</span> }
+                    @if (!string.IsNullOrEmpty(a.Brobygningstype)) { <span class="pill @BtClass(a.Brobygningstype)">@a.Brobygningstype</span> }
+                </dd>
+            }
             @if (a.GentagelserAntal is int g && g > 0) { <dt>Gentagelser</dt><dd>@g gange, @a.DageImellem dage imellem</dd> }
             <dt>Menneske</dt><dd><a href="mennesker/@a.MenneskeId">@(menneske?.Navn ?? "—")</a></dd>
             <dt>Brobygger</dt><dd>@if (a.BrobyggerId is Guid bid2) { <a href="brobyggere/@bid2">@(brobygger?.Navn ?? "—")</a> } else { <span class="muted">Ikke tildelt</span> }</dd>
@@ -24,7 +32,7 @@ else
             <dt>Type</dt><dd>@a.Type</dd>
             <dt>Sted</dt><dd>@(a.Sted ?? "—")</dd>
             <dt>Brobygningstype</dt><dd>@(a.Brobygningstype ?? "—")</dd>
-            <dt>Status</dt><dd><span class="pill">@a.Status</span></dd>
+            <dt>Status</dt><dd><span class="pill @StatusClass(a.Status)">@a.Status</span></dd>
             <dt>Oprettet</dt><dd>@a.CreatedAt.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</dd>
             <dt>Efterspurgt</dt><dd>@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
             <dt>Brobygger tildelt</dt><dd>@(a.BrobyggerTildeltAt is null ? "—" : a.BrobyggerTildeltAt.Value.ToLocalTime().ToString("dd. MMM yyyy HH:mm"))</dd>
@@ -136,6 +144,9 @@ else
         }
         catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
     }
+
+    private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };
+    private static string StatusClass(string s) => s switch { "confirmed" => "gron", "pending" => "gul", "aflyst" or "afslaaet" or "brudt" => "graa", _ => "" };
 
     private async Task GemAftale()
     {
