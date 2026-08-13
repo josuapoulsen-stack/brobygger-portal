@@ -43,7 +43,8 @@ public class AftalerController(BrobyggerDbContext db, BrobyggerPortal.Api.Servic
             var bb = a.BrobyggerId is Guid bid && brobyggere.TryGetValue(bid, out var n) ? n : "";
             sb.AppendLine($"{a.Dato:yyyy-MM-dd HH:mm};{Csv(mn)};{Csv(bb)};{a.Status};{a.Type};{Csv(a.Brobygningstype)};{Csv(a.Sted)};{Csv(a.Udfald)}");
         }
-        return File(System.Text.Encoding.UTF8.GetBytes(sb.ToString()), "text/csv; charset=utf-8", "aftaler.csv");
+        byte[] csv = [.. System.Text.Encoding.UTF8.GetPreamble(), .. System.Text.Encoding.UTF8.GetBytes(sb.ToString())];
+        return File(csv, "text/csv; charset=utf-8", "aftaler.csv");
     }
 
     private static string Csv(string? s) => s is null ? "" : "\"" + s.Replace("\"", "\"\"") + "\"";

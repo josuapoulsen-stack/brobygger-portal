@@ -31,7 +31,8 @@ public class UdlaegEksportController(BrobyggerDbContext db, CryptoService crypto
             sb.AppendLine($"{Csv(navn)};{Csv(k.RegNr)};{Csv(konto)};{Csv(k.Iban)}");
         }
 
-        return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv; charset=utf-8", "kreditorer.csv");
+        byte[] csv = [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(sb.ToString())];
+        return File(csv, "text/csv; charset=utf-8", "kreditorer.csv");
     }
 
     private static string Csv(string? s) => s is null ? "" : "\"" + s.Replace("\"", "\"\"") + "\"";

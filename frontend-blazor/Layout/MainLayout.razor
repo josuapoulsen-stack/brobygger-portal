@@ -4,53 +4,71 @@
 @inject NavigationManager Nav
 @implements IDisposable
 
-<header>
-    <div class="topbar">
-        <div class="brand">Brobygger Portal</div>
-        <div class="sog">
-            <input placeholder="Søg navn/telefon…" value="@soegQ" @oninput="OnSoeg" />
-            @if (soegRes is not null && (soegRes.Mennesker.Any() || soegRes.Brobyggere.Any()))
+<div class="app">
+    <aside class="side">
+        <div class="side-brand">
+            <span class="dot">◆</span>
+            <div>
+                <div class="bn">Social Sundhed</div>
+                <div class="bs">Koordinator</div>
+            </div>
+        </div>
+
+        <nav class="side-nav">
+            <NavLink href="" Match="NavLinkMatch.All">@Ikon("home") <span>Oversigt</span></NavLink>
+            <NavLink href="mennesker">@Ikon("heart") <span>Mennesker</span></NavLink>
+            <NavLink href="brobyggere">@Ikon("users") <span>Brobyggere</span></NavLink>
+            <NavLink href="aftaler">@Ikon("note") <span>Aftaler</span></NavLink>
+            <NavLink href="kalender">@Ikon("calendar") <span>Kalender</span></NavLink>
+            <NavLink href="statistik">@Ikon("chart") <span>Statistik</span></NavLink>
+            <div class="side-sep">Administration</div>
+            <NavLink href="skabeloner">@Ikon("chat") <span>Skabeloner</span></NavLink>
+            <NavLink href="stamdata">@Ikon("chip") <span>Stamdata</span></NavLink>
+            <NavLink href="oekonomi">@Ikon("coin") <span>Økonomi</span></NavLink>
+            <NavLink href="revisionsspor">@Ikon("shield") <span>Revisionsspor</span></NavLink>
+        </nav>
+
+        <div class="side-user">
+            <div class="avatar">DB</div>
+            <div style="flex:1;min-width:0">
+                <div class="un">Dev Bruger</div>
+                <div class="ur">Admin · dev-login</div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="main-top">
+            <div class="sog">
+                <input placeholder="Søg navn/telefon…" value="@soegQ" @oninput="OnSoeg" />
+                @if (soegRes is not null && (soegRes.Mennesker.Any() || soegRes.Brobyggere.Any()))
+                {
+                    <div class="sog-res">
+                        @foreach (var r in soegRes.Mennesker) { <a href="mennesker/@r.Id" @onclick="LukSog">@r.Navn <span class="two">· menneske</span></a> }
+                        @foreach (var r in soegRes.Brobyggere) { <a href="brobyggere/@r.Id" @onclick="LukSog">@r.Navn <span class="two">· brobygger</span></a> }
+                    </div>
+                }
+            </div>
+            <div class="bell" @onclick="ToggleNotif">🔔@if (ulaest > 0) { <span class="badge">@ulaest</span>}</div>
+            @if (visNotif)
             {
-                <div class="sog-res">
-                    @foreach (var r in soegRes.Mennesker) { <a href="mennesker/@r.Id" @onclick="LukSog">@r.Navn <span class="two">· menneske</span></a> }
-                    @foreach (var r in soegRes.Brobyggere) { <a href="brobyggere/@r.Id" @onclick="LukSog">@r.Navn <span class="two">· brobygger</span></a> }
+                <div class="notif-drop">
+                    @if (notifs.Count == 0) { <div class="two" style="padding:.5rem .7rem">Ingen notifikationer.</div> }
+                    @foreach (var n in notifs.Take(15))
+                    {
+                        <div class="notif @(n.Laest ? "" : "ny")" @onclick="() => AabnNotif(n)">
+                            <div><b>@NotifLabel(n.Type)</b> <span class="two">· @n.Tidspunkt.ToLocalTime().ToString("dd. MMM HH:mm")</span></div>
+                            <div class="two">@n.Tekst</div>
+                        </div>
+                    }
+                    <button class="mini ghost" style="margin:.4rem" @onclick="LaesAlle">Markér alle læst</button>
                 </div>
             }
         </div>
-        <div class="bell" @onclick="ToggleNotif">🔔@if (ulaest > 0) { <span class="badge">@ulaest</span>}</div>
+        <div class="wrap">
+            @Body
+        </div>
     </div>
-
-    @if (visNotif)
-    {
-        <div class="notif-drop">
-            @if (notifs.Count == 0) { <div class="two" style="padding:.5rem .7rem">Ingen notifikationer.</div> }
-            @foreach (var n in notifs.Take(15))
-            {
-                <div class="notif @(n.Laest ? "" : "ny")" @onclick="() => AabnNotif(n)">
-                    <div><b>@NotifLabel(n.Type)</b> <span class="two">· @n.Tidspunkt.ToLocalTime().ToString("dd. MMM HH:mm")</span></div>
-                    <div class="two">@n.Tekst</div>
-                </div>
-            }
-            <button class="mini ghost" style="margin:.4rem" @onclick="LaesAlle">Markér alle læst</button>
-        </div>
-    }
-
-    <nav>
-        <NavLink href="" Match="NavLinkMatch.All" class="nav-item" ActiveClass="active">Forside</NavLink>
-        <NavLink href="mennesker" class="nav-item" ActiveClass="active">Mennesker</NavLink>
-        <NavLink href="brobyggere" class="nav-item" ActiveClass="active">Brobyggere</NavLink>
-        <NavLink href="aftaler" class="nav-item" ActiveClass="active">Aftaler</NavLink>
-        <NavLink href="kalender" class="nav-item" ActiveClass="active">Kalender</NavLink>
-        <NavLink href="statistik" class="nav-item" ActiveClass="active">Statistik</NavLink>
-        <NavLink href="skabeloner" class="nav-item" ActiveClass="active">Skabeloner</NavLink>
-        <NavLink href="stamdata" class="nav-item" ActiveClass="active">Stamdata</NavLink>
-        <NavLink href="oekonomi" class="nav-item" ActiveClass="active">Økonomi</NavLink>
-        <NavLink href="revisionsspor" class="nav-item" ActiveClass="active">Revisionsspor</NavLink>
-    </nav>
-</header>
-
-<div class="wrap">
-    @Body
 </div>
 
 @code {
@@ -60,6 +78,21 @@
     private int ulaest;
     private bool visNotif;
     private DotNetObjectReference<MainLayout>? _ref;
+
+    private static readonly Dictionary<string, string> Ikoner = new()
+    {
+        ["home"] = "<path d='M3 11l9-8 9 8'/><path d='M5 10v10h14V10'/>",
+        ["heart"] = "<path d='M20.8 5a5.5 5.5 0 0 0-7.8 0L12 6l-1-1a5.5 5.5 0 1 0-7.8 7.8L12 21l8.8-8.2A5.5 5.5 0 0 0 20.8 5z'/>",
+        ["users"] = "<circle cx='9' cy='7' r='3'/><path d='M2 21v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1'/><path d='M16 3.5a3 3 0 0 1 0 7'/>",
+        ["note"] = "<rect x='4' y='3' width='16' height='18' rx='2'/><path d='M8 8h8M8 12h8M8 16h5'/>",
+        ["calendar"] = "<rect x='3' y='4' width='18' height='17' rx='2'/><path d='M3 9h18M8 2v4M16 2v4'/>",
+        ["chart"] = "<path d='M3 3v18h18'/><path d='M7 15l3-4 3 3 4-6'/>",
+        ["chat"] = "<path d='M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z'/>",
+        ["chip"] = "<rect x='5' y='5' width='14' height='14' rx='2'/><path d='M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3'/>",
+        ["coin"] = "<circle cx='12' cy='12' r='9'/><path d='M12 7v10M9.5 9.5h4a2 2 0 0 1 0 4H9.5'/>",
+        ["shield"] = "<path d='M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z'/>",
+    };
+    private MarkupString Ikon(string n) => new($"<svg class='nav-i' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'>{(Ikoner.TryGetValue(n, out var p) ? p : "")}</svg>");
 
     protected override async Task OnAfterRenderAsync(bool first)
     {

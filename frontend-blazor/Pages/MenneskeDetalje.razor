@@ -50,6 +50,23 @@ else
         </div>
     </div>
 
+    <div class="card">
+        <h3>Tidslinje</h3>
+        <div class="tl">
+            @foreach (var t in Tidslinje().Take(30))
+            {
+                <div class="tl-item @t.Type.ToLowerInvariant()">
+                    <div class="tl-dot"></div>
+                    <div class="tl-body">
+                        <div class="tl-hd"><b>@t.Type</b> <span class="two">· @t.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</span></div>
+                        @if (!string.IsNullOrEmpty(t.Tekst)) { <div class="two">@t.Tekst</div> }
+                    </div>
+                </div>
+            }
+            @if (!Tidslinje().Any()) { <p class="muted">Ingen aktivitet endnu.</p> }
+        </div>
+    </div>
+
     <div class="sag-kort">
 
     <div class="card">
@@ -252,6 +269,13 @@ else
     .chk input { width:auto; }
     .forslag { display:flex; flex-direction:column; gap:.4rem; }
     .fslag { display:flex; justify-content:space-between; align-items:center; gap:.6rem; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:.4rem .6rem; font-size:.88rem; }
+    .tl { padding-left:.2rem; }
+    .tl-item { display:flex; gap:.7rem; padding-bottom:.85rem; position:relative; }
+    .tl-item:not(:last-child)::before { content:""; position:absolute; left:5px; top:15px; bottom:-3px; width:2px; background:var(--line); }
+    .tl-dot { width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--card); flex:0 0 auto; margin-top:3px; z-index:1; }
+    .tl-item.aftale .tl-dot { background:#2E6E9E; } .tl-item.trivsel .tl-dot { background:var(--good); } .tl-item.opkald .tl-dot { background:var(--warn); }
+    .tl-body { flex:1; min-width:0; }
+    .tl-hd { font-size:.88rem; }
     .sag-kort { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1rem; align-items:start; }
     .sag-kort > .card { margin-top:0; }
     .spark { display:flex; align-items:flex-end; gap:3px; height:60px; padding:.3rem 0 .6rem; }
@@ -294,6 +318,16 @@ else
     };
     private static string InstrumentLabel(string i) => i switch { "ucla3" => "UCLA-3", "who5" => "WHO-5", _ => "Kombineret" };
     private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };
+
+    private IEnumerable<(DateTimeOffset Dato, string Type, string Tekst)> Tidslinje()
+    {
+        var items = new List<(DateTimeOffset, string, string)>();
+        foreach (var h in henvendelser) items.Add((h.Dato, "Henvendelse", string.Join(" · ", new[] { h.Kanal, h.Resume }.Where(x => !string.IsNullOrEmpty(x)))));
+        foreach (var a in aftaler) items.Add((a.Dato, "Aftale", $"{a.Type} · {a.Status}"));
+        foreach (var u in maalinger) items.Add((u.Dato, "Trivsel", $"{u.Instrument} · score {u.Score}"));
+        foreach (var o in opkald) items.Add((o.Tidspunkt, "Opkald", (o.Retning == "ud" ? "Udgående" : "Indgående") + (string.IsNullOrEmpty(o.Note) ? "" : " · " + o.Note)));
+        return items.OrderByDescending(x => x.Item1);
+    }
 
     protected override async Task OnParametersSetAsync() => await Load();
 

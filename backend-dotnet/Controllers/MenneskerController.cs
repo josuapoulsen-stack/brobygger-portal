@@ -33,7 +33,8 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto, Au
         sb.AppendLine("navn;alder;koen;telefon;hovedsaede;afdeling;status;kilde;oprettet");
         foreach (var m in rows)
             sb.AppendLine($"{C(m.Navn)};{m.Alder};{C(m.Kon)};{C(m.Telefon)};{C(m.Hq)};{C(m.Afdeling)};{m.Status};{C(m.Kilde)};{m.CreatedAt:yyyy-MM-dd}");
-        return File(System.Text.Encoding.UTF8.GetBytes(sb.ToString()), "text/csv; charset=utf-8", "mennesker.csv");
+        byte[] csv = [.. System.Text.Encoding.UTF8.GetPreamble(), .. System.Text.Encoding.UTF8.GetBytes(sb.ToString())];
+        return File(csv, "text/csv; charset=utf-8", "mennesker.csv");
     }
 
     private static string C(string? s) => s is null ? "" : "\"" + s.Replace("\"", "\"\"") + "\"";
