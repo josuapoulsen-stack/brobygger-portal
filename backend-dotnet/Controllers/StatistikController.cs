@@ -31,7 +31,20 @@ public class StatistikController(BrobyggerDbContext db) : ControllerBase
                 .GroupBy(m => m.Hq!).Select(g => new { navn = g.Key, antal = g.Count() }).OrderByDescending(x => x.antal),
             trivselBaselineGns = Gennemsnit(maalinger, UclaSlags.Baseline),
             trivselOpfoelgningGns = Gennemsnit(maalinger, UclaSlags.Opfoelgning),
+            aftalerPrMaaned = aftaler
+                .GroupBy(a => new { a.Dato.Year, a.Dato.Month })
+                .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+                .Select(g => new { navn = $"{g.Key.Year}-{g.Key.Month:00}", antal = g.Count() })
+                .TakeLast(12),
+            gennemfoerselsrate = Rate(aftaler),
         });
+    }
+
+    private static double? Rate(List<Aftale> aftaler)
+    {
+        var afholdt = aftaler.Count(a => a.Status == AftaleStatus.Gennemfoert);
+        var afbrudt = aftaler.Count(a => a.Status is AftaleStatus.Aflyst or AftaleStatus.Afslaaet or AftaleStatus.Brudt);
+        return (afholdt + afbrudt) == 0 ? null : Math.Round(100.0 * afholdt / (afholdt + afbrudt), 0);
     }
 
     private static double? Gennemsnit(List<Trivselsmaaling> ms, UclaSlags slags)

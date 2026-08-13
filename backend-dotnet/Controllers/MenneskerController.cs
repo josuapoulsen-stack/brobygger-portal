@@ -25,6 +25,19 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto, Au
         return Ok(rows.Select(MenneskeReadDto.From));
     }
 
+    [HttpGet("eksport"), Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Eksport()
+    {
+        var rows = await db.Mennesker.Where(m => m.DeletedAt == null).OrderBy(m => m.Navn).ToListAsync();
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("navn;alder;koen;telefon;hovedsaede;afdeling;status;kilde;oprettet");
+        foreach (var m in rows)
+            sb.AppendLine($"{C(m.Navn)};{m.Alder};{C(m.Kon)};{C(m.Telefon)};{C(m.Hq)};{C(m.Afdeling)};{m.Status};{C(m.Kilde)};{m.CreatedAt:yyyy-MM-dd}");
+        return File(System.Text.Encoding.UTF8.GetBytes(sb.ToString()), "text/csv; charset=utf-8", "mennesker.csv");
+    }
+
+    private static string C(string? s) => s is null ? "" : "\"" + s.Replace("\"", "\"\"") + "\"";
+
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<MenneskeReadDto>> Get(Guid id)
     {
