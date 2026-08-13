@@ -1,47 +1,77 @@
 @page "/"
 @inject ApiClient Api
 
-<h1>Overblik</h1>
-<p class="sub">Brobygger Portal — status lige nu.</p>
+<div class="hero">
+    <div>
+        <h1>Overblik</h1>
+        <p class="sub" style="margin:0">@DateTime.Now.ToString("dddd d. MMMM yyyy")</p>
+    </div>
+    <div class="hero-stats">
+        <a class="hs" href="mennesker"><span class="num">@mennesker.Count</span><span>Mennesker</span></a>
+        <a class="hs" href="brobyggere"><span class="num">@brobyggere.Count</span><span>Brobyggere</span></a>
+        <a class="hs" href="aftaler"><span class="num">@Aktive</span><span>Aktive aftaler</span></a>
+        <div class="hs"><span class="num">@Ledig</span><span>Ledig kapacitet</span></div>
+    </div>
+</div>
 @if (error is not null) { <div class="status err">@error</div> }
 
-<div class="tiles">
-    <a class="tile" href="mennesker"><div class="num">@mennesker.Count</div><div class="lbl">Mennesker</div></a>
-    <a class="tile" href="brobyggere"><div class="num">@brobyggere.Count</div><div class="lbl">Brobyggere</div></a>
-    <a class="tile" href="aftaler"><div class="num">@Aktive</div><div class="lbl">Aktive aftaler</div></a>
-    <a class="tile" href="aftaler"><div class="num">@Afventer.Count</div><div class="lbl">Afventer bekræftelse</div></a>
-    <div class="tile"><div class="num">@Ledig</div><div class="lbl">Ledig kapacitet</div></div>
+<div class="cols">
+    <section class="panel">
+        <div class="panel-hd"><h3>Kommende aftaler</h3><a href="kalender" class="two">Kalender →</a></div>
+        @if (Kommende.Count == 0) { <p class="muted">Ingen kommende aftaler.</p> }
+        @foreach (var a in Kommende)
+        {
+            <a class="rowitem @BtClass(a.Brobygningstype)" href="aftaler/@a.Id">
+                <span class="tid">@a.Dato.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                <span class="navn">@NavnM(a.MenneskeId)@(string.IsNullOrEmpty(a.Titel) ? "" : " · " + a.Titel)</span>
+                <span class="pill @StatusClass(a.Status)">@a.Status</span>
+            </a>
+        }
+    </section>
+
+    <section class="panel">
+        <div class="panel-hd"><h3>Afventer bekræftelse</h3><span class="badge2">@Afventer.Count</span></div>
+        @if (Afventer.Count == 0) { <p class="muted">Alt bekræftet 🎉</p> }
+        @foreach (var a in Afventer)
+        {
+            <div class="rowitem gul">
+                <span class="navn"><a href="aftaler/@a.Id">@NavnM(a.MenneskeId)</a> <span class="two">@a.Dato.ToLocalTime().ToString("dd/MM")</span></span>
+                <button class="mini" @onclick="() => Bekraeft(a.Id)">Bekræft</button>
+            </div>
+        }
+    </section>
+
+    <section class="panel">
+        <div class="panel-hd"><h3>Skal matches</h3><span class="badge2">@Umatchede.Count</span></div>
+        @if (Umatchede.Count == 0) { <p class="muted">Alle er matchet.</p> }
+        @foreach (var m in Umatchede)
+        {
+            <a class="rowitem" href="mennesker/@m.Id">
+                <span class="navn">@m.Navn</span>
+                <span class="two">@(m.Hq ?? "—")</span>
+                <span class="pill @StatusClass2(m.Status)">@m.Status</span>
+            </a>
+        }
+    </section>
 </div>
 
-@if (Afventer.Count > 0)
-{
-    <div class="card">
-        <h3>Afventer bekræftelse</h3>
-        <table>
-            <thead><tr><th>Menneske</th><th>Brobygger</th><th>Dato</th><th></th></tr></thead>
-            <tbody>
-                @foreach (var a in Afventer)
-                {
-                    <tr>
-                        <td><a href="mennesker/@a.MenneskeId">@NavnM(a.MenneskeId)</a></td>
-                        <td>@if (a.BrobyggerId is Guid bid) { <a href="brobyggere/@bid">@NavnB(bid)</a> } else { <span class="muted">Ikke tildelt</span> }</td>
-                        <td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td>
-                        <td><button class="mini" @onclick="() => Bekraeft(a.Id)">Bekræft</button></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
-
 <style>
-    .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; }
-    .tile { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.2rem; text-decoration:none; color:inherit; display:block; }
-    a.tile:hover { border-color:var(--accent); }
-    .num { font-size:2rem; font-weight:700; color:var(--accent2); }
-    .lbl { color:var(--soft); font-size:.9rem; margin-top:.2rem; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-top:1.25rem; }
-    .card h3 { margin:0 0 .6rem; font-size:1rem; }
+    .hero { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+    .hero-stats { display:flex; gap:.6rem; flex-wrap:wrap; }
+    .hs { display:flex; flex-direction:column; align-items:flex-start; background:var(--card); border:1px solid var(--line-strong); border-radius:12px; padding:.7rem 1rem; min-width:110px; text-decoration:none; color:var(--soft); font-size:.78rem; }
+    a.hs:hover { border-color:var(--accent); }
+    .hs .num { font-size:1.7rem; line-height:1.1; }
+    .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1rem; align-items:start; }
+    .panel { background:var(--card); border:1px solid var(--line-strong); border-radius:14px; padding:1rem 1.1rem; }
+    .panel-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:.7rem; }
+    .panel-hd h3 { margin:0; font-size:1.02rem; }
+    .badge2 { font-family:var(--mono); font-size:.72rem; background:var(--sand); color:var(--soft); border-radius:999px; padding:.05rem .5rem; }
+    .rowitem { display:flex; align-items:center; gap:.6rem; padding:.5rem .55rem; border-radius:8px; border-left:3px solid var(--line-strong); background:var(--surface); margin-bottom:.4rem; text-decoration:none; color:var(--ink); font-size:.88rem; }
+    a.rowitem:hover { background:var(--accent-wash); }
+    .rowitem.social { border-left-color:#C04F6E; } .rowitem.forening { border-left-color:#2C8A5E; } .rowitem.sundhed { border-left-color:#2E6E9E; }
+    .rowitem.gul { border-left-color:var(--warn); }
+    .rowitem .tid { font-family:var(--mono); font-size:.76rem; color:var(--soft); flex:0 0 auto; }
+    .rowitem .navn { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
 
 @code {
@@ -51,8 +81,10 @@
     private string? error;
 
     private int Aktive => aftaler.Count(a => a.Status is "planlagt" or "pending" or "confirmed");
-    private List<Aftale> Afventer => aftaler.Where(a => a.Status == "pending").ToList();
     private int Ledig => brobyggere.Sum(b => Math.Max(0, b.MaxActive - b.Active));
+    private List<Aftale> Kommende => aftaler.Where(a => a.Dato.ToLocalTime() >= DateTime.Now.AddHours(-12) && a.Status is not ("aflyst" or "afslaaet" or "gennemfoert" or "brudt")).OrderBy(a => a.Dato).Take(7).ToList();
+    private List<Aftale> Afventer => aftaler.Where(a => a.Status == "pending").OrderBy(a => a.Dato).Take(8).ToList();
+    private List<Menneske> Umatchede => mennesker.Where(m => m.MatchedWith is null && m.Status is not ("afsluttet")).Take(8).ToList();
 
     protected override async Task OnInitializedAsync() => await Load();
 
@@ -75,5 +107,7 @@
     }
 
     private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
-    private string NavnB(Guid id) => brobyggere.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
+    private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };
+    private static string StatusClass(string s) => s switch { "confirmed" => "gron", "pending" => "gul", "aflyst" or "afslaaet" or "brudt" => "graa", _ => "" };
+    private static string StatusClass2(string s) => s switch { "matched" or "aktiv" => "gron", "venteliste" => "gul", _ => "" };
 }
