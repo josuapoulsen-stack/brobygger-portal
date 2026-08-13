@@ -1,7 +1,11 @@
 @page "/mennesker"
 @inject ApiClient Api
+@inject IJSRuntime JS
 
-<h1>Mennesker</h1>
+<div style="display:flex;justify-content:space-between;align-items:center">
+    <h1>Mennesker</h1>
+    <button class="mini ghost" @onclick="Eksport">Eksportér CSV</button>
+</div>
 <p class="sub">Borgere vi hjælper.</p>
 @if (error is not null) { <div class="status err">@error</div> }
 
@@ -65,5 +69,11 @@
     {
         try { await Api.CreateMenneske(form); form = new(); await Load(); }
         catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
+    }
+
+    private async Task Eksport()
+    {
+        try { var csv = await Api.EksportMennesker(); await JS.InvokeVoidAsync("downloadText", "mennesker.csv", csv); }
+        catch (Exception e) { error = "Kunne ikke eksportere: " + e.Message; }
     }
 }

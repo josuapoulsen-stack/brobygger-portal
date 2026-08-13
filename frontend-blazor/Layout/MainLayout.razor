@@ -1,7 +1,40 @@
 @inherits LayoutComponentBase
+@inject ApiClient Api
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@implements IDisposable
 
 <header>
-    <div class="brand">Brobygger Portal</div>
+    <div class="topbar">
+        <div class="brand">Brobygger Portal</div>
+        <div class="sog">
+            <input placeholder="Søg navn/telefon…" value="@soegQ" @oninput="OnSoeg" />
+            @if (soegRes is not null && (soegRes.Mennesker.Any() || soegRes.Brobyggere.Any()))
+            {
+                <div class="sog-res">
+                    @foreach (var r in soegRes.Mennesker) { <a href="mennesker/@r.Id" @onclick="LukSog">@r.Navn <span class="two">· menneske</span></a> }
+                    @foreach (var r in soegRes.Brobyggere) { <a href="brobyggere/@r.Id" @onclick="LukSog">@r.Navn <span class="two">· brobygger</span></a> }
+                </div>
+            }
+        </div>
+        <div class="bell" @onclick="ToggleNotif">🔔@if (ulaest > 0) { <span class="badge">@ulaest</span>}</div>
+    </div>
+
+    @if (visNotif)
+    {
+        <div class="notif-drop">
+            @if (notifs.Count == 0) { <div class="two" style="padding:.5rem .7rem">Ingen notifikationer.</div> }
+            @foreach (var n in notifs.Take(15))
+            {
+                <div class="notif @(n.Laest ? "" : "ny")" @onclick="() => AabnNotif(n)">
+                    <div><b>@NotifLabel(n.Type)</b> <span class="two">· @n.Tidspunkt.ToLocalTime().ToString("dd. MMM HH:mm")</span></div>
+                    <div class="two">@n.Tekst</div>
+                </div>
+            }
+            <button class="mini ghost" style="margin:.4rem" @onclick="LaesAlle">Markér alle læst</button>
+        </div>
+    }
+
     <nav>
         <NavLink href="" Match="NavLinkMatch.All" class="nav-item" ActiveClass="active">Forside</NavLink>
         <NavLink href="mennesker" class="nav-item" ActiveClass="active">Mennesker</NavLink>
@@ -9,6 +42,7 @@
         <NavLink href="aftaler" class="nav-item" ActiveClass="active">Aftaler</NavLink>
         <NavLink href="statistik" class="nav-item" ActiveClass="active">Statistik</NavLink>
         <NavLink href="skabeloner" class="nav-item" ActiveClass="active">Skabeloner</NavLink>
+        <NavLink href="stamdata" class="nav-item" ActiveClass="active">Stamdata</NavLink>
         <NavLink href="oekonomi" class="nav-item" ActiveClass="active">Økonomi</NavLink>
         <NavLink href="revisionsspor" class="nav-item" ActiveClass="active">Revisionsspor</NavLink>
     </nav>
@@ -17,3 +51,54 @@
 <div class="wrap">
     @Body
 </div>
+
+@code {
+    private string soegQ = "";
+    private SoegResultat? soegRes;
+    private List<Notifikation> notifs = [];
+    private int ulaest;
+    private bool visNotif;
+    private DotNetObjectReference<MainLayout>? _ref;
+
+    protected override async Task OnAfterRenderAsync(bool first)
+    {
+        if (!first) return;
+        try
+        {
+            notifs = await Api.GetNotifikationer();
+            ulaest = notifs.Count(n => !n.Laest);
+            _ref = DotNetObjectReference.Create(this);
+            var url = await Api.StreamUrlAsync();
+            await JS.InvokeVoidAsync("sseConnect", url, _ref);
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    [JSInvokable]
+    public async Task OnSse(string data)
+    {
+        try
+        {
+            var n = System.Text.Json.JsonSerializer.Deserialize<Notifikation>(data,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (n is not null) { notifs.Insert(0, n); ulaest++; await InvokeAsync(StateHasChanged); }
+        }
+        catch { }
+    }
+
+    private async Task OnSoeg(ChangeEventArgs e)
+    {
+        soegQ = e.Value?.ToString() ?? "";
+        if (soegQ.Trim().Length < 2) { soegRes = null; return; }
+        try { soegRes = await Api.Soeg(soegQ); } catch { }
+    }
+    private void LukSog() { soegRes = null; soegQ = ""; }
+
+    private void ToggleNotif() => visNotif = !visNotif;
+    private async Task LaesAlle() { try { await Api.LaesAlle(); ulaest = 0; foreach (var n in notifs) n.Laest = true; } catch { } }
+    private void AabnNotif(Notifikation n) { visNotif = false; if (!string.IsNullOrEmpty(n.Link)) Nav.NavigateTo(n.Link); }
+    private static string NotifLabel(string t) => t switch { "ny_aftale" => "Ny aftale", "aftale_godkendt" => "Aftale bekræftet", "ny_besked" => "Ny besked", _ => t };
+
+    public void Dispose() => _ref?.Dispose();
+}

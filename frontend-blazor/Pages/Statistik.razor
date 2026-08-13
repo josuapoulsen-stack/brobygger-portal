@@ -16,6 +16,16 @@ else
         <div class="tile"><div class="num">@s.AntalBrobyggere</div><div class="lbl">Brobyggere</div></div>
         <div class="tile"><div class="num">@s.LedigKapacitet</div><div class="lbl">Ledig kapacitet</div></div>
         <div class="tile"><div class="num">@s.AntalMaalinger</div><div class="lbl">Trivselsmålinger</div></div>
+        <div class="tile"><div class="num">@(s.Gennemfoerselsrate is double r ? $"{r}%" : "—")</div><div class="lbl">Gennemførselsrate</div></div>
+    </div>
+
+    <div class="card">
+        <h3>Aftaler pr. måned</h3>
+        @if (s.AftalerPrMaaned.Count == 0) { <p class="muted">Ingen data.</p> }
+        @foreach (var d in s.AftalerPrMaaned)
+        {
+            <div class="bar-row"><span class="k">@d.Navn</span><span class="b" style="width:@Bredde(d.Antal, s.AftalerPrMaaned)px"></span><span class="n">@d.Antal</span></div>
+        }
     </div>
 
     <div class="card">

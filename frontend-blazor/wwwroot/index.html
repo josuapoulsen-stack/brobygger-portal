@@ -16,6 +16,13 @@
     <script>
         window.blazorPrint = () => window.print();
         window.copyText = (t) => navigator.clipboard && navigator.clipboard.writeText(t);
+        window.sseConnect = (url, dotnetRef) => {
+            try { if (window._es) window._es.close(); } catch (e) {}
+            const es = new EventSource(url);
+            es.onmessage = (e) => { try { dotnetRef.invokeMethodAsync('OnSse', e.data); } catch (x) {} };
+            es.onerror = () => {};
+            window._es = es;
+        };
         window.downloadText = (filename, text) => {
             const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
             const a = document.createElement('a');

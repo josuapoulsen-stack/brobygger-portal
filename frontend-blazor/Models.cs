@@ -76,6 +76,16 @@ public class AftaleLog
     public string? LogNote { get; set; }
 }
 
+public class Notifikation
+{
+    public Guid Id { get; set; }
+    public string Type { get; set; } = "";
+    public string Tekst { get; set; } = "";
+    public string? Link { get; set; }
+    public bool Laest { get; set; }
+    public DateTimeOffset Tidspunkt { get; set; }
+}
+
 public class Audit
 {
     public Guid Id { get; set; }
@@ -96,6 +106,8 @@ public class AftaleCreate
     public string Status { get; set; } = "pending";
     public string? Sted { get; set; }
     public string? Brobygningstype { get; set; }
+    public string? Henvender { get; set; }
+    public string? Modtager { get; set; }
     public string? Beskrivelse { get; set; }
 }
 
@@ -253,6 +265,8 @@ public class StatistikData
     public List<Optael> MenneskerPerHovedsaede { get; set; } = [];
     public double? TrivselBaselineGns { get; set; }
     public double? TrivselOpfoelgningGns { get; set; }
+    public List<Optael> AftalerPrMaaned { get; set; } = [];
+    public double? Gennemfoerselsrate { get; set; }
 }
 
 public class Skabelon
@@ -260,6 +274,33 @@ public class Skabelon
     public Guid Id { get; set; }
     public string Navn { get; set; } = "";
     public string Indhold { get; set; } = "";
+}
+
+public class StamdataVaerdi
+{
+    public Guid Id { get; set; }
+    public string Kategori { get; set; } = "";
+    public string Vaerdi { get; set; } = "";
+    public bool Aktiv { get; set; } = true;
+}
+public class StamdataCreate
+{
+    public string Kategori { get; set; } = "henvender";
+    public string Vaerdi { get; set; } = "";
+}
+
+public class SoegTraef
+{
+    public Guid Id { get; set; }
+    public string Navn { get; set; } = "";
+    public string? Telefon { get; set; }
+    public string? Hq { get; set; }
+    public string Type { get; set; } = "";
+}
+public class SoegResultat
+{
+    public List<SoegTraef> Mennesker { get; set; } = [];
+    public List<SoegTraef> Brobyggere { get; set; } = [];
 }
 public class SkabelonCreate
 {

@@ -105,6 +105,27 @@ public class ApiClient(HttpClient http)
     public async Task LogUdfald(Guid id, AftaleLog dto) { await EnsureLoginAsync(); await EnsureOk(await http.PostAsJsonAsync($"/v1/aftaler/{id}/log", dto, Json)); }
     public Task<List<Audit>> GetAudit(Guid? maalId = null) => GetList<Audit>(maalId is Guid m ? $"/v1/audit?maalId={m}" : "/v1/audit");
 
+    public Task<List<Notifikation>> GetNotifikationer() => GetList<Notifikation>("/v1/notifikationer");
+    public async Task LaesAlle() { await EnsureLoginAsync(); await http.PostAsync("/v1/notifikationer/laes-alle", null); }
+    public async Task<string> StreamUrlAsync()
+    {
+        await EnsureLoginAsync();
+        var t = http.DefaultRequestHeaders.Authorization?.Parameter;
+        return $"{http.BaseAddress}v1/stream?access_token={t}";
+    }
+
+    // Søgning
+    public async Task<SoegResultat?> Soeg(string q) { await EnsureLoginAsync(); return await http.GetFromJsonAsync<SoegResultat>($"/v1/soeg?q={Uri.EscapeDataString(q)}", Json); }
+
+    // Stamdata
+    public Task<List<StamdataVaerdi>> GetStamdata(string? kategori = null) => GetList<StamdataVaerdi>(kategori is null ? "/v1/stamdata" : $"/v1/stamdata?kategori={Uri.EscapeDataString(kategori)}");
+    public async Task CreateStamdata(StamdataCreate s) { await EnsureLoginAsync(); await EnsureOk(await http.PostAsJsonAsync("/v1/stamdata", s, Json)); }
+    public async Task DeleteStamdata(Guid id) { await EnsureLoginAsync(); (await http.DeleteAsync($"/v1/stamdata/{id}")).EnsureSuccessStatusCode(); }
+
+    // Eksport (returnerer CSV-tekst)
+    public async Task<string> EksportAftaler() { await EnsureLoginAsync(); return await http.GetStringAsync("/v1/aftaler/eksport"); }
+    public async Task<string> EksportMennesker() { await EnsureLoginAsync(); return await http.GetStringAsync("/v1/mennesker/eksport"); }
+
     public async Task Match(Guid menneskeId, Guid brobyggerId) { await EnsureLoginAsync(); (await http.PostAsJsonAsync($"/v1/mennesker/{menneskeId}/match", new { brobyggerId }, Json)).EnsureSuccessStatusCode(); }
     public async Task Unmatch(Guid menneskeId) { await EnsureLoginAsync(); (await http.DeleteAsync($"/v1/mennesker/{menneskeId}/match")).EnsureSuccessStatusCode(); }
     public Task<List<MatchForslag>> GetMatchForslag(Guid menneskeId) => GetList<MatchForslag>($"/v1/mennesker/{menneskeId}/match-forslag");

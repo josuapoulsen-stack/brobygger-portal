@@ -33,3 +33,17 @@ button.mini { padding:.3rem .65rem; font-size:.8rem; }
 a { color:var(--accent); }
 button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
 .handling { display:flex; gap:.35rem; flex-wrap:wrap; }
+.topbar { display:flex; align-items:center; gap:1rem; }
+.topbar .brand { flex:0 0 auto; }
+.topbar .sog { flex:1 1 auto; position:relative; max-width:360px; }
+.topbar .sog input { width:100%; padding:.35rem .6rem; border-radius:8px; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.12); color:#fff; }
+.topbar .sog input::placeholder { color:#cfe0dd; }
+.sog-res { position:absolute; top:110%; left:0; right:0; background:var(--card); border:1px solid var(--line); border-radius:8px; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,.15); max-height:320px; overflow:auto; }
+.sog-res a { display:block; padding:.45rem .7rem; color:var(--ink); text-decoration:none; border-bottom:1px solid var(--line); font-size:.9rem; }
+.sog-res a:hover { background:var(--bg); }
+.bell { position:relative; cursor:pointer; font-size:1.2rem; }
+.bell .badge { position:absolute; top:-6px; right:-8px; background:#d98673; color:#fff; border-radius:999px; font-size:.66rem; padding:0 .35rem; font-weight:700; }
+.notif-drop { position:absolute; right:1.25rem; top:3.2rem; width:320px; background:var(--card); border:1px solid var(--line); border-radius:10px; z-index:30; box-shadow:0 10px 30px rgba(0,0,0,.2); }
+.notif { display:block; padding:.5rem .7rem; border-bottom:1px solid var(--line); cursor:pointer; color:var(--ink); text-decoration:none; font-size:.88rem; }
+.notif.ny { background:var(--accent-tint, #e2ecea); }
+.notif:hover { background:var(--bg); }

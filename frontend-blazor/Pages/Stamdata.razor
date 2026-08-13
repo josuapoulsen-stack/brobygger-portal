@@ -1,0 +1,66 @@
+@page "/stamdata"
+@inject ApiClient Api
+
+<h1>Stamdata</h1>
+<p class="sub">Ensartede referenceværdier — bruges i dropdowns, så data er konsistent.</p>
+@if (error is not null) { <div class="status err">@error</div> }
+
+@foreach (var g in rows.GroupBy(x => x.Kategori).OrderBy(g => g.Key))
+{
+    <div class="card">
+        <h3>@KatLabel(g.Key)</h3>
+        <div class="chips">
+            @foreach (var s in g.OrderBy(x => x.Vaerdi))
+            {
+                <span class="chip2">@s.Vaerdi <a @onclick="() => Slet(s.Id)">✕</a></span>
+            }
+        </div>
+    </div>
+}
+@if (rows.Count == 0) { <p class="muted">Ingen stamdata endnu.</p> }
+
+<form @onsubmit="Opret">
+    <div>
+        <label>Kategori</label>
+        <select @bind="form.Kategori">
+            <option value="henvender">Henvender</option>
+            <option value="modtager">Modtager</option>
+            <option value="aflysning_aarsag">Aflysningsårsag</option>
+            <option value="brobygningstype">Brobygningstype</option>
+        </select>
+    </div>
+    <div><label>Værdi *</label><input @bind="form.Vaerdi" required /></div>
+    <div class="full"><button type="submit">Tilføj</button></div>
+</form>
+
+<style>
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:.8rem 1rem; margin-top:.8rem; }
+    .card h3 { margin:0 0 .5rem; font-size:1rem; }
+    .chips { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .chip2 { background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:.2rem .6rem; font-size:.85rem; }
+    .chip2 a { cursor:pointer; color:var(--soft); margin-left:.3rem; }
+</style>
+
+@code {
+    private List<StamdataVaerdi> rows = [];
+    private StamdataCreate form = new();
+    private string? error;
+
+    protected override async Task OnInitializedAsync() => await Load();
+    private async Task Load()
+    {
+        try { rows = await Api.GetStamdata(); error = null; }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+    private async Task Opret()
+    {
+        try { await Api.CreateStamdata(form); form = new() { Kategori = form.Kategori }; await Load(); }
+        catch (Exception e) { error = "Kunne ikke oprette (kræver Admin): " + e.Message; }
+    }
+    private async Task Slet(Guid id)
+    {
+        try { await Api.DeleteStamdata(id); await Load(); }
+        catch (Exception e) { error = "Kunne ikke slette: " + e.Message; }
+    }
+    private static string KatLabel(string k) => k switch { "henvender" => "Henvender", "modtager" => "Modtager", "aflysning_aarsag" => "Aflysningsårsag", "brobygningstype" => "Brobygningstype", _ => k };
+}

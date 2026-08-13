@@ -1,7 +1,11 @@
 @page "/aftaler"
 @inject ApiClient Api
+@inject IJSRuntime JS
 
-<h1>Aftaler</h1>
+<div style="display:flex;justify-content:space-between;align-items:center">
+    <h1>Aftaler</h1>
+    <button class="mini ghost" @onclick="Eksport">Eksportér CSV</button>
+</div>
 <p class="sub">Efterspørg en brobygning nu — bekræft den når den er på plads (dage/uger senere).</p>
 @if (error is not null) { <div class="status err">@error</div> }
 
@@ -66,6 +70,20 @@
         </select>
     </div>
     <div>
+        <label>Henvender</label>
+        <select @bind="form.Henvender">
+            <option value="">—</option>
+            @foreach (var s in henvenderListe) { <option value="@s.Vaerdi">@s.Vaerdi</option> }
+        </select>
+    </div>
+    <div>
+        <label>Modtager</label>
+        <select @bind="form.Modtager">
+            <option value="">—</option>
+            @foreach (var s in modtagerListe) { <option value="@s.Vaerdi">@s.Vaerdi</option> }
+        </select>
+    </div>
+    <div>
         <label>Type</label>
         <select @bind="form.Type">
             <option value="moede">Møde</option>
@@ -94,6 +112,8 @@
     private List<Menneske> mennesker = [];
     private List<Brobygger> brobyggere = [];
     private List<Skabelon> skabeloner = [];
+    private List<StamdataVaerdi> henvenderListe = [];
+    private List<StamdataVaerdi> modtagerListe = [];
     private AftaleCreate form = new();
     private DateTime dato = DateTime.Now;
     private string? error;
@@ -105,6 +125,8 @@
             mennesker = await Api.GetMennesker();
             brobyggere = await Api.GetBrobyggere();
             skabeloner = await Api.GetSkabeloner();
+            henvenderListe = await Api.GetStamdata("henvender");
+            modtagerListe = await Api.GetStamdata("modtager");
             if (mennesker.Count > 0) form.MenneskeId = mennesker[0].Id;
             await Load();
         }
@@ -121,6 +143,12 @@
     {
         try { form.Dato = DateTime.SpecifyKind(dato, DateTimeKind.Local).ToUniversalTime(); await Api.CreateAftale(form); await Load(); }
         catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
+    }
+
+    private async Task Eksport()
+    {
+        try { var csv = await Api.EksportAftaler(); await JS.InvokeVoidAsync("downloadText", "aftaler.csv", csv); }
+        catch (Exception e) { error = "Kunne ikke eksportere: " + e.Message; }
     }
 
     private async Task Skift(Guid id, string status)
