@@ -55,7 +55,7 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto, Au
             Telefon = dto.Telefon, Adresse = dto.Adresse, Typer = dto.Typer, Sprog = dto.Sprog,
             Noter = dto.Noter, Status = dto.Status, MatchedWith = dto.MatchedWith,
             RaadgiverId = dto.RaadgiverId, Hq = dto.Hq, Afdeling = dto.Afdeling, Kilde = dto.Kilde,
-            Brobygningstype = dto.Brobygningstype, Meetpoint = dto.Meetpoint, SroiMaalgruppe = dto.SroiMaalgruppe,
+            Brobygningstype = dto.Brobygningstype, Region = dto.Region, Meetpoint = dto.Meetpoint, SroiMaalgruppe = dto.SroiMaalgruppe,
             HelbredsKategorier = dto.HelbredsKategorier, PraeferencerJson = dto.Praeferencer,
             AfslutTrivsel = dto.AfslutTrivsel, AfslutAarsag = dto.AfslutAarsag, UclaFravalgt = dto.UclaFravalgt,
             TelefonNorm = Telefon.Normaliser(dto.Telefon),
@@ -72,7 +72,12 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto, Au
         var m = await db.Mennesker.FindAsync(id);
         if (m is null || m.DeletedAt is not null) return NotFound();
 
-        if (dto.Navn is not null) m.Navn = dto.Navn;
+        if (dto.Navn is not null && dto.Navn != m.Navn)
+        {
+            // Navnehistorik: gem det gamle navn (telefon er den stabile id)
+            m.TidligereNavne = string.IsNullOrEmpty(m.TidligereNavne) ? m.Navn : $"{m.TidligereNavne}, {m.Navn}";
+            m.Navn = dto.Navn;
+        }
         if (dto.Alder is not null) m.Alder = dto.Alder;
         if (dto.Kon is not null) m.Kon = dto.Kon;
         if (dto.Email is not null) m.Email = dto.Email;
@@ -87,6 +92,7 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto, Au
         if (dto.Hq is not null) m.Hq = dto.Hq;
         if (dto.Afdeling is not null) m.Afdeling = dto.Afdeling;
         if (dto.Kilde is not null) m.Kilde = dto.Kilde;
+        if (dto.Region is not null) m.Region = dto.Region;
         if (dto.Brobygningstype is not null) m.Brobygningstype = dto.Brobygningstype;
         if (dto.Meetpoint is not null) m.Meetpoint = dto.Meetpoint;
         if (dto.SroiMaalgruppe is not null) m.SroiMaalgruppe = dto.SroiMaalgruppe;

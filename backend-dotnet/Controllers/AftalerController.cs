@@ -78,7 +78,7 @@ public class AftalerController(BrobyggerDbContext db, BrobyggerPortal.Api.Servic
 
         var a = new Aftale
         {
-            BrobyggerId = dto.BrobyggerId, MenneskeId = dto.MenneskeId, Dato = dto.Dato,
+            BrobyggerId = dto.BrobyggerId, MenneskeId = dto.MenneskeId, Dato = dto.Dato, Slut = dto.Slut,
             Varighed = dto.Varighed, Type = dto.Type, Sted = dto.Sted, Beskrivelse = dto.Beskrivelse,
             Status = dto.Status, Notes = dto.Notes, EfterspurgtAt = dto.EfterspurgtAt ?? DateTimeOffset.UtcNow,
             BekraeftetAt = dto.Status == AftaleStatus.Confirmed ? DateTimeOffset.UtcNow : null,
@@ -119,6 +119,7 @@ public class AftalerController(BrobyggerDbContext db, BrobyggerPortal.Api.Servic
             a.BrobyggerTildeltAt = DateTimeOffset.UtcNow;
         }
         if (dto.Dato is not null) a.Dato = dto.Dato.Value;
+        if (dto.Slut is not null) a.Slut = dto.Slut;
         if (dto.Varighed is not null) a.Varighed = dto.Varighed.Value;
         if (dto.Type is not null) a.Type = dto.Type.Value;
         if (dto.Sted is not null) a.Sted = dto.Sted;

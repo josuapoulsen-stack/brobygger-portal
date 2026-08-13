@@ -23,6 +23,7 @@ public record MenneskeCreateDto
     public string? Hq { get; init; }
     public string? Afdeling { get; init; }
     public string? Kilde { get; init; }
+    public string? Region { get; init; }
     public string? Brobygningstype { get; init; }
     public string? Meetpoint { get; init; }
     public string? SroiMaalgruppe { get; init; }
@@ -51,6 +52,7 @@ public record MenneskeUpdateDto
     public string? Hq { get; init; }
     public string? Afdeling { get; init; }
     public string? Kilde { get; init; }
+    public string? Region { get; init; }
     public string? Brobygningstype { get; init; }
     public string? Meetpoint { get; init; }
     public string? SroiMaalgruppe { get; init; }
@@ -71,6 +73,7 @@ public record MenneskeReadDto
     public string? Email { get; init; }
     public string? Telefon { get; init; }
     public string? TelefonNorm { get; init; }
+    public string? TidligereNavne { get; init; }
     public string? Adresse { get; init; }
     public List<string> Typer { get; init; } = [];
     public List<string> Sprog { get; init; } = [];
@@ -81,6 +84,7 @@ public record MenneskeReadDto
     public string? Hq { get; init; }
     public string? Afdeling { get; init; }
     public string? Kilde { get; init; }
+    public string? Region { get; init; }
     public string? Brobygningstype { get; init; }
     public string? Meetpoint { get; init; }
     public string? SroiMaalgruppe { get; init; }
@@ -94,7 +98,8 @@ public record MenneskeReadDto
     public static MenneskeReadDto From(Menneske m) => new()
     {
         Id = m.Id, Navn = m.Navn, Alder = m.Alder, Kon = m.Kon, Email = m.Email,
-        Telefon = m.Telefon, TelefonNorm = m.TelefonNorm, Adresse = m.Adresse,
+        Telefon = m.Telefon, TelefonNorm = m.TelefonNorm, TidligereNavne = m.TidligereNavne,
+        Region = m.Region, Adresse = m.Adresse,
         Typer = m.Typer, Sprog = m.Sprog, Noter = m.Noter, Status = m.Status,
         MatchedWith = m.MatchedWith, RaadgiverId = m.RaadgiverId, Hq = m.Hq,
         Afdeling = m.Afdeling, Kilde = m.Kilde, Brobygningstype = m.Brobygningstype, Meetpoint = m.Meetpoint,
@@ -115,6 +120,7 @@ public record BrobyggerCreateDto
     public List<string> Sprog { get; init; } = ["dansk"];
     public string? Hq { get; init; }
     public string? Afdeling { get; init; }
+    public string? Region { get; init; }
     public string? Kon { get; init; }
     public string? Bio { get; init; }
     public string? AvatarUrl { get; init; }
@@ -137,6 +143,7 @@ public record BrobyggerUpdateDto
     public List<string>? Sprog { get; init; }
     public string? Hq { get; init; }
     public string? Afdeling { get; init; }
+    public string? Region { get; init; }
     public string? Kon { get; init; }
     public string? Bio { get; init; }
     public string? AvatarUrl { get; init; }
@@ -161,6 +168,7 @@ public record BrobyggerReadDto
     public List<string> Sprog { get; init; } = [];
     public string? Hq { get; init; }
     public string? Afdeling { get; init; }
+    public string? Region { get; init; }
     public string? Kon { get; init; }
     public string? Bio { get; init; }
     public string? AvatarUrl { get; init; }
@@ -177,7 +185,7 @@ public record BrobyggerReadDto
     public static BrobyggerReadDto From(Brobygger b) => new()
     {
         Id = b.Id, Navn = b.Navn, Email = b.Email, Telefon = b.Telefon, TelefonNorm = b.TelefonNorm,
-        Typer = b.Typer, Sprog = b.Sprog, Hq = b.Hq, Afdeling = b.Afdeling, Kon = b.Kon,
+        Typer = b.Typer, Sprog = b.Sprog, Hq = b.Hq, Afdeling = b.Afdeling, Region = b.Region, Kon = b.Kon,
         Bio = b.Bio, AvatarUrl = b.AvatarUrl, Status = b.Status, Active = b.Active, MaxActive = b.MaxActive,
         TilgaengeligFra = b.TilgaengeligFra, NaesteTid = b.NaesteTid, Startdato = b.Startdato,
         SenesteMoede = b.SenesteMoede, Noter = b.Noter, CreatedAt = b.CreatedAt,
@@ -191,6 +199,7 @@ public record AftaleCreateDto
     public Guid? BrobyggerId { get; init; }
     public Guid MenneskeId { get; init; }
     public DateTimeOffset Dato { get; init; }
+    public DateTimeOffset? Slut { get; init; }
     public int Varighed { get; init; } = 60;
     public AftaleType Type { get; init; } = AftaleType.Moede;
     public string? Sted { get; init; }
@@ -233,6 +242,7 @@ public record AftaleUpdateDto
 {
     public Guid? BrobyggerId { get; init; }
     public DateTimeOffset? Dato { get; init; }
+    public DateTimeOffset? Slut { get; init; }
     public int? Varighed { get; init; }
     public AftaleType? Type { get; init; }
     public string? Sted { get; init; }
@@ -246,6 +256,7 @@ public record AftaleReadDto
     public Guid? BrobyggerId { get; init; }
     public Guid MenneskeId { get; init; }
     public DateTimeOffset Dato { get; init; }
+    public DateTimeOffset? Slut { get; init; }
     public int Varighed { get; init; }
     public AftaleType Type { get; init; }
     public string? Sted { get; init; }
@@ -288,7 +299,7 @@ public record AftaleReadDto
 
     public static AftaleReadDto From(Aftale a) => new()
     {
-        Id = a.Id, BrobyggerId = a.BrobyggerId, MenneskeId = a.MenneskeId, Dato = a.Dato,
+        Id = a.Id, BrobyggerId = a.BrobyggerId, MenneskeId = a.MenneskeId, Dato = a.Dato, Slut = a.Slut,
         Varighed = a.Varighed, Type = a.Type, Sted = a.Sted, Beskrivelse = a.Beskrivelse,
         Status = a.Status, Notes = a.Notes, EfterspurgtAt = a.EfterspurgtAt, BekraeftetAt = a.BekraeftetAt,
         BrobyggerTildeltAt = a.BrobyggerTildeltAt,

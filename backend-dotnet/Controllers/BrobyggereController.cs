@@ -38,7 +38,7 @@ public class BrobyggereController(BrobyggerDbContext db) : ControllerBase
         var b = new Brobygger
         {
             Navn = dto.Navn, Email = dto.Email, Telefon = dto.Telefon, Typer = dto.Typer, Sprog = dto.Sprog,
-            Hq = dto.Hq, Afdeling = dto.Afdeling, Kon = dto.Kon, Bio = dto.Bio, AvatarUrl = dto.AvatarUrl,
+            Hq = dto.Hq, Afdeling = dto.Afdeling, Region = dto.Region, Kon = dto.Kon, Bio = dto.Bio, AvatarUrl = dto.AvatarUrl,
             Status = dto.Status, Active = dto.Active, MaxActive = dto.MaxActive,
             TilgaengeligFra = dto.TilgaengeligFra, NaesteTid = dto.NaesteTid, Startdato = dto.Startdato,
             SenesteMoede = dto.SenesteMoede, Noter = dto.Noter,
@@ -62,6 +62,7 @@ public class BrobyggereController(BrobyggerDbContext db) : ControllerBase
         if (dto.Sprog is not null) b.Sprog = dto.Sprog;
         if (dto.Hq is not null) b.Hq = dto.Hq;
         if (dto.Afdeling is not null) b.Afdeling = dto.Afdeling;
+        if (dto.Region is not null) b.Region = dto.Region;
         if (dto.Kon is not null) b.Kon = dto.Kon;
         if (dto.Bio is not null) b.Bio = dto.Bio;
         if (dto.AvatarUrl is not null) b.AvatarUrl = dto.AvatarUrl;

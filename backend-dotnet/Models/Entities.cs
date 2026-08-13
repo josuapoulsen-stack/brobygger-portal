@@ -26,6 +26,8 @@ public class Menneske
     public string? Hq { get; set; }
     public string? Afdeling { get; set; }
     public string? Kilde { get; set; }
+    public string? Region { get; set; }                   // Nord | Kronjylland | Aarhus | Syd | Sydvest | Midt | Sjælland | Hovedstaden
+    public string? TidligereNavne { get; set; }           // navnehistorik (telefon er den stabile id)
     public string? Brobygningstype { get; set; }          // social | forening | sundhed (foreslår trivselsinstrument)
     public string? Meetpoint { get; set; }
     public string? SroiMaalgruppe { get; set; }
@@ -53,6 +55,7 @@ public class Brobygger
     public List<string> Sprog { get; set; } = ["dansk"];
     public string? Hq { get; set; }
     public string? Afdeling { get; set; }
+    public string? Region { get; set; }
     public string? Kon { get; set; }
     public string? Bio { get; set; }
     public string? AvatarUrl { get; set; }
@@ -74,7 +77,8 @@ public class Aftale
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid? BrobyggerId { get; set; }          // valgfri — brobygger kan findes efter oprettelse
     public Guid MenneskeId { get; set; }
-    public DateTimeOffset Dato { get; set; }
+    public DateTimeOffset Dato { get; set; }               // starttidspunkt
+    public DateTimeOffset? Slut { get; set; }              // sluttidspunkt (eksplicit; ellers Dato+Varighed)
     public int Varighed { get; set; } = 60;
     public AftaleType Type { get; set; } = AftaleType.Moede;
     public string? Sted { get; set; }
