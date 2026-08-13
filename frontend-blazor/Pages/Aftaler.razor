@@ -59,7 +59,8 @@
             @foreach (var b in brobyggere) { <option value="@b.Id">@b.Navn</option> }
         </select>
     </div>
-    <div><label>Dato/tid *</label><input type="datetime-local" @bind="dato" /></div>
+    <div><label>Start *</label><input type="datetime-local" @bind="dato" /></div>
+    <div><label>Slut</label><input type="datetime-local" @bind="slut" /></div>
     <div><label>Sted</label><input @bind="form.Sted" /></div>
     <div>
         <label>Brobygningstype</label>
@@ -123,6 +124,7 @@
     private List<StamdataVaerdi> modtagerListe = [];
     private AftaleCreate form = new();
     private DateTime dato = DateTime.Now;
+    private DateTime? slut;
     private string? error;
 
     protected override async Task OnInitializedAsync()
@@ -148,7 +150,12 @@
 
     private async Task Opret()
     {
-        try { form.Dato = DateTime.SpecifyKind(dato, DateTimeKind.Local).ToUniversalTime(); await Api.CreateAftale(form); await Load(); }
+        try
+        {
+            form.Dato = DateTime.SpecifyKind(dato, DateTimeKind.Local).ToUniversalTime();
+            form.Slut = slut is DateTime s ? DateTime.SpecifyKind(s, DateTimeKind.Local).ToUniversalTime() : null;
+            await Api.CreateAftale(form); slut = null; await Load();
+        }
         catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
     }
 

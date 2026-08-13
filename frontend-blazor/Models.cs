@@ -14,6 +14,8 @@ public class Menneske
     public string? Hq { get; set; }
     public string? Afdeling { get; set; }
     public string? Kilde { get; set; }
+    public string? Region { get; set; }
+    public string? TidligereNavne { get; set; }
     public string? Brobygningstype { get; set; }
     public string? SroiMaalgruppe { get; set; }
     public Guid? MatchedWith { get; set; }
@@ -39,6 +41,7 @@ public class Brobygger
     public string? Hq { get; set; }
     public int Active { get; set; }
     public int MaxActive { get; set; }
+    public string? Region { get; set; }
     public string Status { get; set; } = "";
 }
 
@@ -47,6 +50,7 @@ public class BrobyggerCreate
     public string Navn { get; set; } = "";
     public string? Telefon { get; set; }
     public string? Hq { get; set; }
+    public string? Region { get; set; }
     public int MaxActive { get; set; } = 3;
     public string Status { get; set; } = "ny";
 }
@@ -57,6 +61,7 @@ public class Aftale
     public Guid? BrobyggerId { get; set; }
     public Guid MenneskeId { get; set; }
     public DateTimeOffset Dato { get; set; }
+    public DateTimeOffset? Slut { get; set; }
     public string Type { get; set; } = "moede";
     public string Status { get; set; } = "";
     public string? Sted { get; set; }
@@ -109,6 +114,7 @@ public class AftaleCreate
     public Guid? BrobyggerId { get; set; }
     public Guid MenneskeId { get; set; }
     public DateTimeOffset Dato { get; set; }
+    public DateTimeOffset? Slut { get; set; }
     public string Type { get; set; } = "moede";
     public string Status { get; set; } = "pending";
     public string? Sted { get; set; }
@@ -210,6 +216,7 @@ public class MenneskeUpdate
 {
     public string? Status { get; set; }
     public string? Brobygningstype { get; set; }
+    public string? Region { get; set; }
     public string? Telefon { get; set; }
     public string? Hq { get; set; }
     public int? Alder { get; set; }

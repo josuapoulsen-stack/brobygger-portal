@@ -28,6 +28,14 @@
     <div><label>Navn *</label><input @bind="form.Navn" required /></div>
     <div><label>Telefon</label><input @bind="form.Telefon" /></div>
     <div><label>Hovedsæde</label><input @bind="form.Hq" /></div>
+    <div>
+        <label>Region</label>
+        <select @bind="form.Region">
+            <option value="">—</option>
+            <option>Nord</option><option>Kronjylland</option><option>Aarhus</option><option>Syd</option>
+            <option>Sydvest</option><option>Midt</option><option>Sjælland</option><option>Hovedstaden</option>
+        </select>
+    </div>
     <div><label>Max forløb</label><input type="number" @bind="form.MaxActive" /></div>
     <div>
         <label>Status</label>

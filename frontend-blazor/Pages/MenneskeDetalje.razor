@@ -28,6 +28,8 @@ else
                 <dt>Adresse</dt><dd>@(m.Adresse ?? "—")</dd>
                 <dt>Afdeling</dt><dd>@(m.Afdeling ?? "—")</dd>
                 <dt>Kilde</dt><dd>@(m.Kilde ?? "—")</dd>
+                <dt>Region</dt><dd>@(m.Region ?? "—")</dd>
+                @if (!string.IsNullOrEmpty(m.TidligereNavne)) { <dt>Tidligere navne</dt><dd>@m.TidligereNavne</dd> }
                 <dt>Oprettet</dt><dd>@m.CreatedAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
             </dl>
         </div>
@@ -57,6 +59,11 @@ else
             </select>
             <input placeholder="Telefon" @bind="rediger.Telefon" />
             <input placeholder="Hovedsæde" @bind="rediger.Hq" />
+            <select @bind="rediger.Region">
+                <option value="">— region —</option>
+                <option>Nord</option><option>Kronjylland</option><option>Aarhus</option><option>Syd</option>
+                <option>Sydvest</option><option>Midt</option><option>Sjælland</option><option>Hovedstaden</option>
+            </select>
             <button class="mini" @onclick="Gem">Gem</button>
         </div>
     </div>
@@ -284,7 +291,7 @@ else
             opkald = await Api.GetOpkaldForMenneske(Id);
             nyOpkald.MenneskeId = Id;
             if (m is not null)
-                rediger = new MenneskeUpdate { Status = m.Status, Brobygningstype = m.Brobygningstype, Telefon = m.Telefon, Hq = m.Hq, Alder = m.Alder };
+                rediger = new MenneskeUpdate { Status = m.Status, Brobygningstype = m.Brobygningstype, Region = m.Region, Telefon = m.Telefon, Hq = m.Hq, Alder = m.Alder };
             try { adgang = await Api.GetAudit(Id); } catch { adgang = []; }
             error = null;
         }
