@@ -88,8 +88,17 @@ public class Aftale
     // Klassificering (fra stamdata)
     public string? Aftaletype { get; set; }
     public string? Brobygningstype { get; set; }          // Social | Forening | Sundhed
+    public string? Titel { get; set; }                    // beskrivende titel, fx "Nusrat til øjenlæge"
+    public string? Programtype { get; set; }              // fx SBB
+    public string? Indsatstype { get; set; }              // fx IDAB, LP
+    public string? Samarbejdskommune { get; set; }
+    public string? Samarbejdshospital { get; set; }
     public string? Henvender { get; set; }
+    public string? HenvenderKonkret { get; set; }
     public string? Modtager { get; set; }
+    public string? ModtagerKonkret { get; set; }
+    public int? GentagelserAntal { get; set; }            // gentagelser (max 10)
+    public int? DageImellem { get; set; }                 // dage imellem gentagelser
     public string? Finansiering { get; set; }
     public string? Samarbejdspartner { get; set; }
     public string? Afdeling { get; set; }

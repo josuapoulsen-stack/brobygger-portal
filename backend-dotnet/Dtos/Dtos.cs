@@ -200,8 +200,17 @@ public record AftaleCreateDto
     public DateTimeOffset? EfterspurgtAt { get; init; }   // udelades → sættes til nu
     public string? Aftaletype { get; init; }
     public string? Brobygningstype { get; init; }
+    public string? Titel { get; init; }
+    public string? Programtype { get; init; }
+    public string? Indsatstype { get; init; }
+    public string? Samarbejdskommune { get; init; }
+    public string? Samarbejdshospital { get; init; }
     public string? Henvender { get; init; }
+    public string? HenvenderKonkret { get; init; }
     public string? Modtager { get; init; }
+    public string? ModtagerKonkret { get; init; }
+    public int? GentagelserAntal { get; init; }
+    public int? DageImellem { get; init; }
     public string? Finansiering { get; init; }
     public string? Samarbejdspartner { get; init; }
     public string? Afdeling { get; init; }
@@ -248,8 +257,17 @@ public record AftaleReadDto
     public DateTimeOffset? BrobyggerTildeltAt { get; init; }
     public string? Aftaletype { get; init; }
     public string? Brobygningstype { get; init; }
+    public string? Titel { get; init; }
+    public string? Programtype { get; init; }
+    public string? Indsatstype { get; init; }
+    public string? Samarbejdskommune { get; init; }
+    public string? Samarbejdshospital { get; init; }
     public string? Henvender { get; init; }
+    public string? HenvenderKonkret { get; init; }
     public string? Modtager { get; init; }
+    public string? ModtagerKonkret { get; init; }
+    public int? GentagelserAntal { get; init; }
+    public int? DageImellem { get; init; }
     public string? Finansiering { get; init; }
     public string? Samarbejdspartner { get; init; }
     public string? Afdeling { get; init; }
@@ -275,7 +293,12 @@ public record AftaleReadDto
         Status = a.Status, Notes = a.Notes, EfterspurgtAt = a.EfterspurgtAt, BekraeftetAt = a.BekraeftetAt,
         BrobyggerTildeltAt = a.BrobyggerTildeltAt,
         Aftaletype = a.Aftaletype, Brobygningstype = a.Brobygningstype,
-        Henvender = a.Henvender, Modtager = a.Modtager, Finansiering = a.Finansiering,
+        Titel = a.Titel, Programtype = a.Programtype, Indsatstype = a.Indsatstype,
+        Samarbejdskommune = a.Samarbejdskommune, Samarbejdshospital = a.Samarbejdshospital,
+        Henvender = a.Henvender, HenvenderKonkret = a.HenvenderKonkret,
+        Modtager = a.Modtager, ModtagerKonkret = a.ModtagerKonkret,
+        GentagelserAntal = a.GentagelserAntal, DageImellem = a.DageImellem,
+        Finansiering = a.Finansiering,
         Samarbejdspartner = a.Samarbejdspartner, Afdeling = a.Afdeling, AflystAf = a.AflystAf,
         AflysningsAarsag = a.AflysningsAarsag, Transportplan = a.Transportplan, AktivitetsTid = a.AktivitetsTid,
         FremmoedeType = a.FremmoedeType, Gentagelse = a.Gentagelse, AftaleForm = a.AftaleForm,
