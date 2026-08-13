@@ -1,0 +1,78 @@
+@page "/kalender"
+@inject ApiClient Api
+
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+    <h1>Kalender</h1>
+    <div class="row" style="margin:0">
+        <button class="mini ghost" @onclick="() => Skift(-1)">‹ Forrige</button>
+        <b style="min-width:150px;text-align:center">@Maanedsnavn</b>
+        <button class="mini ghost" @onclick="() => Skift(1)">Næste ›</button>
+        <button class="mini ghost" @onclick="() => maaned = FoersteIMaaned(DateTime.Now)">I dag</button>
+    </div>
+</div>
+<p class="sub"><a href="aftaler">← Liste-visning</a></p>
+@if (error is not null) { <div class="status err">@error</div> }
+
+<div class="kal">
+    @foreach (var d in new[] { "Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn" })
+    {
+        <div class="kal-hd">@d</div>
+    }
+    @for (var i = 0; i < Offset; i++)
+    {
+        <div class="kal-cell tom"></div>
+    }
+    @for (var dag = 1; dag <= DageIMaaned; dag++)
+    {
+        var dato = new DateTime(maaned.Year, maaned.Month, dag);
+        var idag = dato.Date == DateTime.Now.Date;
+        <div class="kal-cell @(idag ? "idag" : "")">
+            <div class="kal-dag">@dag</div>
+            @foreach (var a in PaaDag(dato))
+            {
+                <a href="aftaler/@a.Id" class="kal-a @StatusClass(a.Status)" title="@NavnM(a.MenneskeId)">
+                    <b>@a.Dato.ToLocalTime().ToString("HH:mm")</b> @NavnM(a.MenneskeId)
+                </a>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .kal { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--line); border:1px solid var(--line-strong); border-radius:12px; overflow:hidden; }
+    .kal-hd { background:var(--surface); padding:.4rem; text-align:center; font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; color:var(--soft); font-weight:600; }
+    .kal-cell { background:var(--card); min-height:96px; padding:.35rem; }
+    .kal-cell.tom { background:var(--surface); }
+    .kal-cell.idag { background:var(--accent-wash); }
+    .kal-dag { font-size:.8rem; color:var(--soft); font-family:var(--mono); margin-bottom:.25rem; }
+    .kal-a { display:block; font-size:.72rem; padding:.12rem .35rem; border-radius:5px; margin-bottom:.15rem; text-decoration:none; color:var(--ink); background:var(--sand); border-left:3px solid var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .kal-a b { font-family:var(--mono); }
+    .kal-a.gron { background:var(--good-tint); border-left-color:var(--good); }
+    .kal-a.gul { background:var(--warn-tint); border-left-color:var(--warn); }
+    .kal-a.graa { background:var(--sand); border-left-color:var(--muted); opacity:.7; }
+</style>
+
+@code {
+    private DateTime maaned = new(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private List<Aftale> aftaler = [];
+    private List<Menneske> mennesker = [];
+    private string? error;
+
+    private int Offset => ((int)maaned.DayOfWeek + 6) % 7;
+    private int DageIMaaned => DateTime.DaysInMonth(maaned.Year, maaned.Month);
+    private string Maanedsnavn => maaned.ToString("MMMM yyyy");
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        try { aftaler = await Api.GetAftaler(); mennesker = await Api.GetMennesker(); error = null; }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private void Skift(int n) => maaned = maaned.AddMonths(n);
+    private static DateTime FoersteIMaaned(DateTime d) => new(d.Year, d.Month, 1);
+    private IEnumerable<Aftale> PaaDag(DateTime dato) => aftaler.Where(a => a.Dato.ToLocalTime().Date == dato.Date).OrderBy(a => a.Dato);
+    private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
+    private static string StatusClass(string s) => s switch { "confirmed" => "gron", "pending" => "gul", "aflyst" or "afslaaet" or "brudt" => "graa", _ => "" };
+}
