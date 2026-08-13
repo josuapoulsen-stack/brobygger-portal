@@ -76,6 +76,16 @@ public class BeskedSkabelon
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
+public class Notifikation
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Type { get; set; } = "";      // ny_aftale | aftale_godkendt | ny_besked | ...
+    public string Tekst { get; set; } = "";
+    public string? Link { get; set; }
+    public bool Laest { get; set; }
+    public DateTimeOffset Tidspunkt { get; set; } = DateTimeOffset.UtcNow;
+}
+
 // Revisionsspor (GDPR art. 30): hvem gjorde hvad, hvornår — aldrig selve indholdet.
 public class AuditLog
 {

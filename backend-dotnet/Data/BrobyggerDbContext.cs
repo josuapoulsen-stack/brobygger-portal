@@ -17,6 +17,7 @@ public class BrobyggerDbContext(DbContextOptions<BrobyggerDbContext> options) : 
     public DbSet<UdlaegKonto> UdlaegKonti => Set<UdlaegKonto>();
     public DbSet<Besked> Beskeder => Set<Besked>();
     public DbSet<AuditLog> Auditlog => Set<AuditLog>();
+    public DbSet<Notifikation> Notifikationer => Set<Notifikation>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -49,5 +50,6 @@ public class BrobyggerDbContext(DbContextOptions<BrobyggerDbContext> options) : 
         b.Entity<UdlaegKonto>().HasIndex(x => x.BrobyggerId).IsUnique();
         b.Entity<Besked>().HasIndex(x => x.AftaleId);
         b.Entity<AuditLog>().HasIndex(x => x.Tidspunkt);
+        b.Entity<Notifikation>().HasIndex(x => x.Tidspunkt);
     }
 }

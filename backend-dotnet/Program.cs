@@ -54,6 +54,8 @@ builder.Services.AddSingleton<BrobyggerPortal.Api.Services.GraphService>();
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<BrobyggerPortal.Api.Services.CryptoService>();
 builder.Services.AddScoped<BrobyggerPortal.Api.Services.AuditService>();
+builder.Services.AddSingleton<BrobyggerPortal.Api.Services.EventBroker>();
+builder.Services.AddScoped<BrobyggerPortal.Api.Services.NotifikationService>();
 
 // ── Controllers + JSON i snake_case (matcher OpenAPI-kontrakten) ─────────────
 builder.Services

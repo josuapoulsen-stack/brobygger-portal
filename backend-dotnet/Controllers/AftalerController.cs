@@ -10,7 +10,7 @@ namespace BrobyggerPortal.Api.Controllers;
 [ApiController]
 [Route("v1/aftaler")]
 [Authorize]
-public class AftalerController(BrobyggerDbContext db) : ControllerBase
+public class AftalerController(BrobyggerDbContext db, BrobyggerPortal.Api.Services.NotifikationService notif) : ControllerBase
 {
     // Statusser der tæller som et "aktivt forløb" på brobyggeren
     private static readonly AftaleStatus[] AktiveStatus =
@@ -72,7 +72,7 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
             await db.SaveChangesAsync();
         }
 
-        // TODO (SSE): push "ny_aftale"-event til brobygger via egen backend-stream
+        await notif.PushAsync("ny_aftale", "Ny aftale efterspurgt", $"/aftaler/{a.Id}");
         return CreatedAtAction(nameof(Get), new { id = a.Id }, AftaleReadDto.From(a));
     }
 
@@ -127,6 +127,8 @@ public class AftalerController(BrobyggerDbContext db) : ControllerBase
             a.BekraeftetAt = DateTimeOffset.UtcNow;
         a.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync();
+        if (dto.Status == AftaleStatus.Confirmed)
+            await notif.PushAsync("aftale_godkendt", "Aftale bekræftet", $"/aftaler/{a.Id}");
         return AftaleReadDto.From(a);
     }
 }

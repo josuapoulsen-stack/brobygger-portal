@@ -9,7 +9,7 @@ namespace BrobyggerPortal.Api.Controllers;
 // Besked-tråd pr. aftale. Fundamentet for chat-funktionen: koordinator opretter en aftale
 // (evt. fra skabelon) → beskeden lægger sig som første besked; brobygger kan se + svare.
 [ApiController, Authorize]
-public class BeskederController(BrobyggerDbContext db) : ControllerBase
+public class BeskederController(BrobyggerDbContext db, BrobyggerPortal.Api.Services.NotifikationService notif) : ControllerBase
 {
     public record BeskedInput(string? Afsender, string Tekst);
 
@@ -29,6 +29,7 @@ public class BeskederController(BrobyggerDbContext db) : ControllerBase
         };
         db.Beskeder.Add(b);
         await db.SaveChangesAsync();
+        await notif.PushAsync("ny_besked", "Ny besked på en aftale", $"/aftaler/{aftaleId}");
         return Created($"/v1/beskeder/{b.Id}", b);
     }
 }
