@@ -90,6 +90,9 @@ tbody tr:hover td { background:var(--surface); }
 .pill.social   { background:#F7E6EC; color:#8F3550; }
 .pill.forening { background:#E0EFE7; color:#22664A; }
 .pill.sundhed  { background:#E2ECF3; color:#245676; }
+/* Sted-linje i lister (diskret, med lille pin) */
+.sted-linje { font-size:.76rem; color:var(--muted); display:flex; align-items:center; gap:.3rem; margin-top:.1rem; }
+.sted-linje::before { content:''; width:6px; height:6px; border-radius:50% 50% 50% 0; transform:rotate(45deg); border:1.5px solid var(--muted); flex:0 0 auto; }
 /* Kode-chips (programtype/indsatstype: SBB, IDAB, LP) */
 .chip-code { display:inline-block; font-family:var(--mono); font-size:.64rem; font-weight:700; padding:.12rem .4rem; border-radius:5px; background:var(--sand); color:var(--soft); letter-spacing:.04em; margin-right:.25rem; }
 

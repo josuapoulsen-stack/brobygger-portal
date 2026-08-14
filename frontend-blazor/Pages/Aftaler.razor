@@ -19,6 +19,7 @@
                 <td>
                     <a href="mennesker/@a.MenneskeId">@NavnM(a.MenneskeId)</a>
                     @if (!string.IsNullOrEmpty(a.Titel)) { <div class="two">@a.Titel</div> }
+                    @if (!string.IsNullOrEmpty(a.Sted)) { <div class="sted-linje">@a.Sted</div> }
                     <div style="margin-top:.2rem">
                         @if (!string.IsNullOrEmpty(a.Brobygningstype)) { <span class="tmono @BtClass(a.Brobygningstype)">@a.Brobygningstype</span> }
                         @if (!string.IsNullOrEmpty(a.Programtype)) { <span class="chip-code">@a.Programtype</span> }

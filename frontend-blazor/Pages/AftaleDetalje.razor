@@ -30,8 +30,11 @@ else
             <dt>Start</dt><dd>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</dd>
             @if (a.Slut is DateTimeOffset sl) { <dt>Slut</dt><dd>@sl.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</dd> }
             <dt>Type</dt><dd>@a.Type</dd>
-            <dt>Sted</dt><dd>@(a.Sted ?? "—")</dd>
-            <dt>Brobygningstype</dt><dd>@(a.Brobygningstype ?? "—")</dd>
+            <dt>Sted</dt>
+            <dd>
+                @(a.Sted ?? "—")
+                @if (!string.IsNullOrEmpty(a.StedShak)) { <span class="chip-code">SHAK @a.StedShak</span> }
+            </dd>
             <dt>Status</dt><dd><span class="smono @StatusClass(a.Status)">@a.Status</span></dd>
             <dt>Oprettet</dt><dd>@a.CreatedAt.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</dd>
             <dt>Efterspurgt</dt><dd>@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
@@ -48,7 +51,9 @@ else
                 @foreach (var bb in brobyggere) { <option value="@bb.Id">@bb.Navn</option> }
             </select>
             <input type="datetime-local" @bind="redigerDato" />
-            <input placeholder="Sted" @bind="rediger.Sted" />
+            <div style="flex:1 1 240px;min-width:200px">
+                <StedFelt Vaerdi="rediger.Sted" VaerdiChanged="v => rediger.Sted = v" OnValgt="StedValgt" />
+            </div>
             <select @bind="rediger.Type">
                 <option value="moede">Møde</option>
                 <option value="aktivitet">Aktivitet</option>
@@ -147,6 +152,12 @@ else
 
     private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };
     private static string StatusClass(string s) => s switch { "confirmed" => "gron", "pending" => "gul", "aflyst" or "afslaaet" or "brudt" => "graa", _ => "" };
+
+    private void StedValgt(Sted s)
+    {
+        rediger.StedSorId = string.IsNullOrEmpty(s.SorId) ? null : s.SorId;
+        rediger.StedShak = string.IsNullOrEmpty(s.Shak) ? null : s.Shak;
+    }
 
     private async Task GemAftale()
     {
