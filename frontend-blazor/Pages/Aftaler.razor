@@ -53,6 +53,7 @@
 </table>
 
 <form @onsubmit="Opret">
+    <div class="form-sec">Grundlag</div>
     <div style="grid-column:1/-1"><label>Titel</label><input @bind="form.Titel" placeholder="fx Nusrat til øjenlæge" /></div>
     <div>
         <label>Menneske *</label>
@@ -73,6 +74,7 @@
         <label>Sted (sygehus/afdeling — autoudfyld fra SOR)</label>
         <StedFelt Vaerdi="form.Sted" VaerdiChanged="v => form.Sted = v" OnValgt="StedValgt" />
     </div>
+    <div class="form-sec">Klassificering</div>
     <div>
         <label>Brobygningstype</label>
         <select @bind="form.Brobygningstype">
@@ -119,6 +121,7 @@
             <option value="online">Online</option>
         </select>
     </div>
+    <div class="form-sec">Besked til brobygger</div>
     <div>
         <label>Skabelon (besked)</label>
         <select @onchange="BrugSkabelon">
