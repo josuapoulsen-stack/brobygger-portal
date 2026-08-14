@@ -54,7 +54,7 @@ else
             @if (s.AftalerPerStatus.Count == 0) { <p class="muted">Ingen data.</p> }
             @foreach (var d in s.AftalerPerStatus)
             {
-                <div class="bar-row"><span class="k">@d.Navn</span><span class="b" style="width:@Bredde(d.Antal, s.AftalerPerStatus)px"></span><span class="n">@d.Antal</span></div>
+                <div class="bar-row"><span class="k">@d.Navn</span><span class="b @StatusFarve.Klasse(d.Navn)" style="width:@Bredde(d.Antal, s.AftalerPerStatus)px"></span><span class="n">@d.Antal</span></div>
             }
         </div>
         <div class="card">
@@ -70,18 +70,19 @@ else
 
 <style>
     .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; }
-    .tile { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.1rem; }
-    .num { font-size:1.9rem; font-weight:700; color:var(--accent2); }
-    .lbl { color:var(--soft); font-size:.85rem; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-top:1rem; }
-    .card h3 { margin:0 0 .6rem; font-size:1rem; }
+    .tile { background:var(--card); border:1px solid var(--line-strong); border-radius:12px; padding:1rem 1.1rem; }
+    .num { font-size:1.9rem; line-height:1; color:var(--ink); }
+    .lbl { color:var(--soft); font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; margin-top:.35rem; }
+    .card { background:var(--card); border:1px solid var(--line-strong); border-radius:12px; padding:1rem 1.1rem; margin-top:1rem; }
+    .card h3 { margin:0 0 .7rem; font-size:.98rem; }
     .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; }
-    .stat { display:flex; flex-direction:column; margin-right:1.5rem; }
-    .num2 { font-size:1.5rem; font-weight:700; color:var(--accent2); }
-    .bar-row { display:flex; align-items:center; gap:.6rem; margin:.25rem 0; font-size:.85rem; }
+    .stat { display:flex; flex-direction:column; margin-right:1.8rem; }
+    .num2 { font-family:var(--mono); font-size:1.5rem; font-weight:700; letter-spacing:-.02em; color:var(--ink); }
+    .bar-row { display:flex; align-items:center; gap:.7rem; margin:.3rem 0; font-size:.85rem; }
     .bar-row .k { width:130px; color:var(--soft); }
-    .bar-row .b { height:14px; background:var(--accent); border-radius:4px; min-width:6px; }
-    .bar-row .n { font-variant-numeric:tabular-nums; }
+    .bar-row .b { height:12px; background:var(--accent); border-radius:3px; min-width:6px; }
+    .bar-row .b.gron { background:var(--good); } .bar-row .b.gul { background:var(--warn); } .bar-row .b.graa { background:var(--line-strong); }
+    .bar-row .n { font-family:var(--mono); font-weight:600; font-variant-numeric:tabular-nums; }
 </style>
 
 @code {
