@@ -13,6 +13,13 @@
 <p class="sub"><a href="aftaler">← Liste-visning</a></p>
 @if (error is not null) { <div class="status err">@error</div> }
 
+<div class="kpi">
+    <div class="kpi-c"><span class="kpi-l"><i class="d"></i>Aftaler i måneden</span><span class="num">@IMaaned.Count</span></div>
+    <div class="kpi-c"><span class="kpi-l"><i class="d gron"></i>Bekræftede</span><span class="num">@IMaaned.Count(a => a.Status == "confirmed")</span></div>
+    <div class="kpi-c"><span class="kpi-l"><i class="d gul"></i>Afventer</span><span class="num">@IMaaned.Count(a => a.Status == "pending")</span></div>
+    <div class="kpi-c"><span class="kpi-l"><i class="d graa"></i>Gennemførte</span><span class="num">@IMaaned.Count(a => a.Status == "gennemfoert")</span></div>
+</div>
+
 <div class="kal">
     @foreach (var d in new[] { "Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn" })
     {
@@ -39,6 +46,14 @@
 </div>
 
 <style>
+    .kpi { display:flex; background:var(--card); border:1px solid var(--line-strong); border-radius:12px; overflow:hidden; margin-bottom:1rem; }
+    .kpi-c { flex:1; padding:.7rem .9rem; border-left:1px solid var(--line); display:flex; flex-direction:column; gap:.25rem; }
+    .kpi-c:first-child { border-left:none; }
+    .kpi-l { font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; color:var(--soft); display:flex; align-items:center; gap:.4rem; }
+    .kpi-l .d { width:6px; height:6px; border-radius:2px; background:var(--muted); display:inline-block; }
+    .kpi-l .d.gron { background:var(--good); } .kpi-l .d.gul { background:var(--warn); } .kpi-l .d.graa { background:var(--muted); }
+    .kpi-c .num { font-size:1.5rem; line-height:1; }
+    @@media (max-width:640px){ .kpi { flex-wrap:wrap; } .kpi-c { flex:1 1 45%; } }
     .kal { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--line); border:1px solid var(--line-strong); border-radius:12px; overflow:hidden; }
     .kal-hd { background:var(--surface); padding:.4rem; text-align:center; font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; color:var(--soft); font-weight:600; }
     .kal-cell { background:var(--card); min-height:96px; padding:.35rem; }
@@ -58,6 +73,7 @@
     private List<Menneske> mennesker = [];
     private string? error;
 
+    private List<Aftale> IMaaned => aftaler.Where(a => { var d = a.Dato.ToLocalTime(); return d.Year == maaned.Year && d.Month == maaned.Month; }).ToList();
     private int Offset => ((int)maaned.DayOfWeek + 6) % 7;
     private int DageIMaaned => DateTime.DaysInMonth(maaned.Year, maaned.Month);
     private string Maanedsnavn => maaned.ToString("MMMM yyyy");

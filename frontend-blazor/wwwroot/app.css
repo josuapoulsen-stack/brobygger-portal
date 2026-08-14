@@ -111,8 +111,15 @@ button.ghost:hover { background:var(--surface); }
 .soeg { max-width:320px; }
 .handling { display:flex; gap:.35rem; flex-wrap:wrap; }
 
-/* Kort/tiles bruges paa flere sider (num i brand-orange) */
-.num { font-family:var(--font); font-weight:800; color:var(--accent2); }
+/* Kort/tiles bruges paa flere sider — metrik-tal i mono (v2 "skandinavisk funktionel") */
+.num { font-family:var(--mono); font-weight:700; letter-spacing:-.02em; color:var(--ink); }
+
+/* Status som mono-label + firkant-prik (v2: erstatter pastel-pills hvor det giver mening) */
+.smono { font-family:var(--mono); font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+         display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap; color:var(--muted); }
+.smono::before { content:''; width:6px; height:6px; border-radius:2px; background:currentColor; flex:0 0 auto; }
+.smono.gron { color:var(--good); } .smono.gul { color:var(--warn); }
+.smono.graa { color:var(--muted); } .smono.rod { color:var(--crit); }
 
 /* ── Sted-felt (SOR-autoudfyld) ── */
 .sted-felt { position:relative; }

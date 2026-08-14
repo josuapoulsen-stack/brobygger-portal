@@ -24,7 +24,7 @@
             <a class="rowitem @BtClass(a.Brobygningstype)" href="aftaler/@a.Id">
                 <span class="tid">@a.Dato.ToLocalTime().ToString("dd/MM HH:mm")</span>
                 <span class="navn">@NavnM(a.MenneskeId)@(string.IsNullOrEmpty(a.Titel) ? "" : " · " + a.Titel)</span>
-                <span class="pill @StatusClass(a.Status)">@a.Status</span>
+                <span class="smono @StatusClass(a.Status)">@a.Status</span>
             </a>
         }
     </section>
@@ -49,11 +49,25 @@
             <a class="rowitem" href="mennesker/@m.Id">
                 <span class="navn">@m.Navn</span>
                 <span class="two">@(m.Hq ?? "—")</span>
-                <span class="pill @StatusClass2(m.Status)">@m.Status</span>
+                <span class="smono @StatusClass2(m.Status)">@m.Status</span>
             </a>
         }
     </section>
 </div>
+
+<section class="res">
+    <div class="res-hd"><span class="eyebrow">Ressourcer</span></div>
+    <div class="res-list">
+        @foreach (var r in Ressourcer)
+        {
+            <a class="res-item" href="@r.Href" target="_blank" rel="noopener">
+                <span class="res-ic">@((MarkupString)r.Ikon)</span>
+                <span class="res-tx"><b>@r.Titel</b><span class="two">@r.Under</span></span>
+                <span class="res-pil">→</span>
+            </a>
+        }
+    </div>
+</section>
 
 <style>
     .hero { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem; }
@@ -72,6 +86,19 @@
     .rowitem.gul { border-left-color:var(--warn); }
     .rowitem .tid { font-family:var(--mono); font-size:.76rem; color:var(--soft); flex:0 0 auto; }
     .rowitem .navn { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    .res { margin-top:1.4rem; }
+    .eyebrow { font-family:var(--mono); font-size:.64rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); }
+    .res-list { margin-top:.55rem; background:var(--card); border:1px solid var(--line-strong); border-radius:14px; overflow:hidden; }
+    .res-item { display:flex; align-items:center; gap:.85rem; padding:.75rem 1rem; border-bottom:1px solid var(--line); text-decoration:none; color:var(--ink); }
+    .res-item:last-child { border-bottom:none; }
+    .res-item:hover { background:var(--surface); }
+    .res-ic { width:34px; height:34px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; border:1px solid var(--line-strong); border-radius:9px; color:var(--accent); background:var(--accent-wash); }
+    .res-ic svg { width:17px; height:17px; }
+    .res-tx { flex:1 1 auto; display:flex; flex-direction:column; gap:.05rem; }
+    .res-tx b { font-size:.92rem; font-weight:600; }
+    .res-pil { color:var(--muted); font-family:var(--mono); }
+    .res-item:hover .res-pil { color:var(--accent); }
 </style>
 
 @code {
@@ -105,6 +132,19 @@
         try { await Api.SetAftaleStatus(id, "confirmed"); await Load(); }
         catch (Exception e) { error = "Kunne ikke bekræfte: " + e.Message; }
     }
+
+    private record Res(string Titel, string Under, string Href, string Ikon);
+    private static readonly List<Res> Ressourcer =
+    [
+        new("Guides", "Sådan brobygger du — trin for trin", "https://socialsundhed.org",
+            "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8'><path d='M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z'/><path d='M4 5.5v15'/></svg>"),
+        new("Manualer", "Retningslinjer, samtykke og GDPR", "https://socialsundhed.org",
+            "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8'><path d='M6 2h9l5 5v15H6z'/><path d='M14 2v6h6'/><path d='M9 13h7M9 17h7'/></svg>"),
+        new("Webinarer", "Optagelser og kommende oplæg", "https://socialsundhed.org",
+            "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8'><rect x='2' y='5' width='15' height='14' rx='2'/><path d='M17 10l5-3v10l-5-3z'/></svg>"),
+        new("Support", "Kontakt koordinator eller IT", "mailto:kontakt@socialsundhed.org",
+            "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8'><path d='M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-4.5A8.4 8.4 0 1 1 21 11.5z'/></svg>"),
+    ];
 
     private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
     private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };
