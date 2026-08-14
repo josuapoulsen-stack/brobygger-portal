@@ -82,6 +82,8 @@ public class Aftale
     public int Varighed { get; set; } = 60;
     public AftaleType Type { get; set; } = AftaleType.Moede;
     public string? Sted { get; set; }
+    public string? StedSorId { get; set; }                // SOR-reference (valgt via autoudfyld)
+    public string? StedShak { get; set; }                 // SHAK-kode for stedet (til udtræk/sammenligning)
     public string? Beskrivelse { get; set; }
     public AftaleStatus Status { get; set; } = AftaleStatus.Planlagt;
     public string Notes { get; set; } = string.Empty;

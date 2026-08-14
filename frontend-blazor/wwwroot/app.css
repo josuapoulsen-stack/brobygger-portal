@@ -113,3 +113,16 @@ button.ghost:hover { background:var(--surface); }
 
 /* Kort/tiles bruges paa flere sider (num i brand-orange) */
 .num { font-family:var(--font); font-weight:800; color:var(--accent2); }
+
+/* ── Sted-felt (SOR-autoudfyld) ── */
+.sted-felt { position:relative; }
+.sted-clear { position:absolute; right:.55rem; top:.45rem; cursor:pointer; color:var(--muted); font-size:1.1rem; line-height:1; }
+.sted-clear:hover { color:var(--ink); }
+.sted-drop { position:absolute; left:0; right:0; top:calc(100% + 3px); background:var(--card); border:1px solid var(--line-strong); border-radius:8px; z-index:40; max-height:300px; overflow:auto; }
+.sted-item { display:flex; flex-direction:column; align-items:flex-start; gap:.15rem; width:100%; text-align:left; background:transparent; color:var(--ink); border:none; border-bottom:1px solid var(--line); border-radius:0; padding:.5rem .7rem; cursor:pointer; font-weight:400; }
+.sted-item:last-child { border-bottom:none; }
+.sted-item:hover { background:var(--surface); }
+.sted-navn { font-weight:600; font-size:.9rem; }
+.sted-meta { display:flex; gap:.4rem; flex-wrap:wrap; align-items:center; font-size:.76rem; color:var(--soft); }
+.sted-meta .sted-by { color:var(--muted); }
+.sted-tom { padding:.55rem .7rem; font-size:.82rem; color:var(--muted); }

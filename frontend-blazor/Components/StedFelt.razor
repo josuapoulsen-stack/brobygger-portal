@@ -1,0 +1,83 @@
+@inject ApiClient Api
+
+@* Genbrugeligt sted-felt med autoudfyld fra SOR (sygehuse/afdelinger m.m.). *@
+<div class="sted-felt">
+    <input value="@Tekst" @oninput="OnInput" @onfocus="() => aaben = true"
+           placeholder="@Placeholder" autocomplete="off" />
+    @if (Tekst is { Length: > 0 } && (valgt is not null || !aaben))
+    {
+        <span class="sted-clear" @onclick="Ryd" title="Ryd">×</span>
+    }
+    @if (aaben && forslag.Count > 0)
+    {
+        <div class="sted-drop">
+            @foreach (var s in forslag)
+            {
+                <button type="button" class="sted-item" @onclick="() => Vaelg(s)">
+                    <span class="sted-navn">@s.Navn</span>
+                    <span class="sted-meta">
+                        @if (!string.IsNullOrEmpty(s.Sygehus) && s.Sygehus != s.Navn) { <span>@s.Sygehus</span> }
+                        @if (!string.IsNullOrEmpty(s.By)) { <span class="sted-by">@s.By</span> }
+                        @if (!string.IsNullOrEmpty(s.Shak)) { <span class="chip-code">@s.Shak</span> }
+                    </span>
+                </button>
+            }
+        </div>
+    }
+    @if (aaben && soegt && forslag.Count == 0 && (Tekst?.Trim().Length ?? 0) >= 2)
+    {
+        <div class="sted-drop"><div class="sted-tom">Ingen match — teksten gemmes som fritekst.</div></div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Vaerdi { get; set; }
+    [Parameter] public EventCallback<string?> VaerdiChanged { get; set; }
+    [Parameter] public EventCallback<Sted> OnValgt { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Søg sygehus, afdeling, by …";
+
+    private string? Tekst { get; set; }
+    private List<Sted> forslag = [];
+    private bool aaben, soegt;
+    private Sted? valgt;
+    private int seq;
+
+    protected override void OnParametersSet()
+    {
+        // Synk fra parent (fx ved redigering af eksisterende aftale)
+        if (valgt is null && Tekst != Vaerdi) Tekst = Vaerdi;
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        Tekst = e.Value?.ToString();
+        valgt = null;
+        aaben = true;
+        await VaerdiChanged.InvokeAsync(Tekst);   // fritekst gemmes løbende
+
+        var q = Tekst?.Trim() ?? "";
+        var mit = ++seq;
+        if (q.Length < 2) { forslag = []; soegt = false; return; }
+        await Task.Delay(180);                     // debounce
+        if (mit != seq) return;                    // nyere tastetryk vandt
+        forslag = await Api.SoegSteder(q);
+        soegt = true;
+    }
+
+    private async Task Vaelg(Sted s)
+    {
+        valgt = s;
+        Tekst = s.Label;
+        aaben = false;
+        forslag = [];
+        await VaerdiChanged.InvokeAsync(s.Label);
+        await OnValgt.InvokeAsync(s);
+    }
+
+    private async Task Ryd()
+    {
+        valgt = null; Tekst = ""; forslag = []; soegt = false; aaben = false;
+        await VaerdiChanged.InvokeAsync(null);
+        await OnValgt.InvokeAsync(new Sted());     // nulstil sorid/shak hos parent
+    }
+}

@@ -117,6 +117,14 @@ public class ApiClient(HttpClient http)
     // Søgning
     public async Task<SoegResultat?> Soeg(string q) { await EnsureLoginAsync(); return await http.GetFromJsonAsync<SoegResultat>($"/v1/soeg?q={Uri.EscapeDataString(q)}", Json); }
 
+    // Steder (SOR-autoudfyld)
+    public async Task<List<Sted>> SoegSteder(string q)
+    {
+        if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2) return [];
+        await EnsureLoginAsync();
+        return await http.GetFromJsonAsync<List<Sted>>($"/v1/steder?q={Uri.EscapeDataString(q)}", Json) ?? [];
+    }
+
     // Stamdata
     public Task<List<StamdataVaerdi>> GetStamdata(string? kategori = null) => GetList<StamdataVaerdi>(kategori is null ? "/v1/stamdata" : $"/v1/stamdata?kategori={Uri.EscapeDataString(kategori)}");
     public async Task CreateStamdata(StamdataCreate s) { await EnsureLoginAsync(); await EnsureOk(await http.PostAsJsonAsync("/v1/stamdata", s, Json)); }

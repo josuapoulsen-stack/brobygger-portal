@@ -203,6 +203,8 @@ public record AftaleCreateDto
     public int Varighed { get; init; } = 60;
     public AftaleType Type { get; init; } = AftaleType.Moede;
     public string? Sted { get; init; }
+    public string? StedSorId { get; init; }
+    public string? StedShak { get; init; }
     public string? Beskrivelse { get; init; }
     public AftaleStatus Status { get; init; } = AftaleStatus.Planlagt;
     public string Notes { get; init; } = string.Empty;
@@ -246,6 +248,8 @@ public record AftaleUpdateDto
     public int? Varighed { get; init; }
     public AftaleType? Type { get; init; }
     public string? Sted { get; init; }
+    public string? StedSorId { get; init; }
+    public string? StedShak { get; init; }
     public string? Beskrivelse { get; init; }
     public string? Brobygningstype { get; init; }
 }
@@ -260,6 +264,8 @@ public record AftaleReadDto
     public int Varighed { get; init; }
     public AftaleType Type { get; init; }
     public string? Sted { get; init; }
+    public string? StedSorId { get; init; }
+    public string? StedShak { get; init; }
     public string? Beskrivelse { get; init; }
     public AftaleStatus Status { get; init; }
     public string Notes { get; init; } = string.Empty;
@@ -300,7 +306,7 @@ public record AftaleReadDto
     public static AftaleReadDto From(Aftale a) => new()
     {
         Id = a.Id, BrobyggerId = a.BrobyggerId, MenneskeId = a.MenneskeId, Dato = a.Dato, Slut = a.Slut,
-        Varighed = a.Varighed, Type = a.Type, Sted = a.Sted, Beskrivelse = a.Beskrivelse,
+        Varighed = a.Varighed, Type = a.Type, Sted = a.Sted, StedSorId = a.StedSorId, StedShak = a.StedShak, Beskrivelse = a.Beskrivelse,
         Status = a.Status, Notes = a.Notes, EfterspurgtAt = a.EfterspurgtAt, BekraeftetAt = a.BekraeftetAt,
         BrobyggerTildeltAt = a.BrobyggerTildeltAt,
         Aftaletype = a.Aftaletype, Brobygningstype = a.Brobygningstype,

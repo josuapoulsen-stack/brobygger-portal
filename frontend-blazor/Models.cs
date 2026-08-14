@@ -65,6 +65,7 @@ public class Aftale
     public string Type { get; set; } = "moede";
     public string Status { get; set; } = "";
     public string? Sted { get; set; }
+    public string? StedShak { get; set; }
     public string? Brobygningstype { get; set; }
     public string? Titel { get; set; }
     public string? Programtype { get; set; }
@@ -118,6 +119,8 @@ public class AftaleCreate
     public string Type { get; set; } = "moede";
     public string Status { get; set; } = "pending";
     public string? Sted { get; set; }
+    public string? StedSorId { get; set; }
+    public string? StedShak { get; set; }
     public string? Brobygningstype { get; set; }
     public string? Titel { get; set; }
     public string? Programtype { get; set; }
@@ -252,6 +255,8 @@ public class AftaleUpdate
     public Guid? BrobyggerId { get; set; }
     public DateTimeOffset? Dato { get; set; }
     public string? Sted { get; set; }
+    public string? StedSorId { get; set; }
+    public string? StedShak { get; set; }
     public string? Type { get; set; }
     public string? Brobygningstype { get; set; }
 }
@@ -329,6 +334,21 @@ public class SkabelonCreate
 {
     public string Navn { get; set; } = "";
     public string Indhold { get; set; } = "";
+}
+
+// Sted fra SOR-registret (autoudfyld)
+public class Sted
+{
+    public string SorId { get; set; } = "";
+    public string Navn { get; set; } = "";
+    public string? Type { get; set; }
+    public string? Sygehus { get; set; }
+    public string? Shak { get; set; }
+    public string? Vej { get; set; }
+    public string? Postnr { get; set; }
+    public string? By { get; set; }
+    public string? Region { get; set; }
+    public string Label { get; set; } = "";
 }
 
 public class GdprRapport

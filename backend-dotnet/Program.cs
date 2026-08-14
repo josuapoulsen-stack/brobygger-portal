@@ -133,6 +133,8 @@ if (app.Environment.IsDevelopment())
         var db = scope.ServiceProvider.GetRequiredService<BrobyggerDbContext>();
         db.Database.Migrate();
         BrobyggerPortal.Api.Data.DbSeeder.SeedAsync(db).GetAwaiter().GetResult();
+        BrobyggerPortal.Api.Data.DbSeeder.EnsureStamdataAsync(db).GetAwaiter().GetResult();
+        BrobyggerPortal.Api.Data.StedSeeder.SeedAsync(db).GetAwaiter().GetResult();
     });
 }
 

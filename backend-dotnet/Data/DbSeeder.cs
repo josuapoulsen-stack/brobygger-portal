@@ -32,8 +32,35 @@ public static class DbSeeder
             new Stamdata { Kategori = "modtager", Vaerdi = "Pårørende" },
             new Stamdata { Kategori = "aflysning_aarsag", Vaerdi = "Sygdom" },
             new Stamdata { Kategori = "aflysning_aarsag", Vaerdi = "Udeblevet" },
-            new Stamdata { Kategori = "aflysning_aarsag", Vaerdi = "Ombooket" });
+            new Stamdata { Kategori = "aflysning_aarsag", Vaerdi = "Ombooket" },
+            // Program-/indsatstyper (koder) — datalist-forslag; koordinator kan tilføje flere under Stamdata
+            new Stamdata { Kategori = "programtype", Vaerdi = "SBB" },
+            new Stamdata { Kategori = "programtype", Vaerdi = "IDA" },
+            new Stamdata { Kategori = "programtype", Vaerdi = "LP" },
+            new Stamdata { Kategori = "indsatstype", Vaerdi = "IDAB" },
+            new Stamdata { Kategori = "indsatstype", Vaerdi = "SBB" },
+            new Stamdata { Kategori = "indsatstype", Vaerdi = "Ledsagelse" },
+            new Stamdata { Kategori = "indsatstype", Vaerdi = "Netværk" });
 
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Idempotent: sikrer at nye stamdata-kategorier findes selv i en allerede seedet database.</summary>
+    public static async Task EnsureStamdataAsync(BrobyggerDbContext db)
+    {
+        (string kat, string vaerdi)[] ønskede =
+        [
+            ("programtype","SBB"), ("programtype","IDA"), ("programtype","LP"),
+            ("indsatstype","IDAB"), ("indsatstype","SBB"), ("indsatstype","Ledsagelse"), ("indsatstype","Netværk"),
+        ];
+        var findes = await db.Stamdata
+            .Where(s => s.Kategori == "programtype" || s.Kategori == "indsatstype")
+            .Select(s => s.Kategori + "|" + s.Vaerdi).ToListAsync();
+        var sæt = findes.ToHashSet();
+        var nye = ønskede.Where(x => !sæt.Contains(x.kat + "|" + x.vaerdi))
+            .Select(x => new Stamdata { Kategori = x.kat, Vaerdi = x.vaerdi }).ToList();
+        if (nye.Count == 0) return;
+        db.Stamdata.AddRange(nye);
         await db.SaveChangesAsync();
     }
 }

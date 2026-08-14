@@ -30,11 +30,11 @@
     <div><label>Hovedsæde</label><input @bind="form.Hq" /></div>
     <div>
         <label>Region</label>
-        <select @bind="form.Region">
-            <option value="">—</option>
-            <option>Nord</option><option>Kronjylland</option><option>Aarhus</option><option>Syd</option>
-            <option>Sydvest</option><option>Midt</option><option>Sjælland</option><option>Hovedstaden</option>
-        </select>
+        <input list="dl-region" @bind="form.Region" placeholder="Søg region …" />
+        <datalist id="dl-region">
+            <option value="Nord" /><option value="Kronjylland" /><option value="Aarhus" /><option value="Syd" />
+            <option value="Sydvest" /><option value="Midt" /><option value="Sjælland" /><option value="Hovedstaden" />
+        </datalist>
     </div>
     <div><label>Max forløb</label><input type="number" @bind="form.MaxActive" /></div>
     <div>

@@ -80,11 +80,11 @@ else
             </select>
             <input placeholder="Telefon" @bind="rediger.Telefon" />
             <input placeholder="Hovedsæde" @bind="rediger.Hq" />
-            <select @bind="rediger.Region">
-                <option value="">— region —</option>
-                <option>Nord</option><option>Kronjylland</option><option>Aarhus</option><option>Syd</option>
-                <option>Sydvest</option><option>Midt</option><option>Sjælland</option><option>Hovedstaden</option>
-            </select>
+            <input list="dl-region" placeholder="Søg region …" @bind="rediger.Region" />
+            <datalist id="dl-region">
+                <option value="Nord" /><option value="Kronjylland" /><option value="Aarhus" /><option value="Syd" />
+                <option value="Sydvest" /><option value="Midt" /><option value="Sjælland" /><option value="Hovedstaden" />
+            </datalist>
             <button class="mini" @onclick="Gem">Gem</button>
         </div>
     </div>
