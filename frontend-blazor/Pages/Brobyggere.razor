@@ -18,7 +18,7 @@
                 <td>@(b.Telefon ?? "—")</td>
                 <td>@(b.Hq ?? "—")</td>
                 <td>@b.Active / @b.MaxActive</td>
-                <td><span class="pill">@b.Status</span></td>
+                <td><span class="smono @StatusFarve.Klasse(b.Status)">@b.Status</span></td>
             </tr>
         }
     </tbody>

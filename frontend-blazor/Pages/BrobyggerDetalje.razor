@@ -14,7 +14,7 @@ else
     <p class="sub">
         @(string.IsNullOrEmpty(b.Hq) ? "" : b.Hq + " · ")
         Kapacitet @b.Active / @b.MaxActive
-        <span class="pill">@b.Status</span>
+        <span class="smono @StatusFarve.Klasse(b.Status)">@b.Status</span>
     </p>
 
     <div class="card">
@@ -56,7 +56,7 @@ else
             <tbody>
                 @foreach (var a in aftaler)
                 {
-                    <tr><td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td><td>@a.Type</td><td><span class="pill">@a.Status</span></td></tr>
+                    <tr><td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td><td>@a.Type</td><td><span class="smono @StatusFarve.Klasse(a.Status)">@a.Status</span></td></tr>
                 }
                 @if (aftaler.Count == 0) { <tr><td colspan="3" class="muted">Ingen.</td></tr> }
             </tbody>

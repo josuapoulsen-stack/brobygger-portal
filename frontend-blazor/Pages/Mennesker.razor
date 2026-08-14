@@ -22,7 +22,7 @@
                 <td>@(m.Alder?.ToString() ?? "—")</td>
                 <td>@(m.Telefon ?? "—")</td>
                 <td>@(m.Hq ?? "—")</td>
-                <td><span class="pill">@m.Status</span></td>
+                <td><span class="smono @StatusFarve.Klasse(m.Status)">@m.Status</span></td>
             </tr>
         }
     </tbody>

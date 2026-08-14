@@ -16,6 +16,7 @@
     --good:#3F7A5F; --good-tint:#E6EFEA;
     --warn:#A8741A; --warn-tint:#F6ECD8;
     --crit:#B0493A; --crit-tint:#F4E2DD;
+    --social:#C04F6E; --forening:#2C8A5E; --sundhed:#2E6E9E;
     --font:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
     --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
 }
@@ -120,6 +121,12 @@ button.ghost:hover { background:var(--surface); }
 .smono::before { content:''; width:6px; height:6px; border-radius:2px; background:currentColor; flex:0 0 auto; }
 .smono.gron { color:var(--good); } .smono.gul { color:var(--warn); }
 .smono.graa { color:var(--muted); } .smono.rod { color:var(--crit); }
+
+/* Brobygningstype som mono-label i typefarven (v2: erstatter pastel-type-pills) */
+.tmono { font-family:var(--mono); font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+         display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap; color:var(--soft); }
+.tmono::before { content:''; width:6px; height:6px; border-radius:2px; background:currentColor; flex:0 0 auto; }
+.tmono.social { color:var(--social); } .tmono.forening { color:var(--forening); } .tmono.sundhed { color:var(--sundhed); }
 
 /* ── Sted-felt (SOR-autoudfyld) ── */
 .sted-felt { position:relative; }

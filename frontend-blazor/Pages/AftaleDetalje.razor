@@ -21,7 +21,7 @@ else
                 <dd>
                     @if (!string.IsNullOrEmpty(a.Programtype)) { <span class="chip-code">@a.Programtype</span> }
                     @if (!string.IsNullOrEmpty(a.Indsatstype)) { <span class="chip-code">@a.Indsatstype</span> }
-                    @if (!string.IsNullOrEmpty(a.Brobygningstype)) { <span class="pill @BtClass(a.Brobygningstype)">@a.Brobygningstype</span> }
+                    @if (!string.IsNullOrEmpty(a.Brobygningstype)) { <span class="tmono @BtClass(a.Brobygningstype)">@a.Brobygningstype</span> }
                 </dd>
             }
             @if (a.GentagelserAntal is int g && g > 0) { <dt>Gentagelser</dt><dd>@g gange, @a.DageImellem dage imellem</dd> }
@@ -32,7 +32,7 @@ else
             <dt>Type</dt><dd>@a.Type</dd>
             <dt>Sted</dt><dd>@(a.Sted ?? "—")</dd>
             <dt>Brobygningstype</dt><dd>@(a.Brobygningstype ?? "—")</dd>
-            <dt>Status</dt><dd><span class="pill @StatusClass(a.Status)">@a.Status</span></dd>
+            <dt>Status</dt><dd><span class="smono @StatusClass(a.Status)">@a.Status</span></dd>
             <dt>Oprettet</dt><dd>@a.CreatedAt.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</dd>
             <dt>Efterspurgt</dt><dd>@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
             <dt>Brobygger tildelt</dt><dd>@(a.BrobyggerTildeltAt is null ? "—" : a.BrobyggerTildeltAt.Value.ToLocalTime().ToString("dd. MMM yyyy HH:mm"))</dd>

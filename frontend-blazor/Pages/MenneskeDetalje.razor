@@ -15,8 +15,8 @@ else
     <p class="sub">
         @(m.Alder is null ? "" : m.Alder + " år · ")@(m.Kon ?? "")
         @(string.IsNullOrEmpty(m.Hq) ? "" : " · " + m.Hq)
-        <span class="pill">@m.Status</span>
-        @if (!string.IsNullOrEmpty(m.Brobygningstype)) { <span class="pill @BtClass(m.Brobygningstype)">@m.Brobygningstype</span> }
+        <span class="smono @StatusFarve.Klasse(m.Status)">@m.Status</span>
+        @if (!string.IsNullOrEmpty(m.Brobygningstype)) { <span class="tmono @BtClass(m.Brobygningstype)">@m.Brobygningstype</span> }
         @if (!string.IsNullOrEmpty(m.Region)) { <span class="pill graa">@m.Region</span> }
     </p>
     <p class="sub"><a href="mennesker/@Id/rapport">📄 Indsigtsrapport (GDPR art. 15)</a></p>
@@ -232,7 +232,7 @@ else
             <tbody>
                 @foreach (var a in aftaler)
                 {
-                    <tr><td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td><td>@a.Type</td><td><span class="pill">@a.Status</span></td></tr>
+                    <tr><td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td><td>@a.Type</td><td><span class="smono @StatusFarve.Klasse(a.Status)">@a.Status</span></td></tr>
                 }
                 @if (aftaler.Count == 0) { <tr><td colspan="3" class="muted">Ingen.</td></tr> }
             </tbody>

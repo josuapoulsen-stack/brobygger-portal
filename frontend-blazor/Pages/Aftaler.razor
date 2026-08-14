@@ -20,7 +20,7 @@
                     <a href="mennesker/@a.MenneskeId">@NavnM(a.MenneskeId)</a>
                     @if (!string.IsNullOrEmpty(a.Titel)) { <div class="two">@a.Titel</div> }
                     <div style="margin-top:.2rem">
-                        @if (!string.IsNullOrEmpty(a.Brobygningstype)) { <span class="pill @BtClass(a.Brobygningstype)">@a.Brobygningstype</span> }
+                        @if (!string.IsNullOrEmpty(a.Brobygningstype)) { <span class="tmono @BtClass(a.Brobygningstype)">@a.Brobygningstype</span> }
                         @if (!string.IsNullOrEmpty(a.Programtype)) { <span class="chip-code">@a.Programtype</span> }
                         @if (!string.IsNullOrEmpty(a.Indsatstype)) { <span class="chip-code">@a.Indsatstype</span> }
                     </div>
@@ -30,7 +30,7 @@
                     else { <span class="muted">Ikke tildelt</span> }
                 </td>
                 <td><a href="aftaler/@a.Id">@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</a></td>
-                <td><span class="pill @Pill(a.Status)">@a.Status</span></td>
+                <td><span class="smono @Pill(a.Status)">@a.Status</span></td>
                 <td class="two">@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</td>
                 <td class="two">@(a.BekraeftetAt is null ? "—" : a.BekraeftetAt.Value.ToLocalTime().ToString("dd. MMM yyyy"))</td>
                 <td class="handling">
