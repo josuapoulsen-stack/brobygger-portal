@@ -18,9 +18,22 @@
 {
     <form @onsubmit="Opret">
         <div class="form-sec">Nyt menneske</div>
-        <div><label>Navn *</label><input @bind="form.Navn" required /></div>
-        <div><label>Alder</label><input type="number" @bind="form.Alder" /></div>
-        <div><label>Telefon</label><input @bind="form.Telefon" /></div>
+        @if (dubletter.Any())
+        {
+            <div class="dublet-advarsel">
+                <div class="da-hd"><span class="da-ic">!</span> Muligt dublet — ligner @(dubletter.Count == 1 ? "et" : dubletter.Count) eksisterende</div>
+                @foreach (var d in dubletter)
+                {
+                    <a class="da-rk" href="mennesker/@d.Id">
+                        <span><b>@d.Navn</b>@(string.IsNullOrEmpty(d.Telefon) ? "" : " · " + d.Telefon)@(string.IsNullOrEmpty(d.Hq) ? "" : " · " + d.Hq)</span>
+                        <span class="two">@d.Grund → åbn</span>
+                    </a>
+                }
+            </div>
+        }
+        <div><label>Navn *</label><input @bind="form.Navn" @bind:event="oninput" @bind:after="CheckDublet" required /></div>
+        <div><label>Alder</label><input type="number" @bind="form.Alder" @bind:after="CheckDublet" /></div>
+        <div><label>Telefon</label><input @bind="form.Telefon" @bind:event="oninput" @bind:after="CheckDublet" /></div>
         <div><label>Hovedsæde</label><input @bind="form.Hq" /></div>
         <div>
             <label>Status</label>
@@ -63,12 +76,33 @@ else
     </div>
 }
 
+<style>
+    .dublet-advarsel { grid-column:1/-1; background:var(--warn-tint); border:1px solid #ecd8ab; border-radius:var(--r-md); padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
+    .dublet-advarsel .da-hd { font-size:13.5px; font-weight:600; color:var(--warn); display:flex; align-items:center; gap:8px; }
+    .dublet-advarsel .da-ic { width:18px; height:18px; flex:0 0 auto; border-radius:50%; background:var(--warn); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+    .dublet-advarsel .da-rk { display:flex; justify-content:space-between; gap:12px; align-items:baseline; padding:8px 10px; background:var(--card); border:1px solid var(--line); border-radius:var(--r-sm); text-decoration:none; color:var(--ink); font-size:13.5px; }
+    .dublet-advarsel .da-rk:hover { border-color:var(--line-strong); text-decoration:none; }
+</style>
+
 @code {
     private List<Menneske> rows = [];
     private MenneskeCreate form = new();
     private string search = "";
     private bool visForm;
     private string? error;
+    private List<DuplikatForslag> dubletter = [];
+    private int dubSeq;
+
+    // Debounced dublet-tjek mens koordinatoren udfylder navn/telefon
+    private async Task CheckDublet()
+    {
+        var mit = ++dubSeq;
+        await Task.Delay(300);
+        if (mit != dubSeq) return;
+        try { dubletter = await Api.MuligeDubletter(form.Navn, form.Telefon, form.Alder); }
+        catch { dubletter = []; }
+        StateHasChanged();
+    }
 
     private IEnumerable<Menneske> Filtered => string.IsNullOrWhiteSpace(search)
         ? rows
@@ -85,7 +119,7 @@ else
 
     private async Task Opret()
     {
-        try { await Api.CreateMenneske(form); form = new(); visForm = false; await Load(); }
+        try { await Api.CreateMenneske(form); form = new(); dubletter = []; visForm = false; await Load(); }
         catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
     }
 

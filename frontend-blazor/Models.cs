@@ -338,6 +338,18 @@ public class SkabelonCreate
     public string Indhold { get; set; } = "";
 }
 
+// Dublet-genkendelse ved oprettelse af menneske
+public class DuplikatForslag
+{
+    public Guid Id { get; set; }
+    public string Navn { get; set; } = "";
+    public string? Telefon { get; set; }
+    public string? Hq { get; set; }
+    public int? Alder { get; set; }
+    public int Score { get; set; }
+    public string Grund { get; set; } = "";
+}
+
 // Sted fra SOR-registret (autoudfyld)
 public class Sted
 {

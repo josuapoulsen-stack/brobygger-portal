@@ -29,6 +29,14 @@ public class ApiClient(HttpClient http)
     }
 
     public Task<List<Menneske>> GetMennesker() => GetList<Menneske>("/v1/mennesker");
+    public async Task<List<DuplikatForslag>> MuligeDubletter(string? navn, string? telefon, int? alder)
+    {
+        var n = (navn ?? "").Trim(); var t = (telefon ?? "").Trim();
+        if (n.Length < 2 && t.Length < 6) return [];
+        await EnsureLoginAsync();
+        var q = $"?navn={Uri.EscapeDataString(n)}&telefon={Uri.EscapeDataString(t)}" + (alder is int a ? $"&alder={a}" : "");
+        return await http.GetFromJsonAsync<List<DuplikatForslag>>($"/v1/mennesker/mulige-dubletter{q}", Json) ?? [];
+    }
     public async Task CreateMenneske(MenneskeCreate m) { await EnsureLoginAsync(); (await http.PostAsJsonAsync("/v1/mennesker", m, Json)).EnsureSuccessStatusCode(); }
 
     public Task<List<Brobygger>> GetBrobyggere() => GetList<Brobygger>("/v1/brobyggere");

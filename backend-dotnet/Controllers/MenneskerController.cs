@@ -25,6 +25,85 @@ public class MenneskerController(BrobyggerDbContext db, CryptoService crypto, Au
         return Ok(rows.Select(MenneskeReadDto.From));
     }
 
+    public record DuplikatForslag(Guid Id, string Navn, string? Telefon, string? Hq, int? Alder, int Score, string Grund);
+
+    // Dublet-genkendelse: find eksisterende mennesker der ligner det man er ved at oprette.
+    // Telefon (normaliseret) er stærkeste signal; ellers navnelighed (inkl. tidligere navne) + alder.
+    [HttpGet("mulige-dubletter")]
+    public async Task<ActionResult<IEnumerable<DuplikatForslag>>> MuligeDubletter(
+        [FromQuery] string? navn, [FromQuery] string? telefon, [FromQuery] int? alder)
+    {
+        if (string.IsNullOrWhiteSpace(navn) && string.IsNullOrWhiteSpace(telefon))
+            return Ok(Array.Empty<DuplikatForslag>());
+
+        var tlf = Telefon.Normaliser(telefon);
+        var navnN = FoldNavn(navn);
+        var alle = await db.Mennesker.Where(m => m.DeletedAt == null).ToListAsync();
+
+        var forslag = new List<DuplikatForslag>();
+        foreach (var m in alle)
+        {
+            int score = 0;
+            var grunde = new List<string>();
+
+            if (!string.IsNullOrEmpty(tlf) && tlf.Length >= 8 && m.TelefonNorm == tlf)
+            { score += 100; grunde.Add("samme telefonnummer"); }
+
+            if (!string.IsNullOrEmpty(navnN))
+            {
+                var navne = new List<string> { m.Navn };
+                if (!string.IsNullOrEmpty(m.TidligereNavne))
+                    navne.AddRange(m.TidligereNavne.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                double bedste = navne.Select(n => Lighed(navnN, FoldNavn(n))).DefaultIfEmpty(0).Max();
+                if (bedste >= 0.90) { score += 60; grunde.Add("næsten identisk navn"); }
+                else if (bedste >= 0.78) { score += 35; grunde.Add("lignende navn"); }
+            }
+
+            if (alder is int a && m.Alder is int ma && Math.Abs(a - ma) <= 1 && score > 0)
+            { score += 10; grunde.Add("samme alder"); }
+
+            if (score >= 35)
+                forslag.Add(new DuplikatForslag(m.Id, m.Navn, m.Telefon, m.Hq, m.Alder, score, string.Join(" · ", grunde)));
+        }
+        return Ok(forslag.OrderByDescending(x => x.Score).ThenBy(x => x.Navn).Take(5));
+    }
+
+    // Navn foldet til sammenligning: små bogstaver, diakritik fjernet, ekstra mellemrum væk.
+    private static string FoldNavn(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return "";
+        var lower = s.Trim().ToLowerInvariant()
+            .Replace("æ", "ae").Replace("ø", "oe").Replace("å", "aa");
+        var norm = lower.Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in norm)
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                sb.Append(c);
+        return string.Join(' ', sb.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    // Lighed 0..1 baseret på Levenshtein-afstand.
+    private static double Lighed(string a, string b)
+    {
+        if (a.Length == 0 || b.Length == 0) return 0;
+        if (a == b) return 1;
+        int[] forrige = new int[b.Length + 1];
+        int[] aktuel = new int[b.Length + 1];
+        for (int j = 0; j <= b.Length; j++) forrige[j] = j;
+        for (int i = 1; i <= a.Length; i++)
+        {
+            aktuel[0] = i;
+            for (int j = 1; j <= b.Length; j++)
+            {
+                int pris = a[i - 1] == b[j - 1] ? 0 : 1;
+                aktuel[j] = Math.Min(Math.Min(aktuel[j - 1] + 1, forrige[j] + 1), forrige[j - 1] + pris);
+            }
+            (forrige, aktuel) = (aktuel, forrige);
+        }
+        int dist = forrige[b.Length];
+        return 1.0 - (double)dist / Math.Max(a.Length, b.Length);
+    }
+
     [HttpGet("eksport"), Authorize(Roles = "Admin")]
     public async Task<IActionResult> Eksport()
     {
