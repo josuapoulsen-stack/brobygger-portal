@@ -1,29 +1,38 @@
 @page "/brobyggere"
 @inject ApiClient Api
 
-<h1>Brobyggere</h1>
-<p class="sub">Frivillige der bygger bro.</p>
+<div class="page-head">
+    <div class="ph-id">
+        <h1>Brobyggere</h1>
+        <p class="ph-sub">@rows.Count frivillige · @rows.Sum(b => Math.Max(0, b.MaxActive - b.Active)) ledige pladser</p>
+    </div>
+    <div class="ph-act">
+        <button @onclick="() => visForm = !visForm">@(visForm ? "Luk" : "Ny brobygger")</button>
+    </div>
+</div>
 @if (error is not null) { <div class="status err">@error</div> }
 
-<div class="row"><input class="soeg" placeholder="Søg navn eller hovedsæde…" @bind="search" @bind:event="oninput" /></div>
+<div class="row" style="margin:16px 0"><input class="soeg" placeholder="Søg navn eller hovedsæde…" @bind="search" @bind:event="oninput" /></div>
 
-<table>
-    <thead><tr><th>Navn</th><th>Telefon</th><th>Hovedsæde</th><th>Kapacitet</th><th>Status</th></tr></thead>
-    <tbody>
-        @if (!Filtered.Any()) { <tr><td colspan="5" class="muted">Ingen endnu.</td></tr> }
-        @foreach (var b in Filtered)
-        {
-            <tr>
-                <td><a href="brobyggere/@b.Id">@b.Navn</a></td>
-                <td>@(b.Telefon ?? "—")</td>
-                <td>@(b.Hq ?? "—")</td>
-                <td>@b.Active / @b.MaxActive</td>
-                <td><span class="smono @StatusFarve.Klasse(b.Status)">@b.Status</span></td>
-            </tr>
-        }
-    </tbody>
-</table>
+@if (!Filtered.Any()) { <div class="kort muted">Ingen brobyggere matcher.</div> }
+<div class="rowcards">
+    @foreach (var b in Filtered)
+    {
+        <div class="rowcard">
+            <div class="rc-ini">@Initialer(b.Navn)</div>
+            <div class="rc-main">
+                <div class="rc-navn"><b><a href="brobyggere/@b.Id">@b.Navn</a></b></div>
+                <div class="rc-meta">@Meta(b)</div>
+            </div>
+            <div class="rc-tal"><span class="num">@b.Active/@b.MaxActive</span><span class="rc-tal-l">kapacitet</span></div>
+            <span class="smono @StatusFarve.Klasse(b.Status)">@b.Status</span>
+            <div class="rc-act"><a class="btn-lnk" href="brobyggere/@b.Id">Åbn</a></div>
+        </div>
+    }
+</div>
 
+@if (visForm)
+{
 <form @onsubmit="Opret">
     <div><label>Navn *</label><input @bind="form.Navn" required /></div>
     <div><label>Telefon</label><input @bind="form.Telefon" /></div>
@@ -46,14 +55,32 @@
             <option value="inaktiv">Inaktiv</option>
         </select>
     </div>
-    <div class="full"><button type="submit">Opret brobygger</button></div>
+    <div class="full"><button type="button" class="ghost" @onclick="() => visForm = false">Annullér</button><button type="submit">Opret brobygger</button></div>
 </form>
+}
 
 @code {
     private List<Brobygger> rows = [];
     private BrobyggerCreate form = new();
     private string search = "";
+    private bool visForm;
     private string? error;
+
+    private static string Initialer(string navn)
+    {
+        var dele = (navn ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (dele.Length == 0) return "?";
+        return dele.Length == 1 ? dele[0][..1].ToUpper() : (dele[0][..1] + dele[^1][..1]).ToUpper();
+    }
+
+    private static string Meta(Brobygger b)
+    {
+        var d = new List<string>();
+        if (!string.IsNullOrEmpty(b.Hq)) d.Add(b.Hq!);
+        if (!string.IsNullOrEmpty(b.Region)) d.Add(b.Region!);
+        if (!string.IsNullOrEmpty(b.Telefon)) d.Add(b.Telefon!);
+        return d.Count == 0 ? "—" : string.Join(" · ", d);
+    }
 
     private IEnumerable<Brobygger> Filtered => string.IsNullOrWhiteSpace(search)
         ? rows
