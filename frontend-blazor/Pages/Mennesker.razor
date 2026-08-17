@@ -2,54 +2,77 @@
 @inject ApiClient Api
 @inject IJSRuntime JS
 
-<div style="display:flex;justify-content:space-between;align-items:center">
-    <h1>Mennesker</h1>
-    <button class="mini ghost" @onclick="Eksport">Eksportér CSV</button>
+<div class="page-head">
+    <div class="ph-id">
+        <h1>Mennesker</h1>
+        <p class="ph-sub">@rows.Count borgere · @rows.Count(m => m.MatchedWith is null && m.Status != "afsluttet") afventer match</p>
+    </div>
+    <div class="ph-act">
+        <button class="ghost" @onclick="Eksport">Eksportér</button>
+        <button @onclick="() => visForm = !visForm">@(visForm ? "Luk" : "Nyt menneske")</button>
+    </div>
 </div>
-<p class="sub">Borgere vi hjælper.</p>
 @if (error is not null) { <div class="status err">@error</div> }
 
-<div class="row"><input class="soeg" placeholder="Søg navn eller hovedsæde…" @bind="search" @bind:event="oninput" /></div>
+@if (visForm)
+{
+    <form @onsubmit="Opret">
+        <div class="form-sec">Nyt menneske</div>
+        <div><label>Navn *</label><input @bind="form.Navn" required /></div>
+        <div><label>Alder</label><input type="number" @bind="form.Alder" /></div>
+        <div><label>Telefon</label><input @bind="form.Telefon" /></div>
+        <div><label>Hovedsæde</label><input @bind="form.Hq" /></div>
+        <div>
+            <label>Status</label>
+            <select @bind="form.Status">
+                <option value="ny">Ny</option>
+                <option value="matched">Matched</option>
+                <option value="aktiv">Aktiv</option>
+                <option value="afsluttet">Afsluttet</option>
+                <option value="venteliste">Venteliste</option>
+            </select>
+        </div>
+        <div class="full"><button type="button" class="ghost" @onclick="() => visForm = false">Annullér</button><button type="submit">Opret menneske</button></div>
+    </form>
+}
 
-<table>
-    <thead><tr><th>Navn</th><th>Alder</th><th>Telefon</th><th>Hovedsæde</th><th>Status</th></tr></thead>
-    <tbody>
-        @if (!Filtered.Any()) { <tr><td colspan="5" class="muted">Ingen endnu.</td></tr> }
+<div class="row" style="margin:16px 0"><input class="soeg" placeholder="Søg navn eller hovedsæde…" @bind="search" @bind:event="oninput" /></div>
+
+@if (!Filtered.Any())
+{
+    <div class="kort muted">Ingen mennesker matcher.</div>
+}
+else
+{
+    <div class="rowcards">
         @foreach (var m in Filtered)
         {
-            <tr>
-                <td><a href="mennesker/@m.Id">@m.Navn</a></td>
-                <td>@(m.Alder?.ToString() ?? "—")</td>
-                <td>@(m.Telefon ?? "—")</td>
-                <td>@(m.Hq ?? "—")</td>
-                <td><span class="smono @StatusFarve.Klasse(m.Status)">@m.Status</span></td>
-            </tr>
+            <div class="rowcard">
+                <div class="rc-ini">@Initialer(m.Navn)</div>
+                <div class="rc-main">
+                    <div class="rc-navn">
+                        <b><a href="mennesker/@m.Id">@m.Navn</a></b>
+                        @if (!string.IsNullOrEmpty(m.Brobygningstype)) { <span class="tmono @BtClass(m.Brobygningstype)">@m.Brobygningstype</span> }
+                    </div>
+                    <div class="rc-meta">@Meta(m)</div>
+                </div>
+                <span class="smono @StatusFarve.Klasse(m.Status)">@m.Status</span>
+                <div class="rc-act"><a class="btn-lnk" href="mennesker/@m.Id">Åbn</a></div>
+            </div>
         }
-    </tbody>
-</table>
-
-<form @onsubmit="Opret">
-    <div><label>Navn *</label><input @bind="form.Navn" required /></div>
-    <div><label>Alder</label><input type="number" @bind="form.Alder" /></div>
-    <div><label>Telefon</label><input @bind="form.Telefon" /></div>
-    <div><label>Hovedsæde</label><input @bind="form.Hq" /></div>
-    <div>
-        <label>Status</label>
-        <select @bind="form.Status">
-            <option value="ny">Ny</option>
-            <option value="matched">Matched</option>
-            <option value="aktiv">Aktiv</option>
-            <option value="afsluttet">Afsluttet</option>
-            <option value="venteliste">Venteliste</option>
-        </select>
     </div>
-    <div class="full"><button type="submit">Opret menneske</button></div>
-</form>
+}
+
+<style>
+    .btn-lnk { display:inline-flex; align-items:center; height:32px; padding:0 12px; border:1px solid var(--line-strong); border-radius:8px; background:var(--card); color:var(--ink); font-size:12.5px; font-weight:600; text-decoration:none; }
+    .btn-lnk:hover { background:var(--surface); text-decoration:none; }
+</style>
 
 @code {
     private List<Menneske> rows = [];
     private MenneskeCreate form = new();
     private string search = "";
+    private bool visForm;
     private string? error;
 
     private IEnumerable<Menneske> Filtered => string.IsNullOrWhiteSpace(search)
@@ -67,7 +90,7 @@
 
     private async Task Opret()
     {
-        try { await Api.CreateMenneske(form); form = new(); await Load(); }
+        try { await Api.CreateMenneske(form); form = new(); visForm = false; await Load(); }
         catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
     }
 
@@ -76,4 +99,22 @@
         try { var csv = await Api.EksportMennesker(); await JS.InvokeVoidAsync("downloadText", "mennesker.csv", csv); }
         catch (Exception e) { error = "Kunne ikke eksportere: " + e.Message; }
     }
+
+    private static string Initialer(string navn)
+    {
+        var dele = (navn ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (dele.Length == 0) return "?";
+        return dele.Length == 1 ? dele[0][..1].ToUpper() : (dele[0][..1] + dele[^1][..1]).ToUpper();
+    }
+
+    private static string Meta(Menneske m)
+    {
+        var d = new List<string>();
+        if (!string.IsNullOrEmpty(m.Hq)) d.Add(m.Hq!);
+        if (m.Alder is int a) d.Add($"{a} år");
+        if (!string.IsNullOrEmpty(m.Telefon)) d.Add(m.Telefon!);
+        return d.Count == 0 ? "—" : string.Join(" · ", d);
+    }
+
+    private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };
 }
