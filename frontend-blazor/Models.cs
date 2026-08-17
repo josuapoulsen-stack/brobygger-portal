@@ -11,6 +11,8 @@ public class Menneske
     public string? Email { get; set; }
     public string? Telefon { get; set; }
     public string? Adresse { get; set; }
+    public List<string> Typer { get; set; } = [];
+    public List<string> Sprog { get; set; } = [];
     public string? Hq { get; set; }
     public string? Afdeling { get; set; }
     public string? Kilde { get; set; }
