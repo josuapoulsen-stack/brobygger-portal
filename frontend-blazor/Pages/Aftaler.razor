@@ -2,57 +2,59 @@
 @inject ApiClient Api
 @inject IJSRuntime JS
 
-<div style="display:flex;justify-content:space-between;align-items:center">
-    <h1>Aftaler</h1>
-    <button class="mini ghost" @onclick="Eksport">Eksportér CSV</button>
+<div class="page-head">
+    <div class="ph-id">
+        <h1>Aftaler</h1>
+        <p class="ph-sub">@rows.Count aftaler · @rows.Count(a => a.Status == "pending") afventer bekræftelse</p>
+    </div>
+    <div class="ph-act">
+        <button class="ghost" @onclick="Eksport">Eksportér</button>
+        <button @onclick="() => visForm = !visForm">@(visForm ? "Luk" : "Ny aftale")</button>
+    </div>
 </div>
-<p class="sub">Efterspørg en brobygning nu — bekræft den når den er på plads (dage/uger senere).</p>
 @if (error is not null) { <div class="status err">@error</div> }
 
-<table>
-    <thead><tr><th>Menneske</th><th>Brobygger</th><th>Dato</th><th>Status</th><th>Efterspurgt</th><th>Bekræftet</th><th></th></tr></thead>
-    <tbody>
-        @if (rows.Count == 0) { <tr><td colspan="7" class="muted">Ingen aftaler endnu.</td></tr> }
-        @foreach (var a in rows)
-        {
-            <tr>
-                <td>
-                    <a href="mennesker/@a.MenneskeId">@NavnM(a.MenneskeId)</a>
-                    @if (!string.IsNullOrEmpty(a.Titel)) { <div class="two">@a.Titel</div> }
-                    @if (!string.IsNullOrEmpty(a.Sted)) { <div class="sted-linje">@a.Sted</div> }
-                    <div style="margin-top:.2rem">
-                        @if (!string.IsNullOrEmpty(a.Brobygningstype)) { <span class="tmono @BtClass(a.Brobygningstype)">@a.Brobygningstype</span> }
-                        @if (!string.IsNullOrEmpty(a.Programtype)) { <span class="chip-code">@a.Programtype</span> }
-                        @if (!string.IsNullOrEmpty(a.Indsatstype)) { <span class="chip-code">@a.Indsatstype</span> }
-                    </div>
-                </td>
-                <td>
-                    @if (a.BrobyggerId is Guid bid) { <a href="brobyggere/@bid">@NavnB(bid)</a> }
-                    else { <span class="muted">Ikke tildelt</span> }
-                </td>
-                <td><a href="aftaler/@a.Id">@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</a></td>
-                <td><span class="smono @Pill(a.Status)">@a.Status</span></td>
-                <td class="two">@a.EfterspurgtAt.ToLocalTime().ToString("dd. MMM yyyy")</td>
-                <td class="two">@(a.BekraeftetAt is null ? "—" : a.BekraeftetAt.Value.ToLocalTime().ToString("dd. MMM yyyy"))</td>
-                <td class="handling">
-                    @if (a.Status is "pending" or "planlagt")
-                    {
-                        <button class="mini" @onclick='() => Skift(a.Id, "confirmed")'>Bekræft</button>
-                    }
-                    @if (a.Status == "confirmed")
-                    {
-                        <button class="mini" @onclick='() => Skift(a.Id, "gennemfoert")'>Gennemført</button>
-                    }
-                    @if (a.Status is not ("aflyst" or "gennemfoert" or "afslaaet" or "brudt"))
-                    {
-                        <button class="mini ghost" @onclick='() => Skift(a.Id, "aflyst")'>Aflys</button>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+@if (rows.Count == 0) { <div class="kort muted">Ingen aftaler endnu.</div> }
+<div class="rowcards">
+    @foreach (var a in rows)
+    {
+        <div class="rowcard">
+            <div class="rc-date">
+                <b>@a.Dato.ToLocalTime().ToString("dd")</b>
+                <span>@a.Dato.ToLocalTime().ToString("MMM").TrimEnd('.')</span>
+            </div>
+            <div class="rc-main">
+                <div class="rc-navn">
+                    <b><a href="aftaler/@a.Id">@NavnM(a.MenneskeId)</a></b>
+                    @if (!string.IsNullOrEmpty(a.Titel)) { <span class="two">@a.Titel</span> }
+                    @if (!string.IsNullOrEmpty(a.Brobygningstype)) { <span class="tmono @BtClass(a.Brobygningstype)">@a.Brobygningstype</span> }
+                    @if (!string.IsNullOrEmpty(a.Programtype)) { <span class="chip-code">@a.Programtype</span> }
+                    @if (!string.IsNullOrEmpty(a.Indsatstype)) { <span class="chip-code">@a.Indsatstype</span> }
+                </div>
+                <div class="rc-meta">
+                    @a.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")
+                    · @(a.BrobyggerId is Guid bid ? NavnB(bid) : "Ikke tildelt")
+                    @if (!string.IsNullOrEmpty(a.Sted)) { <text> · @a.Sted</text> }
+                </div>
+            </div>
+            <span class="smono @Pill(a.Status)">@a.Status</span>
+            <div class="rc-act">
+                @if (a.Status is "pending" or "planlagt") { <button class="mini" @onclick='() => Skift(a.Id, "confirmed")'>Bekræft</button> }
+                @if (a.Status == "confirmed") { <button class="mini" @onclick='() => Skift(a.Id, "gennemfoert")'>Gennemført</button> }
+                @if (a.Status is not ("aflyst" or "gennemfoert" or "afslaaet" or "brudt")) { <button class="mini ghost" @onclick='() => Skift(a.Id, "aflyst")'>Aflys</button> }
+            </div>
+        </div>
+    }
+</div>
 
+<style>
+    .rc-date { width:52px; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:6px 0; }
+    .rc-date b { font-family:var(--mono); font-size:18px; font-weight:600; line-height:1; color:var(--ink); }
+    .rc-date span { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:2px; }
+</style>
+
+@if (visForm)
+{
 <form @onsubmit="Opret">
     <div class="form-sec">Grundlag</div>
     <div style="grid-column:1/-1"><label>Titel</label><input @bind="form.Titel" placeholder="fx Nusrat til øjenlæge" /></div>
@@ -135,10 +137,12 @@
         <textarea @bind="form.Beskrivelse" rows="3"></textarea>
         <p class="two">Pladsholdere: {menneske}, {brobygger}, {sted}, {dato} — udfyldes når du vælger skabelonen.</p>
     </div>
-    <div class="full"><button type="submit">Efterspørg aftale</button></div>
+    <div class="full"><button type="button" class="ghost" @onclick="() => visForm = false">Annullér</button><button type="submit">Efterspørg aftale</button></div>
 </form>
+}
 
 @code {
+    private bool visForm;
     private List<Aftale> rows = [];
     private List<Menneske> mennesker = [];
     private List<Brobygger> brobyggere = [];
@@ -181,7 +185,7 @@
         {
             form.Dato = DateTime.SpecifyKind(dato, DateTimeKind.Local).ToUniversalTime();
             form.Slut = slut is DateTime s ? DateTime.SpecifyKind(s, DateTimeKind.Local).ToUniversalTime() : null;
-            await Api.CreateAftale(form); slut = null; await Load();
+            await Api.CreateAftale(form); slut = null; visForm = false; await Load();
         }
         catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
     }
