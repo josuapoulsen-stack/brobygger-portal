@@ -1,8 +1,10 @@
 // Brobygger Portal — service worker.
-// Formål: gør appen installerbar (PWA) og cache app-shellet, så den åbner offline.
-// API-kald (anden origin, fx backend på :5080) caches ALDRIG — de skal altid være live.
+// Formål: gør appen installerbar (PWA) og lad den åbne offline.
+// Strategi: NETWORK-FIRST — online hentes altid friskt indhold (så opdateringer
+// slår igennem med det samme); cachen bruges kun som fallback når man er offline.
+// API-kald (anden origin, fx backend på :5080) røres aldrig.
 
-const CACHE = 'brobygger-shell-v1';
+const CACHE = 'brobygger-shell-v2';
 const CORE = [
     './',
     'index.html',
@@ -19,7 +21,8 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
     e.waitUntil(
-        caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+        caches.keys()
+            .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
             .then(() => self.clients.claim())
     );
 });
@@ -29,26 +32,21 @@ self.addEventListener('fetch', (e) => {
     if (req.method !== 'GET') return;
 
     const url = new URL(req.url);
-    // Kun samme origin caches — backend-API/SSE går altid direkte til nettet.
+    // Kun samme origin — backend-API/SSE går altid direkte til nettet.
     if (url.origin !== self.location.origin) return;
 
-    // Navigation (SPA): network-first med offline-fallback til app-shellet.
-    if (req.mode === 'navigate') {
-        e.respondWith(fetch(req).catch(() => caches.match('index.html')));
-        return;
-    }
-
-    // Øvrige statiske filer (inkl. _framework): stale-while-revalidate.
+    // Network-first: hent friskt, opdatér cache; ved fejl (offline) brug cache.
     e.respondWith(
-        caches.match(req).then((cached) => {
-            const net = fetch(req).then((res) => {
+        fetch(req)
+            .then((res) => {
                 if (res && res.status === 200 && res.type === 'basic') {
                     const copy = res.clone();
                     caches.open(CACHE).then((c) => c.put(req, copy));
                 }
                 return res;
-            }).catch(() => cached);
-            return cached || net;
-        })
+            })
+            .catch(() => caches.match(req).then((cached) =>
+                cached || (req.mode === 'navigate' ? caches.match('index.html') : Response.error())
+            ))
     );
 });

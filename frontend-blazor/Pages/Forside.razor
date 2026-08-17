@@ -2,16 +2,14 @@
 @inject ApiClient Api
 
 <div class="hero">
-    <div>
-        <h1>Overblik</h1>
-        <p class="sub" style="margin:0">@DateTime.Now.ToString("dddd d. MMMM yyyy")</p>
-    </div>
-    <div class="hero-stats">
-        <a class="hs" href="mennesker"><span class="num">@mennesker.Count</span><span>Mennesker</span></a>
-        <a class="hs" href="brobyggere"><span class="num">@brobyggere.Count</span><span>Brobyggere</span></a>
-        <a class="hs" href="aftaler"><span class="num">@Aktive</span><span>Aktive aftaler</span></a>
-        <div class="hs"><span class="num">@Ledig</span><span>Ledig kapacitet</span></div>
-    </div>
+    <h1>Overblik</h1>
+    <p class="sub" style="margin:0 0 1.1rem">@Kapitaliser(DateTime.Now.ToString("dddd d. MMMM yyyy"))</p>
+</div>
+<div class="statrow">
+    <a class="statcell" href="mennesker"><span class="sl"><i class="d accent"></i>Mennesker</span><span class="num">@mennesker.Count</span></a>
+    <a class="statcell" href="brobyggere"><span class="sl"><i class="d gron"></i>Brobyggere</span><span class="num">@brobyggere.Count</span></a>
+    <a class="statcell" href="aftaler"><span class="sl"><i class="d gul"></i>Aktive aftaler</span><span class="num">@Aktive</span></a>
+    <span class="statcell"><span class="sl"><i class="d"></i>Ledig kapacitet</span><span class="num">@Ledig</span></span>
 </div>
 @if (error is not null) { <div class="status err">@error</div> }
 
@@ -70,12 +68,8 @@
 </section>
 
 <style>
-    .hero { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem; }
-    .hero-stats { display:flex; gap:.6rem; flex-wrap:wrap; }
-    .hs { display:flex; flex-direction:column; align-items:flex-start; background:var(--card); border:1px solid var(--line-strong); border-radius:12px; padding:.7rem 1rem; min-width:110px; text-decoration:none; color:var(--soft); font-size:.78rem; }
-    a.hs:hover { border-color:var(--accent); }
-    .hs .num { font-size:1.7rem; line-height:1.1; }
-    .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1rem; align-items:start; }
+    .hero h1 { margin:0 0 .2rem; }
+    .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1rem; align-items:start; margin-top:1.4rem; }
     .panel { background:var(--card); border:1px solid var(--line-strong); border-radius:14px; padding:1rem 1.1rem; }
     .panel-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:.7rem; }
     .panel-hd h3 { margin:0; font-size:1.02rem; }
@@ -145,6 +139,8 @@
         new("Support", "Kontakt koordinator eller IT", "mailto:kontakt@socialsundhed.org",
             "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8'><path d='M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-4.5A8.4 8.4 0 1 1 21 11.5z'/></svg>"),
     ];
+
+    private static string Kapitaliser(string s) => string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];
 
     private string NavnM(Guid id) => mennesker.FirstOrDefault(x => x.Id == id)?.Navn ?? "—";
     private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };

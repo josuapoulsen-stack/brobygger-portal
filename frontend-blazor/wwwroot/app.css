@@ -90,6 +90,18 @@ tbody tr:hover td { background:var(--surface); }
 .pill.social   { background:#F7E6EC; color:#8F3550; }
 .pill.forening { background:#E0EFE7; color:#22664A; }
 .pill.sundhed  { background:#E2ECF3; color:#245676; }
+/* ── Stat-stribe (v2: grupperede celler i ét panel, delt af hairlines) ── */
+.statrow { display:flex; background:var(--card); border:1px solid var(--line-strong); border-radius:12px; overflow:hidden; }
+.statrow > * { flex:1; min-width:0; padding:.75rem 1rem; border-left:1px solid var(--line); display:flex; flex-direction:column; gap:.35rem; text-decoration:none; color:inherit; }
+.statrow > *:first-child { border-left:none; }
+a.statcell:hover { background:var(--surface); }
+.statcell .sl { font-family:var(--mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; color:var(--soft); display:flex; align-items:center; gap:.4rem; }
+.statcell .sl .d { width:6px; height:6px; border-radius:2px; background:var(--muted); flex:0 0 auto; }
+.statcell .sl .d.gron { background:var(--good); } .statcell .sl .d.gul { background:var(--warn); }
+.statcell .sl .d.accent { background:var(--accent); } .statcell .sl .d.graa { background:var(--line-strong); }
+.statcell .num { font-size:1.6rem; line-height:1; }
+@media (max-width:640px){ .statrow { flex-wrap:wrap; } .statrow > * { flex:1 1 45%; } }
+
 /* Sted-linje i lister (diskret, med lille pin) */
 .sted-linje { font-size:.76rem; color:var(--muted); display:flex; align-items:center; gap:.3rem; margin-top:.1rem; }
 .sted-linje::before { content:''; width:6px; height:6px; border-radius:50% 50% 50% 0; transform:rotate(45deg); border:1.5px solid var(--muted); flex:0 0 auto; }
