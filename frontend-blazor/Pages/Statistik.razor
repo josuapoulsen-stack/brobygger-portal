@@ -1,8 +1,7 @@
 @page "/statistik"
 @inject ApiClient Api
 
-<h1>Statistik</h1>
-<p class="sub">Overblik og effekt.</p>
+<div class="page-head"><div class="ph-id"><h1>Statistik</h1><p class="ph-sub">Overblik og effekt.</p></div></div>
 @if (error is not null) { <div class="status err">@error</div> }
 
 @if (s is null)

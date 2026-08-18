@@ -9,13 +9,16 @@
 }
 else
 {
-    <p class="sub"><a href="brobyggere">← Brobyggere</a></p>
-    <h1>@b.Navn</h1>
-    <p class="sub">
-        @(string.IsNullOrEmpty(b.Hq) ? "" : b.Hq + " · ")
-        Kapacitet @b.Active / @b.MaxActive
-        <span class="smono @StatusFarve.Klasse(b.Status)">@b.Status</span>
-    </p>
+    <div class="page-head">
+        <div class="ph-id">
+            <div class="ph-crumb"><a href="brobyggere">Brobyggere</a> <span>/</span> <span>@b.Navn</span></div>
+            <div class="ph-titel">
+                <h1>@b.Navn</h1>
+                <span class="smono @StatusFarve.Klasse(b.Status)">@b.Status</span>
+            </div>
+            <p class="ph-sub">@(string.IsNullOrEmpty(b.Hq) ? "" : b.Hq + " · ")Kapacitet @b.Active / @b.MaxActive</p>
+        </div>
+    </div>
 
     <div class="card">
         <h3>Stamdata</h3>

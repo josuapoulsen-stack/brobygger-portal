@@ -1,16 +1,18 @@
 @page "/kalender"
 @inject ApiClient Api
 
-<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-    <h1>Kalender</h1>
-    <div class="row" style="margin:0">
-        <button class="mini ghost" @onclick="() => Skift(-1)">‹ Forrige</button>
-        <b style="min-width:150px;text-align:center">@Maanedsnavn</b>
-        <button class="mini ghost" @onclick="() => Skift(1)">Næste ›</button>
+<div class="page-head">
+    <div class="ph-id">
+        <h1>Kalender</h1>
+        <p class="ph-sub"><a href="aftaler">← Liste-visning</a></p>
+    </div>
+    <div class="ph-act">
+        <button class="mini ghost" @onclick="() => Skift(-1)">‹</button>
+        <b style="min-width:140px;text-align:center;font-size:14px">@Maanedsnavn</b>
+        <button class="mini ghost" @onclick="() => Skift(1)">›</button>
         <button class="mini ghost" @onclick="() => maaned = FoersteIMaaned(DateTime.Now)">I dag</button>
     </div>
 </div>
-<p class="sub"><a href="aftaler">← Liste-visning</a></p>
 @if (error is not null) { <div class="status err">@error</div> }
 
 <div class="statrow" style="margin-bottom:1rem">

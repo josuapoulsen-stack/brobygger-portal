@@ -1,11 +1,13 @@
 @page "/matching"
 @inject ApiClient Api
 
-<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:.5rem">
-    <h1>Matching</h1>
-    <span class="two">@Umatchede.Count venter på match</span>
+<div class="page-head">
+    <div class="ph-id">
+        <h1>Matching</h1>
+        <p class="ph-sub">Vælg en person til venstre — systemet foreslår passende brobyggere efter kapacitet, hovedsæde, behov og sprog.</p>
+    </div>
+    <div class="ph-act"><span class="smono gul">@Umatchede.Count venter</span></div>
 </div>
-<p class="sub">Vælg en person til venstre — systemet foreslår passende brobyggere efter kapacitet, hovedsæde, behov og sprog.</p>
 @if (error is not null) { <div class="status err">@error</div> }
 
 <div class="match-wrap">

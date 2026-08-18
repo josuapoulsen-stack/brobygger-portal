@@ -1,8 +1,7 @@
 @page "/stamdata"
 @inject ApiClient Api
 
-<h1>Stamdata</h1>
-<p class="sub">Ensartede referenceværdier — bruges i dropdowns, så data er konsistent.</p>
+<div class="page-head"><div class="ph-id"><h1>Stamdata</h1><p class="ph-sub">Ensartede referenceværdier — bruges i dropdowns, så data er konsistent.</p></div></div>
 @if (error is not null) { <div class="status err">@error</div> }
 
 @foreach (var g in rows.GroupBy(x => x.Kategori).OrderBy(g => g.Key))

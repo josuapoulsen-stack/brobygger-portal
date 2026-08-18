@@ -9,8 +9,16 @@
 }
 else
 {
-    <p class="sub"><a href="aftaler">← Aftaler</a></p>
-    <h1>Aftale</h1>
+    <div class="page-head">
+        <div class="ph-id">
+            <div class="ph-crumb"><a href="aftaler">Aftaler</a> <span>/</span> <span>@(string.IsNullOrEmpty(a.Titel) ? "Aftale" : a.Titel)</span></div>
+            <div class="ph-titel">
+                <h1>@(string.IsNullOrEmpty(a.Titel) ? "Aftale" : a.Titel)</h1>
+                <span class="smono @StatusClass(a.Status)">@a.Status</span>
+            </div>
+            <p class="ph-sub">@(menneske?.Navn ?? "—") · @a.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</p>
+        </div>
+    </div>
 
     <div class="card">
         <dl>
