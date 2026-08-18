@@ -32,6 +32,7 @@ public class MenneskeCreate
     public int? Alder { get; set; }
     public string? Telefon { get; set; }
     public string? Hq { get; set; }
+    public string? Afdeling { get; set; }
     public string Status { get; set; } = "ny";
 }
 
@@ -53,6 +54,7 @@ public class BrobyggerCreate
     public string Navn { get; set; } = "";
     public string? Telefon { get; set; }
     public string? Hq { get; set; }
+    public string? Afdeling { get; set; }
     public string? Region { get; set; }
     public int MaxActive { get; set; } = 3;
     public string Status { get; set; } = "ny";
@@ -225,6 +227,7 @@ public class MenneskeUpdate
     public string? Region { get; set; }
     public string? Telefon { get; set; }
     public string? Hq { get; set; }
+    public string? Afdeling { get; set; }
     public int? Alder { get; set; }
 }
 

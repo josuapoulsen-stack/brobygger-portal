@@ -36,7 +36,7 @@
         <div><label>Navn *</label><input @bind="form.Navn" @bind:event="oninput" @bind:after="CheckDublet" required /></div>
         <div><label>Alder</label><input type="number" @bind="form.Alder" @bind:after="CheckDublet" /></div>
         <div><label>Telefon</label><input @bind="form.Telefon" @bind:event="oninput" @bind:after="CheckDublet" /></div>
-        <div><label>Hovedsæde</label><input @bind="form.Hq" /></div>
+        <OmraadeVaelger Hovedsaeder="hovedsaeder" Hovedsaede="@form.Hq" HovedsaedeChanged="v => form.Hq = v" Afdeling="@form.Afdeling" AfdelingChanged="v => form.Afdeling = v" />
         <div>
             <label>Status</label>
             <select @bind="form.Status">
@@ -94,6 +94,7 @@ else
     private string? error;
     private List<DuplikatForslag> dubletter = [];
     private int dubSeq;
+    private List<HovedsaedeDto> hovedsaeder = [];
 
     // Debounced dublet-tjek mens koordinatoren udfylder navn/telefon
     private async Task CheckDublet()
@@ -112,7 +113,12 @@ else
                  || (m.Navn ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
                  || (m.Hq ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
 
-    protected override async Task OnInitializedAsync() { Scope.OnChange += StateHasChanged; await Load(); }
+    protected override async Task OnInitializedAsync()
+    {
+        Scope.OnChange += StateHasChanged;
+        try { hovedsaeder = await Api.GetHovedsaeder(); } catch { }
+        await Load();
+    }
     public void Dispose() => Scope.OnChange -= StateHasChanged;
 
     private async Task Load()

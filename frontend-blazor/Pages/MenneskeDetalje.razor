@@ -62,12 +62,17 @@ else
                         <option value="">— brobygningstype —</option><option value="social">Social</option><option value="forening">Forening</option><option value="sundhed">Sundhed</option>
                     </select>
                     <input placeholder="Telefon" @bind="rediger.Telefon" />
-                    <input placeholder="Hovedsæde" @bind="rediger.Hq" />
-                    <input list="dl-region" placeholder="Søg region …" @bind="rediger.Region" />
-                    <datalist id="dl-region">
-                        <option value="Nord" /><option value="Kronjylland" /><option value="Aarhus" /><option value="Syd" />
-                        <option value="Sydvest" /><option value="Midt" /><option value="Sjælland" /><option value="Hovedstaden" />
-                    </datalist>
+                    <select @bind="rediger.Hq">
+                        <option value="">— hovedsæde —</option>
+                        @foreach (var h in hovedsaeder) { <option value="@h.Navn">@h.Navn</option> }
+                    </select>
+                    @if (RedigerAfdelinger.Count > 0)
+                    {
+                        <select @bind="rediger.Afdeling">
+                            <option value="">— hele hovedsædet —</option>
+                            @foreach (var a in RedigerAfdelinger) { <option value="@a.Navn">@a.Navn</option> }
+                        </select>
+                    }
                     <button class="mini" @onclick="Gem">Gem</button>
                 </div>
             </div>
@@ -326,6 +331,8 @@ else
     private List<Brobygger> brobyggere = [];
     private List<MatchForslag> forslag = [];
     private List<Opkald> opkald = [];
+    private List<HovedsaedeDto> hovedsaeder = [];
+    private List<AfdelingDto> RedigerAfdelinger => hovedsaeder.FirstOrDefault(h => h.Navn == rediger.Hq)?.Afdelinger ?? [];
     private OpkaldCreate nyOpkald = new();
     private List<Audit> adgang = [];
     private Guid valgtBrobygger;
@@ -389,9 +396,10 @@ else
             brobyggere = await Api.GetBrobyggere();
             forslag = await Api.GetMatchForslag(Id);
             opkald = await Api.GetOpkaldForMenneske(Id);
+            try { hovedsaeder = await Api.GetHovedsaeder(); } catch { }
             nyOpkald.MenneskeId = Id;
             if (m is not null)
-                rediger = new MenneskeUpdate { Status = m.Status, Brobygningstype = m.Brobygningstype, Region = m.Region, Telefon = m.Telefon, Hq = m.Hq, Alder = m.Alder };
+                rediger = new MenneskeUpdate { Status = m.Status, Brobygningstype = m.Brobygningstype, Region = m.Region, Telefon = m.Telefon, Hq = m.Hq, Afdeling = m.Afdeling, Alder = m.Alder };
             try { adgang = await Api.GetAudit(Id); } catch { adgang = []; }
             error = null;
         }

@@ -1,0 +1,43 @@
+@* Hovedsæde-dropdown → lokalafdelings-dropdown (afdelinger fra det valgte hovedsæde). *@
+<div>
+    <label>Hovedsæde</label>
+    <select value="@Hovedsaede" @onchange="OnHoved">
+        <option value="">— vælg hovedsæde —</option>
+        @foreach (var h in Hovedsaeder) { <option value="@h.Navn">@h.Navn</option> }
+    </select>
+</div>
+@if (ValgtAfdelinger.Count > 0)
+{
+    <div>
+        <label>Lokalafdeling</label>
+        <select value="@Afdeling" @onchange="OnAfd">
+            <option value="">— hele hovedsædet —</option>
+            @foreach (var a in ValgtAfdelinger) { <option value="@a.Navn">@a.Navn</option> }
+        </select>
+    </div>
+}
+
+@code {
+    [Parameter] public List<HovedsaedeDto> Hovedsaeder { get; set; } = [];
+    [Parameter] public string? Hovedsaede { get; set; }
+    [Parameter] public EventCallback<string?> HovedsaedeChanged { get; set; }
+    [Parameter] public string? Afdeling { get; set; }
+    [Parameter] public EventCallback<string?> AfdelingChanged { get; set; }
+
+    private List<AfdelingDto> ValgtAfdelinger =>
+        Hovedsaeder.FirstOrDefault(h => h.Navn == Hovedsaede)?.Afdelinger ?? [];
+
+    private async Task OnHoved(ChangeEventArgs e)
+    {
+        Hovedsaede = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value!.ToString();
+        await HovedsaedeChanged.InvokeAsync(Hovedsaede);
+        Afdeling = null;                       // nulstil afdeling når hovedsæde skifter
+        await AfdelingChanged.InvokeAsync(null);
+    }
+
+    private async Task OnAfd(ChangeEventArgs e)
+    {
+        Afdeling = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value!.ToString();
+        await AfdelingChanged.InvokeAsync(Afdeling);
+    }
+}
