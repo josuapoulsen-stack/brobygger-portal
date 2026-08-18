@@ -10,279 +10,309 @@
 }
 else
 {
-    <p class="sub"><a href="mennesker">← Mennesker</a></p>
-    <h1>@m.Navn</h1>
-    <p class="sub">
-        @(m.Alder is null ? "" : m.Alder + " år · ")@(m.Kon ?? "")
-        @(string.IsNullOrEmpty(m.Hq) ? "" : " · " + m.Hq)
-        <span class="smono @StatusFarve.Klasse(m.Status)">@m.Status</span>
-        @if (!string.IsNullOrEmpty(m.Brobygningstype)) { <span class="tmono @BtClass(m.Brobygningstype)">@m.Brobygningstype</span> }
-        @if (!string.IsNullOrEmpty(m.Region)) { <span class="pill graa">@m.Region</span> }
-    </p>
-    <p class="sub"><a href="mennesker/@Id/rapport">📄 Indsigtsrapport (GDPR art. 15)</a></p>
+    <div class="page-head">
+        <div class="ph-id">
+            <div class="ph-crumb"><a href="mennesker">Mennesker</a> <span>/</span> <span>@m.Navn</span></div>
+            <div class="ph-titel">
+                <h1>@m.Navn</h1>
+                <span class="smono @StatusFarve.Klasse(m.Status)">@m.Status</span>
+                @if (!string.IsNullOrEmpty(m.Brobygningstype)) { <span class="tmono @BtClass(m.Brobygningstype)">@m.Brobygningstype</span> }
+            </div>
+            <p class="ph-sub">@HovedMeta()</p>
+        </div>
+        <div class="ph-act">
+            <a class="btn-lnk" href="mennesker/@Id/rapport">Indsigtsrapport</a>
+        </div>
+    </div>
 
-    <div class="grid2">
-        <div class="card">
-            <h3>Stamdata</h3>
-            <dl>
-                <dt>Telefon</dt><dd>@(m.Telefon ?? "—")</dd>
-                <dt>E-mail</dt><dd>@(m.Email ?? "—")</dd>
-                <dt>Adresse</dt><dd>@(m.Adresse ?? "—")</dd>
-                <dt>Afdeling</dt><dd>@(m.Afdeling ?? "—")</dd>
-                <dt>Kilde</dt><dd>@(m.Kilde ?? "—")</dd>
-                <dt>Region</dt><dd>@(m.Region ?? "—")</dd>
-                @if (!string.IsNullOrEmpty(m.TidligereNavne)) { <dt>Tidligere navne</dt><dd>@m.TidligereNavne</dd> }
-                <dt>Oprettet</dt><dd>@m.CreatedAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
-            </dl>
+    <div class="statrow" style="margin-bottom:16px">
+        <span class="statcell"><span class="sl"><i class="d accent"></i>Aftaler</span><span class="num">@aftaler.Count</span></span>
+        <span class="statcell"><span class="sl"><i class="d"></i>Henvendelser</span><span class="num">@henvendelser.Count</span></span>
+        <span class="statcell"><span class="sl"><i class="d gron"></i>Trivsel (seneste)</span><span class="num">@(maalinger.FirstOrDefault()?.Score.ToString() ?? "—")</span></span>
+        <span class="statcell"><span class="sl"><i class="d gul"></i>Opkald</span><span class="num">@opkald.Count</span></span>
+    </div>
+
+    <div class="detalje-wrap">
+        <div class="detalje-hoved">
+
+            <div class="card">
+                <div class="kort-hd"><h3>Forløb</h3></div>
+                <div class="tl">
+                    @foreach (var t in Tidslinje().Take(30))
+                    {
+                        <div class="tl-item @t.Type.ToLowerInvariant()">
+                            <div class="tl-dot"></div>
+                            <div class="tl-body">
+                                <div class="tl-hd"><b>@t.Type</b> <span class="two">· @t.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</span></div>
+                                @if (!string.IsNullOrEmpty(t.Tekst)) { <div class="two">@t.Tekst</div> }
+                            </div>
+                        </div>
+                    }
+                    @if (!Tidslinje().Any()) { <p class="muted">Ingen aktivitet endnu.</p> }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="kort-hd"><h3>Redigér</h3></div>
+                <div class="row">
+                    <select @bind="rediger.Status">
+                        <option value="ny">Ny</option><option value="matched">Matched</option><option value="aktiv">Aktiv</option><option value="afsluttet">Afsluttet</option><option value="venteliste">Venteliste</option>
+                    </select>
+                    <select @bind="rediger.Brobygningstype">
+                        <option value="">— brobygningstype —</option><option value="social">Social</option><option value="forening">Forening</option><option value="sundhed">Sundhed</option>
+                    </select>
+                    <input placeholder="Telefon" @bind="rediger.Telefon" />
+                    <input placeholder="Hovedsæde" @bind="rediger.Hq" />
+                    <input list="dl-region" placeholder="Søg region …" @bind="rediger.Region" />
+                    <datalist id="dl-region">
+                        <option value="Nord" /><option value="Kronjylland" /><option value="Aarhus" /><option value="Syd" />
+                        <option value="Sydvest" /><option value="Midt" /><option value="Sjælland" /><option value="Hovedstaden" />
+                    </datalist>
+                    <button class="mini" @onclick="Gem">Gem</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="kort-hd"><h3>Henvendelser</h3></div>
+                <ul class="liste">
+                    @foreach (var h in henvendelser)
+                    {
+                        <li><b>@h.Dato.ToLocalTime().ToString("dd. MMM yyyy")</b> · @(h.Kanal ?? "—") @(h.Foerstegang ? "· førstegang" : "") <div class="two">@h.Resume</div></li>
+                    }
+                    @if (henvendelser.Count == 0) { <li class="muted">Ingen endnu.</li> }
+                </ul>
+                <div class="row">
+                    <select @bind="nyHenv.Kanal"><option value="telefon">Telefon</option><option value="mail">Mail</option><option value="fysisk">Fysisk</option><option value="henvist">Henvist</option></select>
+                    <input placeholder="Resume" @bind="nyHenv.Resume" />
+                    <label class="chk"><input type="checkbox" @bind="nyHenv.Foerstegang" /> Førstegang</label>
+                    <button class="mini" @onclick="TilfoejHenv">Tilføj</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="kort-hd"><h3>Trivsel</h3></div>
+                @if (maalinger.Count > 1)
+                {
+                    <div class="spark">
+                        @foreach (var u in maalinger.OrderBy(x => x.Dato))
+                        {
+                            <span class="spark-bar" style="height:@(8 + Math.Min(u.Score, 25) * 2)px" title="@u.Score · @u.Slags"></span>
+                        }
+                    </div>
+                }
+                <ul class="liste">
+                    @foreach (var u in maalinger)
+                    {
+                        <li><b>@u.Score</b> · @InstrumentLabel(u.Instrument) · @u.Slags · @u.Dato.ToLocalTime().ToString("dd. MMM yyyy") <div class="two">@u.Noter</div></li>
+                    }
+                    @if (maalinger.Count == 0) { <li class="muted">Ingen målinger.</li> }
+                </ul>
+                <div class="row">
+                    <select @bind="nyMaaling.Instrument">
+                        <option value="kombineret">Kombineret (5 spørgsmål)</option>
+                        <option value="ucla3">UCLA-3</option>
+                        <option value="who5">WHO-5</option>
+                    </select>
+                    <select @bind="nyMaaling.Slags"><option value="baseline">Baseline</option><option value="opfoelgning">Opfølgning</option></select>
+                </div>
+                @if (nyMaaling.Instrument == "kombineret")
+                {
+                    <div class="likert">
+                        @foreach (var q in Spoergsmaal)
+                        {
+                            <div class="lq">
+                                <span>@q.Tekst</span>
+                                <select value="@q.Get()" @onchange="e => q.Set(int.Parse((string)e.Value!))">
+                                    <option value="1">1 · Helt uenig</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5 · Helt enig</option>
+                                </select>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="row"><input type="number" placeholder="Score" @bind="nyMaaling.Score" /></div>
+                }
+                <div class="row">
+                    <input placeholder="Noter" @bind="nyMaaling.Noter" />
+                    <button class="mini" @onclick="TilfoejMaaling">Tilføj måling</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="kort-hd"><h3>Kontaktpersoner</h3></div>
+                <ul class="liste">
+                    @foreach (var k in kontakt)
+                    {
+                        <li><b>@k.Navn</b> @(string.IsNullOrEmpty(k.Relation) ? "" : "· " + k.Relation) <div class="two">@k.Telefon @k.Email</div></li>
+                    }
+                    @if (kontakt.Count == 0) { <li class="muted">Ingen.</li> }
+                </ul>
+                <div class="row">
+                    <input placeholder="Navn" @bind="nyKontakt.Navn" />
+                    <input placeholder="Relation" @bind="nyKontakt.Relation" />
+                    <input placeholder="Telefon" @bind="nyKontakt.Telefon" />
+                    <button class="mini" @onclick="TilfoejKontakt">Tilføj</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="kort-hd"><h3>Opkald</h3></div>
+                <ul class="liste">
+                    @foreach (var o in opkald)
+                    {
+                        <li><b>@(o.Retning == "ud" ? "↗ Udgående" : "↘ Indgående")</b> · @o.Tidspunkt.ToLocalTime().ToString("dd. MMM yyyy HH:mm") <div class="two">@o.Note</div></li>
+                    }
+                    @if (opkald.Count == 0) { <li class="muted">Ingen opkald.</li> }
+                </ul>
+                <div class="row">
+                    <select @bind="nyOpkald.Retning"><option value="ind">Indgående</option><option value="ud">Udgående</option></select>
+                    <select @bind="nyOpkald.Type"><option value="samtale_menneske">Samtale</option><option value="ringeopgave">Ringeopgave</option></select>
+                    <input placeholder="Note" @bind="nyOpkald.Note" />
+                    <button class="mini" @onclick="LogOpkald">Log opkald</button>
+                </div>
+                <p class="two">Automatisk logning kobles på når telefon-integrationen (ipnordic) er sat op.</p>
+            </div>
+
+            <div class="card">
+                <div class="kort-hd"><h3>Aftaler</h3></div>
+                <table>
+                    <thead><tr><th>Dato</th><th>Type</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var a in aftaler)
+                        {
+                            <tr><td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td><td>@a.Type</td><td><span class="smono @StatusFarve.Klasse(a.Status)">@a.Status</span></td></tr>
+                        }
+                        @if (aftaler.Count == 0) { <tr><td colspan="3" class="muted">Ingen.</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (adgang.Count > 0)
+            {
+                <div class="card">
+                    <div class="kort-hd"><h3>Adgangshistorik</h3></div>
+                    <ul class="liste">
+                        @foreach (var x in adgang)
+                        {
+                            <li>@x.Tidspunkt.ToLocalTime().ToString("dd. MMM yyyy HH:mm") · <b>@x.Handling</b> · @x.Aktoer</li>
+                        }
+                    </ul>
+                </div>
+            }
         </div>
 
-        <div class="card">
-            <h3>Helbred (følsomt)</h3>
-            @if (helbred is null)
+        <aside class="detalje-side">
+            <div class="card">
+                <div class="mono-eyebrow">Stamdata</div>
+                <dl>
+                    <dt>Telefon</dt><dd>@(m.Telefon ?? "—")</dd>
+                    <dt>E-mail</dt><dd>@(m.Email ?? "—")</dd>
+                    <dt>Adresse</dt><dd>@(m.Adresse ?? "—")</dd>
+                    <dt>Afdeling</dt><dd>@(m.Afdeling ?? "—")</dd>
+                    <dt>Kilde</dt><dd>@(m.Kilde ?? "—")</dd>
+                    <dt>Region</dt><dd>@(m.Region ?? "—")</dd>
+                    @if (!string.IsNullOrEmpty(m.TidligereNavne)) { <dt>Tidl. navne</dt><dd>@m.TidligereNavne</dd> }
+                    <dt>Oprettet</dt><dd>@m.CreatedAt.ToLocalTime().ToString("dd. MMM yyyy")</dd>
+                </dl>
+            </div>
+
+            @if (m.MatchedWith is Guid bid)
             {
-                <p class="muted">Skjult. Kun Admin/Rådgiver kan se helbredsnoter.</p>
-                <button class="mini" @onclick="VisHelbred">Vis helbredsnoter</button>
+                <div class="card match-aktiv">
+                    <div class="mono-eyebrow" style="color:var(--brand-deep)">Aktivt match</div>
+                    <div class="ma-navn">
+                        <div class="rc-ini" style="background:#fff;color:var(--brand-deep)">@Ini(BrobyggerNavn(bid))</div>
+                        <div><b>@BrobyggerNavn(bid)</b><div class="two">Brobygger</div></div>
+                    </div>
+                    <div class="row" style="margin:0">
+                        <a class="btn-lnk" href="brobyggere/@bid">Se brobygger</a>
+                        <button class="mini ghost" @onclick="FjernMatch">Fjern match</button>
+                    </div>
+                </div>
             }
             else
             {
-                <p>@(string.IsNullOrEmpty(helbred) ? "(ingen noter)" : helbred)</p>
-            }
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>Tidslinje</h3>
-        <div class="tl">
-            @foreach (var t in Tidslinje().Take(30))
-            {
-                <div class="tl-item @t.Type.ToLowerInvariant()">
-                    <div class="tl-dot"></div>
-                    <div class="tl-body">
-                        <div class="tl-hd"><b>@t.Type</b> <span class="two">· @t.Dato.ToLocalTime().ToString("dd. MMM yyyy HH:mm")</span></div>
-                        @if (!string.IsNullOrEmpty(t.Tekst)) { <div class="two">@t.Tekst</div> }
-                    </div>
-                </div>
-            }
-            @if (!Tidslinje().Any()) { <p class="muted">Ingen aktivitet endnu.</p> }
-        </div>
-    </div>
-
-    <div class="sag-kort">
-
-    <div class="card">
-        <h3>Redigér</h3>
-        <div class="row">
-            <select @bind="rediger.Status">
-                <option value="ny">Ny</option><option value="matched">Matched</option><option value="aktiv">Aktiv</option><option value="afsluttet">Afsluttet</option><option value="venteliste">Venteliste</option>
-            </select>
-            <select @bind="rediger.Brobygningstype">
-                <option value="">— brobygningstype —</option><option value="social">Social</option><option value="forening">Forening</option><option value="sundhed">Sundhed</option>
-            </select>
-            <input placeholder="Telefon" @bind="rediger.Telefon" />
-            <input placeholder="Hovedsæde" @bind="rediger.Hq" />
-            <input list="dl-region" placeholder="Søg region …" @bind="rediger.Region" />
-            <datalist id="dl-region">
-                <option value="Nord" /><option value="Kronjylland" /><option value="Aarhus" /><option value="Syd" />
-                <option value="Sydvest" /><option value="Midt" /><option value="Sjælland" /><option value="Hovedstaden" />
-            </datalist>
-            <button class="mini" @onclick="Gem">Gem</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>Match</h3>
-        @if (m.MatchedWith is Guid bid)
-        {
-            <p>Matchet med <b>@BrobyggerNavn(bid)</b> &nbsp;<button class="mini ghost" @onclick="FjernMatch">Fjern match</button></p>
-        }
-        else
-        {
-            @if (forslag.Any())
-            {
-                <div class="forslag">
-                    @foreach (var f in forslag)
+                <div class="card">
+                    <div class="mono-eyebrow">Forslag til match</div>
+                    @if (forslag.Any())
                     {
-                        <div class="fslag">
-                            <span><b>@f.Navn</b> <span class="two">@f.Hq · @f.Active/@f.MaxActive@(string.IsNullOrEmpty(f.Begrundelse) ? "" : " · " + f.Begrundelse)</span></span>
-                            <button class="mini" @onclick="() => MatchMed(f.Id)">Match</button>
+                        <div class="forslag">
+                            @foreach (var f in forslag)
+                            {
+                                <div class="fslag">
+                                    <span><b>@f.Navn</b> <span class="two">@f.Hq · @f.Active/@f.MaxActive@(string.IsNullOrEmpty(f.Begrundelse) ? "" : " · " + f.Begrundelse)</span></span>
+                                    <button class="mini" @onclick="() => MatchMed(f.Id)">Match</button>
+                                </div>
+                            }
                         </div>
                     }
+                    else { <p class="muted">Ingen forslag.</p> }
+                    <div class="row" style="margin-top:.6rem">
+                        <select @bind="valgtBrobygger">
+                            <option value="@Guid.Empty">— vælg manuelt —</option>
+                            @foreach (var b in brobyggere) { <option value="@b.Id">@b.Navn (@b.Active/@b.MaxActive)</option> }
+                        </select>
+                        <button class="mini" @onclick="MatchNu">Match</button>
+                    </div>
                 </div>
             }
-            <div class="row" style="margin-top:.6rem">
-                <select @bind="valgtBrobygger">
-                    <option value="@Guid.Empty">— vælg manuelt —</option>
-                    @foreach (var b in brobyggere) { <option value="@b.Id">@b.Navn (@b.Active/@b.MaxActive)</option> }
-                </select>
-                <button class="mini" @onclick="MatchNu">Match</button>
-            </div>
-        }
-    </div>
 
-    <div class="card">
-        <h3>Henvendelser</h3>
-        <ul class="liste">
-            @foreach (var h in henvendelser)
-            {
-                <li><b>@h.Dato.ToLocalTime().ToString("dd. MMM yyyy")</b> · @(h.Kanal ?? "—") @(h.Foerstegang ? "· førstegang" : "") <div class="two">@h.Resume</div></li>
-            }
-            @if (henvendelser.Count == 0) { <li class="muted">Ingen endnu.</li> }
-        </ul>
-        <div class="row">
-            <select @bind="nyHenv.Kanal"><option value="telefon">Telefon</option><option value="mail">Mail</option><option value="fysisk">Fysisk</option><option value="henvist">Henvist</option></select>
-            <input placeholder="Resume" @bind="nyHenv.Resume" />
-            <label class="chk"><input type="checkbox" @bind="nyHenv.Foerstegang" /> Førstegang</label>
-            <button class="mini" @onclick="TilfoejHenv">Tilføj</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>Trivsel</h3>
-        @if (maalinger.Count > 1)
-        {
-            <div class="spark">
-                @foreach (var u in maalinger.OrderBy(x => x.Dato))
+            <div class="card">
+                <div class="mono-eyebrow">Helbred (følsomt)</div>
+                @if (helbred is null)
                 {
-                    <span class="spark-bar" style="height:@(8 + Math.Min(u.Score, 25) * 2)px" title="@u.Score · @u.Slags"></span>
+                    <p class="muted" style="margin:.3rem 0 .6rem">Skjult. Kun Admin/Rådgiver kan se helbredsnoter.</p>
+                    <button class="mini ghost" @onclick="VisHelbred">Vis helbredsnoter</button>
+                }
+                else
+                {
+                    <p>@(string.IsNullOrEmpty(helbred) ? "(ingen noter)" : helbred)</p>
                 }
             </div>
-        }
-        <ul class="liste">
-            @foreach (var u in maalinger)
-            {
-                <li><b>@u.Score</b> · @InstrumentLabel(u.Instrument) · @u.Slags · @u.Dato.ToLocalTime().ToString("dd. MMM yyyy") <div class="two">@u.Noter</div></li>
-            }
-            @if (maalinger.Count == 0) { <li class="muted">Ingen målinger.</li> }
-        </ul>
-        <div class="row">
-            <select @bind="nyMaaling.Instrument">
-                <option value="kombineret">Kombineret (5 spørgsmål)</option>
-                <option value="ucla3">UCLA-3</option>
-                <option value="who5">WHO-5</option>
-            </select>
-            <select @bind="nyMaaling.Slags"><option value="baseline">Baseline</option><option value="opfoelgning">Opfølgning</option></select>
-        </div>
-        @if (nyMaaling.Instrument == "kombineret")
-        {
-            <div class="likert">
-                @foreach (var q in Spoergsmaal)
-                {
-                    <div class="lq">
-                        <span>@q.Tekst</span>
-                        <select value="@q.Get()" @onchange="e => q.Set(int.Parse((string)e.Value!))">
-                            <option value="1">1 · Helt uenig</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5 · Helt enig</option>
-                        </select>
-                    </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="row"><input type="number" placeholder="Score" @bind="nyMaaling.Score" /></div>
-        }
-        <div class="row">
-            <input placeholder="Noter" @bind="nyMaaling.Noter" />
-            <button class="mini" @onclick="TilfoejMaaling">Tilføj måling</button>
-        </div>
+        </aside>
     </div>
-
-    <div class="card">
-        <h3>Kontaktpersoner</h3>
-        <ul class="liste">
-            @foreach (var k in kontakt)
-            {
-                <li><b>@k.Navn</b> @(string.IsNullOrEmpty(k.Relation) ? "" : "· " + k.Relation) <div class="two">@k.Telefon @k.Email</div></li>
-            }
-            @if (kontakt.Count == 0) { <li class="muted">Ingen.</li> }
-        </ul>
-        <div class="row">
-            <input placeholder="Navn" @bind="nyKontakt.Navn" />
-            <input placeholder="Relation" @bind="nyKontakt.Relation" />
-            <input placeholder="Telefon" @bind="nyKontakt.Telefon" />
-            <button class="mini" @onclick="TilfoejKontakt">Tilføj</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>Opkald</h3>
-        <ul class="liste">
-            @foreach (var o in opkald)
-            {
-                <li><b>@(o.Retning == "ud" ? "↗ Udgående" : "↘ Indgående")</b> · @o.Tidspunkt.ToLocalTime().ToString("dd. MMM yyyy HH:mm") <div class="two">@o.Note</div></li>
-            }
-            @if (opkald.Count == 0) { <li class="muted">Ingen opkald.</li> }
-        </ul>
-        <div class="row">
-            <select @bind="nyOpkald.Retning"><option value="ind">Indgående</option><option value="ud">Udgående</option></select>
-            <select @bind="nyOpkald.Type"><option value="samtale_menneske">Samtale</option><option value="ringeopgave">Ringeopgave</option></select>
-            <input placeholder="Note" @bind="nyOpkald.Note" />
-            <button class="mini" @onclick="LogOpkald">Log opkald</button>
-        </div>
-        <p class="two">Automatisk logning kobles på når telefon-integrationen (ipnordic) er sat op.</p>
-    </div>
-
-    <div class="card">
-        <h3>Aftaler</h3>
-        <table>
-            <thead><tr><th>Dato</th><th>Type</th><th>Status</th></tr></thead>
-            <tbody>
-                @foreach (var a in aftaler)
-                {
-                    <tr><td>@a.Dato.ToLocalTime().ToString("dd. MMM yyyy")</td><td>@a.Type</td><td><span class="smono @StatusFarve.Klasse(a.Status)">@a.Status</span></td></tr>
-                }
-                @if (aftaler.Count == 0) { <tr><td colspan="3" class="muted">Ingen.</td></tr> }
-            </tbody>
-        </table>
-    </div>
-
-    </div>
-
-    @if (adgang.Count > 0)
-    {
-        <div class="card">
-            <h3>Adgangshistorik</h3>
-            <ul class="liste">
-                @foreach (var x in adgang)
-                {
-                    <li>@x.Tidspunkt.ToLocalTime().ToString("dd. MMM yyyy HH:mm") · <b>@x.Handling</b> · @x.Aktoer</li>
-                }
-            </ul>
-        </div>
-    }
 }
 
 <style>
-    .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1rem; }
-    .card { background:var(--card); border:1px solid var(--line-strong); border-radius:12px; padding:1rem; margin-top:1rem; }
-    .card h3 { margin:0 0 .6rem; font-size:1rem; }
-    dl { display:grid; grid-template-columns:auto 1fr; gap:.2rem .8rem; margin:0; font-size:.88rem; }
-    dt { color:var(--soft); }
-    .liste { list-style:none; padding:0; margin:0 0 .8rem; display:flex; flex-direction:column; gap:.5rem; font-size:.88rem; }
-    .liste li { border-bottom:1px solid var(--line); padding-bottom:.4rem; }
-    .row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+    .ph-titel { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .detalje-wrap { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; }
+    .detalje-hoved { flex:1 1 460px; min-width:0; display:flex; flex-direction:column; gap:16px; }
+    .detalje-side { flex:1 1 300px; max-width:340px; display:flex; flex-direction:column; gap:16px; position:sticky; top:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-1); padding:20px; margin:0; }
+    .kort-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .kort-hd h3 { margin:0; }
+    .mono-eyebrow { font-family:var(--mono); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin-bottom:12px; }
+    dl { display:grid; grid-template-columns:auto 1fr; gap:8px 16px; margin:0; font-size:13.5px; }
+    dt { color:var(--muted); } dd { margin:0; text-align:right; font-weight:500; }
+    .liste { list-style:none; padding:0; margin:0 0 14px; display:flex; flex-direction:column; gap:10px; font-size:13.5px; }
+    .liste li { border-bottom:1px solid #F0F1F4; padding-bottom:8px; }
+    .liste li:last-child { border-bottom:none; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .row input, .row select { width:auto; flex:1; min-width:120px; }
-    .chk { display:flex; align-items:center; gap:.3rem; font-size:.82rem; color:var(--soft); }
-    .chk input { width:auto; }
-    .forslag { display:flex; flex-direction:column; gap:.4rem; }
-    .fslag { display:flex; justify-content:space-between; align-items:center; gap:.6rem; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:.4rem .6rem; font-size:.88rem; }
-    .tl { padding-left:.2rem; }
-    .tl-item { display:flex; gap:.7rem; padding-bottom:.85rem; position:relative; }
+    .chk { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--soft); }
+    .chk input { width:auto; height:auto; }
+    .forslag { display:flex; flex-direction:column; gap:8px; }
+    .fslag { display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-sm); padding:8px 10px; font-size:13px; }
+    .tl { padding-left:2px; }
+    .tl-item { display:flex; gap:12px; padding-bottom:14px; position:relative; }
     .tl-item:not(:last-child)::before { content:""; position:absolute; left:5px; top:15px; bottom:-3px; width:2px; background:var(--line); }
-    .tl-dot { width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--card); flex:0 0 auto; margin-top:3px; z-index:1; }
-    .tl-item.aftale .tl-dot { background:#2E6E9E; } .tl-item.trivsel .tl-dot { background:var(--good); } .tl-item.opkald .tl-dot { background:var(--warn); }
+    .tl-dot { width:12px; height:12px; border-radius:50%; background:var(--brand); border:2px solid var(--card); flex:0 0 auto; margin-top:3px; z-index:1; }
+    .tl-item.aftale .tl-dot { background:var(--sundhed); } .tl-item.trivsel .tl-dot { background:var(--good); } .tl-item.opkald .tl-dot { background:var(--warn); }
     .tl-body { flex:1; min-width:0; }
-    .tl-hd { font-size:.88rem; }
-    .sag-kort { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1rem; align-items:start; }
-    .sag-kort > .card { margin-top:0; }
-    .spark { display:flex; align-items:flex-end; gap:3px; height:60px; padding:.3rem 0 .6rem; }
-    .spark-bar { width:10px; background:var(--accent); border-radius:2px 2px 0 0; opacity:.85; }
-    .likert { display:flex; flex-direction:column; gap:.4rem; margin-bottom:.6rem; }
-    .lq { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; }
+    .tl-hd { font-size:14px; }
+    .spark { display:flex; align-items:flex-end; gap:3px; height:60px; padding:4px 0 10px; }
+    .spark-bar { width:10px; background:var(--brand); border-radius:2px 2px 0 0; opacity:.85; }
+    .likert { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+    .lq { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:13.5px; }
     .lq select { width:auto; min-width:150px; }
+    .match-aktiv { background:var(--brand-soft); border-color:#f7d3c5; }
+    .ma-navn { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    @@media (max-width:900px){ .detalje-side { position:static; max-width:none; flex-basis:100%; } }
 </style>
 
 @code {
@@ -318,6 +348,22 @@ else
     };
     private static string InstrumentLabel(string i) => i switch { "ucla3" => "UCLA-3", "who5" => "WHO-5", _ => "Kombineret" };
     private static string BtClass(string? bt) => (bt ?? "").ToLowerInvariant() switch { "social" => "social", "forening" => "forening", "sundhed" => "sundhed", _ => "" };
+    private static string Ini(string navn)
+    {
+        var d = (navn ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return d.Length == 0 ? "?" : d.Length == 1 ? d[0][..1].ToUpper() : (d[0][..1] + d[^1][..1]).ToUpper();
+    }
+
+    private string HovedMeta()
+    {
+        var d = new List<string>();
+        if (m!.Alder is int a) d.Add($"{a} år");
+        if (!string.IsNullOrEmpty(m.Kon)) d.Add(m.Kon!);
+        if (!string.IsNullOrEmpty(m.Hq)) d.Add(m.Hq!);
+        if (!string.IsNullOrEmpty(m.Region)) d.Add(m.Region!);
+        d.Add("oprettet " + m.CreatedAt.ToLocalTime().ToString("dd. MMM yyyy"));
+        return string.Join(" · ", d);
+    }
 
     private IEnumerable<(DateTimeOffset Dato, string Type, string Tekst)> Tidslinje()
     {
