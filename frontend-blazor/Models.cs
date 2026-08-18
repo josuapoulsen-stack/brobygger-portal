@@ -41,6 +41,7 @@ public class Brobygger
     public string Navn { get; set; } = "";
     public string? Telefon { get; set; }
     public string? Hq { get; set; }
+    public string? Afdeling { get; set; }
     public int Active { get; set; }
     public int MaxActive { get; set; }
     public string? Region { get; set; }
@@ -336,6 +337,13 @@ public class SkabelonCreate
 {
     public string Navn { get; set; } = "";
     public string Indhold { get; set; } = "";
+}
+
+// Områdestruktur (hovedsæde → lokalafdelinger) til scope-filteret
+public class Omraade
+{
+    public string Hovedsaede { get; set; } = "";
+    public List<string> Afdelinger { get; set; } = [];
 }
 
 // Dublet-genkendelse ved oprettelse af menneske

@@ -1,10 +1,12 @@
 @page "/brobyggere"
 @inject ApiClient Api
+@inject ScopeState Scope
+@implements IDisposable
 
 <div class="page-head">
     <div class="ph-id">
         <h1>Brobyggere</h1>
-        <p class="ph-sub">@rows.Count frivillige · @rows.Sum(b => Math.Max(0, b.MaxActive - b.Active)) ledige pladser</p>
+        <p class="ph-sub">@Scoped.Count frivillige@(Scope.Aktiv ? " i " + (Scope.Afdeling ?? Scope.Hovedsaede) : "") · @Scoped.Sum(b => Math.Max(0, b.MaxActive - b.Active)) ledige pladser</p>
     </div>
     <div class="ph-act">
         <button @onclick="() => visForm = !visForm">@(visForm ? "Luk" : "Ny brobygger")</button>
@@ -82,12 +84,14 @@
         return d.Count == 0 ? "—" : string.Join(" · ", d);
     }
 
-    private IEnumerable<Brobygger> Filtered => string.IsNullOrWhiteSpace(search)
-        ? rows
-        : rows.Where(b => (b.Navn ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
-                       || (b.Hq ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
+    private List<Brobygger> Scoped => rows.Where(b => Scope.Matcher(b.Hq, b.Afdeling)).ToList();
+    private IEnumerable<Brobygger> Filtered => Scoped
+        .Where(b => string.IsNullOrWhiteSpace(search)
+                 || (b.Navn ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
+                 || (b.Hq ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
 
-    protected override async Task OnInitializedAsync() => await Load();
+    protected override async Task OnInitializedAsync() { Scope.OnChange += StateHasChanged; await Load(); }
+    public void Dispose() => Scope.OnChange -= StateHasChanged;
 
     private async Task Load()
     {

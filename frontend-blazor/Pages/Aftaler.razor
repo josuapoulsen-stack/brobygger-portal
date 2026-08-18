@@ -1,11 +1,13 @@
 @page "/aftaler"
 @inject ApiClient Api
 @inject IJSRuntime JS
+@inject ScopeState Scope
+@implements IDisposable
 
 <div class="page-head">
     <div class="ph-id">
         <h1>Aftaler</h1>
-        <p class="ph-sub">@rows.Count aftaler · @rows.Count(a => a.Status == "pending") afventer bekræftelse</p>
+        <p class="ph-sub">@Synlige.Count aftaler@(Scope.Aktiv ? " i " + (Scope.Afdeling ?? Scope.Hovedsaede) : "") · @Synlige.Count(a => a.Status == "pending") afventer bekræftelse</p>
     </div>
     <div class="ph-act">
         <button class="ghost" @onclick="Eksport">Eksportér</button>
@@ -14,9 +16,9 @@
 </div>
 @if (error is not null) { <div class="status err">@error</div> }
 
-@if (rows.Count == 0) { <div class="kort muted">Ingen aftaler endnu.</div> }
+@if (Synlige.Count == 0) { <div class="kort muted">Ingen aftaler@(Scope.Aktiv ? " i det valgte område" : " endnu").</div> }
 <div class="rowcards">
-    @foreach (var a in rows)
+    @foreach (var a in Synlige)
     {
         <div class="rowcard">
             <div class="rc-date">
@@ -156,8 +158,13 @@
     private DateTime? slut;
     private string? error;
 
+    private Menneske? MenneskeFor(Guid id) => mennesker.FirstOrDefault(m => m.Id == id);
+    private List<Aftale> Synlige => rows.Where(a => { var m = MenneskeFor(a.MenneskeId); return Scope.Matcher(m?.Hq, m?.Afdeling); }).ToList();
+    public void Dispose() => Scope.OnChange -= StateHasChanged;
+
     protected override async Task OnInitializedAsync()
     {
+        Scope.OnChange += StateHasChanged;
         try
         {
             mennesker = await Api.GetMennesker();

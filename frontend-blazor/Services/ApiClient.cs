@@ -28,6 +28,7 @@ public class ApiClient(HttpClient http)
         return await http.GetFromJsonAsync<List<T>>(path, Json) ?? [];
     }
 
+    public Task<List<Omraade>> GetOmraader() => GetList<Omraade>("/v1/omraader");
     public Task<List<Menneske>> GetMennesker() => GetList<Menneske>("/v1/mennesker");
     public async Task<List<DuplikatForslag>> MuligeDubletter(string? navn, string? telefon, int? alder)
     {

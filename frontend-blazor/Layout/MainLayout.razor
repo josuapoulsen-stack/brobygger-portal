@@ -2,6 +2,7 @@
 @inject ApiClient Api
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject ScopeState Scope
 @implements IDisposable
 
 <div class="app">
@@ -40,6 +41,19 @@
 
     <div class="main">
         <div class="main-top">
+            <div class="scope">
+                <select class="scope-sel" value="@Scope.Hovedsaede" @onchange="OnHq" title="Hovedsæde">
+                    <option value="">Alle hovedsæder</option>
+                    @foreach (var o in omraader) { <option value="@o.Hovedsaede">@o.Hovedsaede</option> }
+                </select>
+                @if (ValgtOmraade?.Afdelinger.Count > 0)
+                {
+                    <select class="scope-sel" value="@Scope.Afdeling" @onchange="OnAfd" title="Lokalafdeling">
+                        <option value="">Alle afdelinger</option>
+                        @foreach (var a in ValgtOmraade.Afdelinger) { <option value="@a">@a</option> }
+                    </select>
+                }
+            </div>
             <div class="sog">
                 <input placeholder="Søg navn/telefon…" value="@soegQ" @oninput="OnSoeg" />
                 @if (soegRes is not null && (soegRes.Mennesker.Any() || soegRes.Brobyggere.Any()))
@@ -75,6 +89,10 @@
 @code {
     private string soegQ = "";
     private SoegResultat? soegRes;
+    private List<Omraade> omraader = [];
+    private Omraade? ValgtOmraade => omraader.FirstOrDefault(o => o.Hovedsaede == Scope.Hovedsaede);
+    private void OnHq(ChangeEventArgs e) => Scope.SetHovedsaede(e.Value?.ToString());
+    private void OnAfd(ChangeEventArgs e) => Scope.SetAfdeling(e.Value?.ToString());
     private List<Notifikation> notifs = [];
     private int ulaest;
     private bool visNotif;
@@ -101,6 +119,7 @@
         if (!first) return;
         try
         {
+            omraader = await Api.GetOmraader();
             notifs = await Api.GetNotifikationer();
             ulaest = notifs.Count(n => !n.Laest);
             _ref = DotNetObjectReference.Create(this);

@@ -10,5 +10,6 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // Peger på det lokale .NET-API. På Azure sættes dette til API'ets URL.
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri("http://localhost:5080") });
 builder.Services.AddScoped<ApiClient>();
+builder.Services.AddScoped<ScopeState>();
 
 await builder.Build().RunAsync();

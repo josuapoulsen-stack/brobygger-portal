@@ -1,11 +1,13 @@
 @page "/mennesker"
 @inject ApiClient Api
 @inject IJSRuntime JS
+@inject ScopeState Scope
+@implements IDisposable
 
 <div class="page-head">
     <div class="ph-id">
         <h1>Mennesker</h1>
-        <p class="ph-sub">@rows.Count borgere · @rows.Count(m => m.MatchedWith is null && m.Status != "afsluttet") afventer match</p>
+        <p class="ph-sub">@Scoped.Count borgere@(Scope.Aktiv ? " i " + (Scope.Afdeling ?? Scope.Hovedsaede) : "") · @Scoped.Count(m => m.MatchedWith is null && m.Status != "afsluttet") afventer match</p>
     </div>
     <div class="ph-act">
         <button class="ghost" @onclick="Eksport">Eksportér</button>
@@ -104,12 +106,14 @@ else
         StateHasChanged();
     }
 
-    private IEnumerable<Menneske> Filtered => string.IsNullOrWhiteSpace(search)
-        ? rows
-        : rows.Where(m => (m.Navn ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
-                       || (m.Hq ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
+    private List<Menneske> Scoped => rows.Where(m => Scope.Matcher(m.Hq, m.Afdeling)).ToList();
+    private IEnumerable<Menneske> Filtered => Scoped
+        .Where(m => string.IsNullOrWhiteSpace(search)
+                 || (m.Navn ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
+                 || (m.Hq ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
 
-    protected override async Task OnInitializedAsync() => await Load();
+    protected override async Task OnInitializedAsync() { Scope.OnChange += StateHasChanged; await Load(); }
+    public void Dispose() => Scope.OnChange -= StateHasChanged;
 
     private async Task Load()
     {
