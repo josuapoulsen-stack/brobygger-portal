@@ -1,0 +1,120 @@
+@page "/omraader"
+@inject ApiClient Api
+
+<div class="page-head">
+    <div class="ph-id">
+        <h1>Områder</h1>
+        <p class="ph-sub">Hovedsæder og lokalafdelinger — styrer scope-filteret og valg på mennesker/brobyggere.</p>
+    </div>
+    <div class="ph-act"><button @onclick="() => visNy = !visNy">@(visNy ? "Luk" : "Nyt hovedsæde")</button></div>
+</div>
+@if (error is not null) { <div class="status err">@error</div> }
+
+@if (visNy)
+{
+    <div class="kort" style="margin-bottom:16px">
+        <div class="row" style="margin:0">
+            <input placeholder="Navn på hovedsæde" @bind="nytHoved" @bind:event="oninput" style="flex:1;min-width:200px" />
+            <button @onclick="OpretHoved" disabled="@string.IsNullOrWhiteSpace(nytHoved)">Opret hovedsæde</button>
+        </div>
+    </div>
+}
+
+@if (hovedsaeder.Count == 0) { <div class="kort muted">Ingen hovedsæder endnu.</div> }
+
+<div class="omr-grid">
+    @foreach (var h in hovedsaeder)
+    {
+        <div class="card">
+            <div class="omr-hd">
+                <input class="omr-navn" @bind="h.Navn" />
+                <div class="handling">
+                    <button class="mini ghost" @onclick="() => GemHoved(h)">Gem navn</button>
+                    <button class="mini ghost" @onclick="() => SletHoved(h)">Slet</button>
+                </div>
+            </div>
+            <div class="afd-liste">
+                @foreach (var a in h.Afdelinger)
+                {
+                    <div class="afd-rk">
+                        <input @bind="a.Navn" />
+                        <button class="mini ghost" @onclick="() => GemAfd(a)">Gem</button>
+                        <button class="mini ghost" @onclick="() => SletAfd(a)">Slet</button>
+                    </div>
+                }
+                @if (h.Afdelinger.Count == 0) { <p class="two" style="margin:0 0 8px">Ingen lokalafdelinger endnu.</p> }
+                <div class="afd-rk">
+                    <input placeholder="Ny lokalafdeling" value="@NyAfd(h.Id)" @oninput="e => nyeAfd[h.Id] = e.Value?.ToString() ?? string.Empty" />
+                    <button class="mini" @onclick="() => TilfoejAfd(h)" disabled="@string.IsNullOrWhiteSpace(NyAfd(h.Id))">Tilføj</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .omr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-1); padding:18px 20px; }
+    .omr-hd { display:flex; align-items:center; gap:10px; justify-content:space-between; margin-bottom:14px; }
+    .omr-navn { flex:1; min-width:120px; font-weight:600; font-size:15px; }
+    .afd-liste { display:flex; flex-direction:column; gap:8px; }
+    .afd-rk { display:flex; gap:8px; align-items:center; }
+    .afd-rk input { flex:1; min-width:120px; }
+</style>
+
+@code {
+    private List<HovedsaedeDto> hovedsaeder = [];
+    private string? nytHoved;
+    private bool visNy;
+    private readonly Dictionary<Guid, string> nyeAfd = new();
+    private string? error;
+
+    private string NyAfd(Guid id) => nyeAfd.TryGetValue(id, out var v) ? v : "";
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        try { hovedsaeder = await Api.GetHovedsaeder(); error = null; }
+        catch (Exception e) { error = "Kunne ikke hente: " + e.Message; }
+    }
+
+    private async Task OpretHoved()
+    {
+        if (string.IsNullOrWhiteSpace(nytHoved)) return;
+        try { await Api.CreateHovedsaede(nytHoved!); nytHoved = ""; visNy = false; await Load(); }
+        catch (Exception e) { error = "Kunne ikke oprette: " + e.Message; }
+    }
+
+    private async Task GemHoved(HovedsaedeDto h)
+    {
+        try { await Api.UpdateHovedsaede(h.Id, h.Navn); await Load(); }
+        catch (Exception e) { error = "Kunne ikke gemme: " + e.Message; }
+    }
+
+    private async Task SletHoved(HovedsaedeDto h)
+    {
+        try { await Api.DeleteHovedsaede(h.Id); await Load(); }
+        catch (Exception e) { error = "Kunne ikke slette: " + e.Message; }
+    }
+
+    private async Task TilfoejAfd(HovedsaedeDto h)
+    {
+        var navn = NyAfd(h.Id);
+        if (string.IsNullOrWhiteSpace(navn)) return;
+        try { await Api.CreateAfdeling(h.Id, navn); nyeAfd[h.Id] = ""; await Load(); }
+        catch (Exception e) { error = "Kunne ikke tilføje afdeling: " + e.Message; }
+    }
+
+    private async Task GemAfd(AfdelingDto a)
+    {
+        try { await Api.UpdateAfdeling(a.Id, a.Navn); await Load(); }
+        catch (Exception e) { error = "Kunne ikke gemme afdeling: " + e.Message; }
+    }
+
+    private async Task SletAfd(AfdelingDto a)
+    {
+        try { await Api.DeleteAfdeling(a.Id); await Load(); }
+        catch (Exception e) { error = "Kunne ikke slette afdeling: " + e.Message; }
+    }
+}

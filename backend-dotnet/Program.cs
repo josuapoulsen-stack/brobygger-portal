@@ -135,6 +135,7 @@ if (app.Environment.IsDevelopment())
         BrobyggerPortal.Api.Data.DbSeeder.SeedAsync(db).GetAwaiter().GetResult();
         BrobyggerPortal.Api.Data.DbSeeder.EnsureStamdataAsync(db).GetAwaiter().GetResult();
         BrobyggerPortal.Api.Data.StedSeeder.SeedAsync(db).GetAwaiter().GetResult();
+        BrobyggerPortal.Api.Data.DbSeeder.EnsureOmraaderAsync(db).GetAwaiter().GetResult();
     });
 }
 

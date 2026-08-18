@@ -346,6 +346,19 @@ public class Omraade
     public List<string> Afdelinger { get; set; } = [];
 }
 
+// Administration af områder (med id'er)
+public class AfdelingDto
+{
+    public Guid Id { get; set; }
+    public string Navn { get; set; } = "";
+}
+public class HovedsaedeDto
+{
+    public Guid Id { get; set; }
+    public string Navn { get; set; } = "";
+    public List<AfdelingDto> Afdelinger { get; set; } = [];
+}
+
 // Dublet-genkendelse ved oprettelse af menneske
 public class DuplikatForslag
 {

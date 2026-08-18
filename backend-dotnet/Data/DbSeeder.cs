@@ -63,4 +63,13 @@ public static class DbSeeder
         db.Stamdata.AddRange(nye);
         await db.SaveChangesAsync();
     }
+
+    /// <summary>Seeder Social Sundheds faste hovedsæder (lokalafdelinger tilføjes af koordinator).</summary>
+    public static async Task EnsureOmraaderAsync(BrobyggerDbContext db)
+    {
+        if (await db.Hovedsaeder.AnyAsync()) return;
+        string[] hovedsaeder = ["Hovedstaden", "Sjælland", "Syd", "Sydvest", "Aarhus", "Kronjylland", "Midt", "Nord"];
+        db.Hovedsaeder.AddRange(hovedsaeder.Select(n => new Hovedsaede { Navn = n }));
+        await db.SaveChangesAsync();
+    }
 }

@@ -29,6 +29,14 @@ public class ApiClient(HttpClient http)
     }
 
     public Task<List<Omraade>> GetOmraader() => GetList<Omraade>("/v1/omraader");
+    // Administration af områder
+    public Task<List<HovedsaedeDto>> GetHovedsaeder() => GetList<HovedsaedeDto>("/v1/hovedsaeder");
+    public async Task CreateHovedsaede(string navn) { await EnsureLoginAsync(); await EnsureOk(await http.PostAsJsonAsync("/v1/hovedsaeder", new { navn }, Json)); }
+    public async Task UpdateHovedsaede(Guid id, string navn) { await EnsureLoginAsync(); await EnsureOk(await http.PutAsJsonAsync($"/v1/hovedsaeder/{id}", new { navn }, Json)); }
+    public async Task DeleteHovedsaede(Guid id) { await EnsureLoginAsync(); await EnsureOk(await http.DeleteAsync($"/v1/hovedsaeder/{id}")); }
+    public async Task CreateAfdeling(Guid hovedsaedeId, string navn) { await EnsureLoginAsync(); await EnsureOk(await http.PostAsJsonAsync($"/v1/hovedsaeder/{hovedsaedeId}/afdelinger", new { navn }, Json)); }
+    public async Task UpdateAfdeling(Guid id, string navn) { await EnsureLoginAsync(); await EnsureOk(await http.PutAsJsonAsync($"/v1/afdelinger/{id}", new { navn }, Json)); }
+    public async Task DeleteAfdeling(Guid id) { await EnsureLoginAsync(); await EnsureOk(await http.DeleteAsync($"/v1/afdelinger/{id}")); }
     public Task<List<Menneske>> GetMennesker() => GetList<Menneske>("/v1/mennesker");
     public async Task<List<DuplikatForslag>> MuligeDubletter(string? navn, string? telefon, int? alder)
     {

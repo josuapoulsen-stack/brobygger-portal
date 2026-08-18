@@ -24,6 +24,7 @@
             <NavLink href="kalender">@Ikon("calendar") <span>Kalender</span></NavLink>
             <NavLink href="statistik">@Ikon("chart") <span>Statistik</span></NavLink>
             <div class="side-sep">Administration</div>
+            <NavLink href="omraader">@Ikon("map") <span>Områder</span></NavLink>
             <NavLink href="skabeloner">@Ikon("chat") <span>Skabeloner</span></NavLink>
             <NavLink href="stamdata">@Ikon("chip") <span>Stamdata</span></NavLink>
             <NavLink href="oekonomi">@Ikon("coin") <span>Økonomi</span></NavLink>
@@ -111,6 +112,7 @@
         ["chip"] = "<rect x='5' y='5' width='14' height='14' rx='2'/><path d='M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3'/>",
         ["coin"] = "<circle cx='12' cy='12' r='9'/><path d='M12 7v10M9.5 9.5h4a2 2 0 0 1 0 4H9.5'/>",
         ["shield"] = "<path d='M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z'/>",
+        ["map"] = "<path d='M9 3 3 5.5v15L9 18l6 3 6-2.5v-15L15 6 9 3z'/><path d='M9 3v15M15 6v15'/>",
     };
     private MarkupString Ikon(string n) => new($"<svg class='nav-i' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'>{(Ikoner.TryGetValue(n, out var p) ? p : "")}</svg>");
 

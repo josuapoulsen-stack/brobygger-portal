@@ -19,6 +19,8 @@ public class BrobyggerDbContext(DbContextOptions<BrobyggerDbContext> options) : 
     public DbSet<AuditLog> Auditlog => Set<AuditLog>();
     public DbSet<Notifikation> Notifikationer => Set<Notifikation>();
     public DbSet<Sted> Steder => Set<Sted>();
+    public DbSet<Hovedsaede> Hovedsaeder => Set<Hovedsaede>();
+    public DbSet<Lokalafdeling> Lokalafdelinger => Set<Lokalafdeling>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -53,5 +55,9 @@ public class BrobyggerDbContext(DbContextOptions<BrobyggerDbContext> options) : 
         b.Entity<AuditLog>().HasIndex(x => x.Tidspunkt);
         b.Entity<Notifikation>().HasIndex(x => x.Tidspunkt);
         b.Entity<Sted>(e => { e.HasIndex(x => x.SorId).IsUnique(); e.HasIndex(x => x.Soegetekst); });
+        b.Entity<Hovedsaede>(e =>
+        {
+            e.HasMany(x => x.Afdelinger).WithOne().HasForeignKey(a => a.HovedsaedeId).OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }
