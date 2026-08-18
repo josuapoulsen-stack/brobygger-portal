@@ -22,6 +22,9 @@
 
     <!-- Microsoft Graph (mail + Outlook-kalender) — token via Azure.Identity, kald via REST -->
     <PackageReference Include="Azure.Identity" Version="1.17.2" />
+    <!-- DEPLOY-TODO (kritisk): tilføj før produktion, kræver netadgang til nuget.org:
+         Azure.Extensions.AspNetCore.DataProtection.Blob + .Keys — persistér DP-nøgler
+         (ellers bliver krypterede felter ulæselige ved genstart). Se AZURE_SETUP.md / readiness-rapporten. -->
 
     <!-- OpenAPI / Swagger UI -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />

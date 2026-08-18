@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using BrobyggerPortal.Api.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Tokens;
@@ -62,7 +63,18 @@ else
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton(new AuthMode(entraConfigured));
 builder.Services.AddSingleton<BrobyggerPortal.Api.Services.GraphService>();
-builder.Services.AddDataProtection();
+// Data Protection: beskytter krypterede felter (helbredsnoter art.9, kontonr).
+// SetApplicationName sikrer samme nøglering på tværs af instanser.
+builder.Services.AddDataProtection().SetApplicationName("BrobyggerPortal");
+// DEPLOY-TODO (kritisk): i produktion SKAL nøglerne persisteres eksternt (Blob + Key Vault),
+// ellers bliver alt krypteret data ulæseligt ved genstart/skalering. Kræver pakkerne
+// Azure.Extensions.AspNetCore.DataProtection.Blob + .Keys (se csproj + AZURE_SETUP.md):
+//   var cred = new Azure.Identity.DefaultAzureCredential();
+//   dp.PersistKeysToAzureBlobStorage(new Uri(cfg["DataProtection:BlobUri"]!), cred);
+//   dp.ProtectKeysWithAzureKeyVault(new Uri(cfg["DataProtection:KeyVaultKeyId"]!), cred);
+if (builder.Environment.IsProduction() && string.IsNullOrWhiteSpace(builder.Configuration["DataProtection:BlobUri"]))
+    throw new InvalidOperationException(
+        "DataProtection:BlobUri mangler i produktion — krypterede felter ville blive ulæselige ved genstart. Wire Blob-persistering (se AZURE_SETUP.md).");
 builder.Services.AddSingleton<BrobyggerPortal.Api.Services.CryptoService>();
 builder.Services.AddScoped<BrobyggerPortal.Api.Services.AuditService>();
 builder.Services.AddSingleton<BrobyggerPortal.Api.Services.EventBroker>();
