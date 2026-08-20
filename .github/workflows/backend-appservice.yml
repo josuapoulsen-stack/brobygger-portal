@@ -1,0 +1,42 @@
+# .github/workflows/backend-appservice.yml
+#
+# CI/CD til .NET-backend (backend-dotnet/) → Azure App Service.
+#
+# Krav:
+#   Secret  AZURE_WEBAPP_PUBLISH_PROFILE  → App Service → Get publish profile
+#   Variable AZURE_WEBAPP_NAME            → fx brobygger-prod-api (Settings → Variables)
+#
+# BEMÆRK: DB-migrationer køres IKKE her (App Service-runneren har typisk ikke
+# firewall-adgang til Postgres). Kør migrationer separat, fx:
+#   dotnet ef database update --project backend-dotnet   (fra en maskine med DB-adgang)
+# — se DEPLOYMENT_READINESS.md.
+
+name: Backend — Azure App Service
+
+on:
+  push:
+    branches: [master]
+    paths: ['backend-dotnet/**']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Byg og deploy (.NET 10)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Opsæt .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish
+        run: dotnet publish backend-dotnet/BrobyggerPortal.Api.csproj -c Release -o publish
+
+      - name: Deploy til App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name:        ${{ vars.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package:         publish
