@@ -14,15 +14,13 @@ _Opdateret: august 2026. Afløser de dele af `AZURE_SETUP.md` der stadig referer
 
 ## 🔴 Blokerende før go-live
 
-### 1. Frontend mangler Entra/MSAL-login
-Blazor-frontenden logger i dag altid ind med et **dev-token** (`ApiClient.EnsureLoginAsync` → `/v1/auth/dev-token`, alle roller). Der er **ingen rigtig Microsoft-login**.
-**Backend er klar** — den skifter automatisk til ægte Entra-validering når `AzureAd:TenantId`/`ClientId` er sat (ellers dev-token). Rollerne læses fra `roles`-claim (Entra app roles).
-**Skal gøres:**
-- Tilføj `Microsoft.Authentication.WebAssembly.Msal` til `frontend-blazor`.
-- Konfigurér MSAL i `Program.cs` med `AzureAd`-værdier (fra `wwwroot/appsettings.json`).
-- Erstat dev-login i `ApiClient` med `IAccessTokenProvider` (rigtige access tokens til API'et).
-- Login/logout-UI + `[Authorize]`-routing.
-- Dev-token-stien beholdes kun til lokal test (backend afviser den automatisk når Entra er konfigureret + `ASPNETCORE_ENVIRONMENT=Production`).
+### 1. Frontend Entra/MSAL — ✅ kodeklar, mangler tenant-config + smoke-test
+Frontenden er nu wiret til MSAL (guarded): når `AzureAd:ClientId` i `frontend-blazor/wwwroot/appsettings.json` er sat (ikke `TODO...`), bruges **ægte Microsoft-login** — ellers dev-token som før (lokalt).
+Implementeret: `AddMsalAuthentication`, `ApiAuthHandler` (vedhæfter Entra-token på API-kald), `/authentication`-callback, `AuthorizeRouteView` + `RedirectToLogin`. Backend skifter tilsvarende automatisk til Entra-validering når `AzureAd` er sat; roller læses fra `roles`-claim.
+**Skal gøres ved deploy:**
+- Udfyld `frontend-blazor/wwwroot/appsettings.json`: `AzureAd:Authority` (tenant), `ClientId`, `ApiScope`, samt `ApiBaseUrl` = prod-API-URL.
+- **Smoke-test mod den rigtige tenant** (login, token, rolle-gated skærme) — MSAL-stien er ikke testet mod en tenant endnu.
+- Overvej at gøre login obligatorisk (tilføj `[Authorize]` på siderne) — pt. vises UI'et, og API'et beskytter data.
 
 ### 2. Data Protection-nøgler skal persisteres (ellers datatab)
 Backend krypterer helbredsnoter (art. 9) og kontonumre med ASP.NET Data Protection. Nøglerne ligger som standard **flygtigt på App Service** → krypteret data bliver **ulæseligt ved genstart/skalering**.
