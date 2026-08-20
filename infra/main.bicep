@@ -9,10 +9,10 @@
 //     --parameters @infra/parameters.json
 //
 // Ressourcer der oprettes:
-//   • Azure Static Web Apps  (frontend)
-//   • Azure App Service      (FastAPI backend)
+//   • Azure Static Web Apps  (Blazor WASM-frontend)
+//   • Azure App Service      (.NET 10 Web API-backend)
 //   • Azure Database for PostgreSQL Flexible Server
-//   • Realtids-beskeder via SSE i FastAPI-backend (ingen separat tjeneste)
+//   • Realtids-beskeder via SSE i .NET-backend (ingen separat tjeneste)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 @description('Miljø: dev, staging eller prod')
@@ -48,7 +48,7 @@ var tags = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. Azure Static Web Apps — React-frontend
+// 1. Azure Static Web Apps — Blazor WASM-frontend
 // ─────────────────────────────────────────────────────────────────────────────
 resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
   name: '${prefix}-web'
@@ -62,15 +62,15 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
     repositoryUrl:  'https://github.com/${githubRepo}'
     branch:         githubBranch
     buildProperties: {
-      appLocation:    '/'      // Root af repo
-      outputLocation: 'dist'   // Vite build-output
-      apiLocation:    ''       // Ingen Azure Functions (bruger separat App Service)
+      appLocation:    'frontend-blazor'   // Blazor WASM-projektet
+      outputLocation: 'wwwroot'           // Blazor publish-output
+      apiLocation:    ''                  // Ingen Azure Functions (separat App Service)
     }
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. App Service Plan + App Service — FastAPI backend
+// 2. App Service Plan + App Service — .NET 10 Web API-backend
 // ─────────────────────────────────────────────────────────────────────────────
 resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: '${prefix}-plan'
@@ -91,6 +91,13 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
   location: location
   tags: tags
   kind: 'app,linux'
+  // Managed identity → adgang til Key Vault + Storage (Data Protection-nøgler)
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${appServiceIdentity.id}': {}
+    }
+  }
   properties: {
     serverFarmId: appServicePlan.id
     httpsOnly:    true
@@ -108,6 +115,11 @@ resource appService 'Microsoft.Web/sites@2022-09-01' = {
         { name: 'AzureAd__TenantId', value: 'TODO_TENANT_ID' }
         { name: 'AzureAd__ClientId', value: 'TODO_CLIENT_ID' }
         { name: 'AzureAd__Audience', value: 'TODO_CLIENT_ID' }
+        // Monitoring
+        { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsights.properties.ConnectionString }
+        // Data Protection-nøgler (KRITISK) — udfyld når storage-konto + KV-nøgle er oprettet, se DEPLOYMENT_READINESS.md
+        { name: 'DataProtection__BlobUri', value: 'TODO_https://<konto>.blob.core.windows.net/dpkeys/keys.xml' }
+        { name: 'DataProtection__KeyVaultKeyId', value: 'TODO_https://${prefix}-kv.vault.azure.net/keys/dp-key' }
       ]
       cors: {
         allowedOrigins: [
