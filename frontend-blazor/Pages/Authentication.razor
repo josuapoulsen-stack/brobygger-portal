@@ -1,0 +1,9 @@
+@page "/authentication/{action}"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+@* Login-/logout-callback for MSAL. Bruges kun når Entra er konfigureret. *@
+<RemoteAuthenticatorView Action="@Action" />
+
+@code {
+    [Parameter] public string? Action { get; set; }
+}

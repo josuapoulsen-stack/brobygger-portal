@@ -3,18 +3,18 @@ using System.Text.Json;
 
 namespace BrobyggerPortal.Web.Services;
 
-public class ApiClient(HttpClient http)
+public class ApiClient(HttpClient http, AuthMode auth)
 {
     private static readonly JsonSerializerOptions Json =
         new(JsonSerializerDefaults.Web) { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
     private bool _loggedIn;
 
-    // Dev-login (indtil Entra/MSAL). Henter et testtoken og sætter Bearer-header.
+    // I produktion (Entra) vedhæfter MSAL-handleren token automatisk — intet dev-login.
+    // Lokalt (uden tenant) hentes et dev-token med alle roller så skærmene kan afprøves.
     public async Task EnsureLoginAsync()
     {
-        if (_loggedIn) return;
-        // Dev: giv testbrugeren alle roller, så alle skærme kan afprøves. I produktion styrer Entra rollerne.
+        if (auth.EntraConfigured || _loggedIn) return;
         var res = await http.PostAsJsonAsync("/v1/auth/dev-token", new { roles = new[] { "Admin", "Raadgiver", "Oekonomi" } }, Json);
         res.EnsureSuccessStatusCode();
         var tok = await res.Content.ReadFromJsonAsync<DevToken>(Json);
