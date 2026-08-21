@@ -16,7 +16,7 @@ name: Backend — Azure App Service
 on:
   push:
     branches: [master]
-    paths: ['backend-dotnet/**']
+    paths: ['backend-dotnet/**', 'backend-dotnet.Tests/**']
   workflow_dispatch:
 
 jobs:
@@ -30,6 +30,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
+      - name: Test
+        run: dotnet test backend-dotnet.Tests/BrobyggerPortal.Tests.csproj -c Release
 
       - name: Publish
         run: dotnet publish backend-dotnet/BrobyggerPortal.Api.csproj -c Release -o publish
