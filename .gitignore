@@ -48,3 +48,7 @@ logs/
 
 # ── Lokale genveje (indeholder tokens) ───────────────────────────────────────
 *.url
+
+# Test-projekt build-artefakter
+backend-dotnet.Tests/bin/
+backend-dotnet.Tests/obj/
